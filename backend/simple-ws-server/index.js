@@ -1,3 +1,4 @@
+require('dotenv').config();
 const http = require("http");
 const { WebSocketServer } = require("ws");
 const Y = require("yjs");
@@ -139,7 +140,7 @@ wss.on("close", () => {
     clearInterval(pingInterval);
 });
 
-const PORT = 1234;
+const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`Yjs WebSocket server running on :${PORT}`);
