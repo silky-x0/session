@@ -139,7 +139,9 @@ wss.on("close", () => {
     clearInterval(pingInterval);
 });
 
-server.listen(1234, "0.0.0.0", () => {
-    console.log("Yjs WebSocket server running on :1234");
+const PORT = 1234;
+
+server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Yjs WebSocket server running on :${PORT}`);
     console.log("Listening on all network interfaces (0.0.0.0)");
 });
