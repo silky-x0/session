@@ -47,9 +47,21 @@ This repository contains a real-time collaborative text editor consisting of a R
 
 ## Deployment Notes
 
+### Production URLs
+- **Frontend**: https://mock-collab-editor.onrender.com
+- **Backend**: https://collab-editor-flc9.onrender.com
+
 ### Render (Backend)
 
 To deploy the backend on Render:
 1. Ensure the server listens on `process.env.PORT`.
 2. Set the "Build Command" to `npm install`.
 3. Set the "Start Command" to `npm start`.
+
+### Render (Frontend)
+
+To deploy the frontend on Render:
+1. Set the "Build Command" to `npm install && npm run build`.
+2. Set the "Start Command" to `npm start`.
+3. Add environment variable: `VITE_WS_URL=wss://collab-editor-flc9.onrender.com`.
+4. Redeploy after setting the environment variable (Vite bakes env vars at build time).

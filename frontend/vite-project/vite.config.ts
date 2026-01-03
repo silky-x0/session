@@ -7,7 +7,8 @@ export default defineConfig({
     host: true,
     port: 5173,
     allowedHosts: [
-      "sbjct-benefit-flight-depend.trycloudflare.com"
+      "sbjct-benefit-flight-depend.trycloudflare.com",
+      "mock-collab-editor.onrender.com"
     ]
   },
 

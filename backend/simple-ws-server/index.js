@@ -1,4 +1,3 @@
-require('dotenv').config();
 const http = require("http");
 const { WebSocketServer } = require("ws");
 const Y = require("yjs");

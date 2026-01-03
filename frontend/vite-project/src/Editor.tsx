@@ -42,10 +42,8 @@ export default function CodeEditor() {
         const ydoc = new Y.Doc();
         ydocRef.current = ydoc;
 
-        // Determine WebSocket URL based on current host
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const host = window.location.hostname;
-        const wsUrl = `${protocol}//${host}:1234`;
+        // Use environment variable for WebSocket URL, fallback to localhost
+        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3000";
 
         console.log("Connecting to WebSocket:", wsUrl);
 
