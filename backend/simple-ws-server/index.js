@@ -62,7 +62,57 @@ wss.on("connection", (ws, req) => {
 
     const messageHandler = (message) => {
         try {
+            // First, check if this is a JSON signaling message (string)
+            if (typeof message === "string") {
+                try {
+                    const data = JSON.parse(message);
+                    if (data.type === "signal") {
+                        console.log(`Signaling message from client in room ${roomName}:`, data.from);
+
+                        // If there's a specific target, send only to that client
+                        if (data.to) {
+                            wss.clients.forEach((client) => {
+                                if (client !== ws && client.readyState === 1 && client.room === roomName) {
+                                    client.send(message);
+                                }
+                            });
+                        } else {
+                            // Broadcast to all other clients in the room
+                            wss.clients.forEach((client) => {
+                                if (client !== ws && client.readyState === 1 && client.room === roomName) {
+                                    client.send(message);
+                                }
+                            });
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    // Not JSON, continue to binary handling
+                }
+            }
+
+            // Handle binary messages (Yjs protocol)
             const uint8Msg = new Uint8Array(message);
+
+            // Check if it might be a JSON string sent as buffer
+            try {
+                const str = new TextDecoder().decode(uint8Msg);
+                const data = JSON.parse(str);
+                if (data.type === "signal") {
+                    console.log(`Signaling message (buffer) from client in room ${roomName}:`, data.from);
+
+                    // Broadcast to all other clients in the room
+                    wss.clients.forEach((client) => {
+                        if (client !== ws && client.readyState === 1 && client.room === roomName) {
+                            client.send(str); // Send as string
+                        }
+                    });
+                    return;
+                }
+            } catch (e) {
+                // Not JSON, continue to Yjs protocol
+            }
+
             const decoder = decoding.createDecoder(uint8Msg);
             const messageType = decoding.readVarUint(decoder);
 
@@ -90,21 +140,6 @@ wss.on("connection", (ws, req) => {
                         client.send(message);
                     }
                 });
-            } else {
-                // Handle custom messages (e.g., WebRTC signaling)
-                try {
-                    const str = new TextDecoder().decode(uint8Msg);
-                    const data = JSON.parse(str);
-
-                    // Broadcast custom messages
-                    wss.clients.forEach((client) => {
-                        if (client !== ws && client.readyState === 1 && client.room === roomName) {
-                            client.send(message);
-                        }
-                    });
-                } catch (e) {
-                    // Not JSON, ignore
-                }
             }
         } catch (err) {
             console.error("Message handling error:", err);
@@ -119,7 +154,8 @@ wss.on("connection", (ws, req) => {
 
     ws.on("close", () => {
         console.log(`Client disconnected from room: ${roomName}`);
-        awareness.removeStates([ws], "disconnect");
+        // Clean up awareness - the awareness protocol handles this automatically
+        // when the connection is closed, so we don't need explicit cleanup
     });
 });
 

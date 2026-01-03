@@ -3,6 +3,7 @@ import Editor, { type Monaco } from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
+import { startAudio, stopAudio } from "./useAudioCall";
 
 const LANGUAGES = [
     "javascript",
@@ -20,9 +21,6 @@ const randomColor = () =>
     "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
 
 const username = "User-" + Math.floor(Math.random() * 1000);
-const myId = Math.random().toString(36).substr(2, 9);
-
-const peers = new Map<string, RTCPeerConnection>();
 
 export default function CodeEditor() {
     const ydocRef = useRef<Y.Doc | null>(null);
@@ -119,66 +117,9 @@ export default function CodeEditor() {
         if (!providerRef.current) return;
         const ws = providerRef.current.ws;
         if (ws) {
-            setInCall(true);
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-                ws.addEventListener("message", async (event: any) => {
-                    let data;
-                    try {
-                        if (typeof event.data === "string") {
-                            data = JSON.parse(event.data);
-                        }
-                    } catch (e) { return; }
-
-                    if (!data) return;
-
-                    if (data.offer) {
-                        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-                        peers.set(data.from, pc);
-
-                        stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-                        pc.ontrack = e => {
-                            const audio = document.createElement("audio");
-                            audio.srcObject = e.streams[0];
-                            audio.autoplay = true;
-                        };
-
-                        await pc.setRemoteDescription(data.offer);
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-
-                        ws.send(JSON.stringify({ answer, to: data.from, from: myId }));
-                    }
-
-                    if (data.answer && data.to === myId) {
-                        await peers.get(data.from)?.setRemoteDescription(data.answer);
-                    }
-
-                    if (data.candidate && data.to === myId) {
-                        await peers.get(data.from)?.addIceCandidate(data.candidate);
-                    }
-
-                    if (data.type === "join-audio" && data.from !== myId) {
-                        const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-                        peers.set(data.from, pc);
-
-                        stream.getTracks().forEach(t => pc.addTrack(t, stream));
-
-                        pc.ontrack = e => {
-                            const audio = document.createElement("audio");
-                            audio.srcObject = e.streams[0];
-                            audio.autoplay = true;
-                        };
-
-                        const offer = await pc.createOffer();
-                        await pc.setLocalDescription(offer);
-                        ws.send(JSON.stringify({ offer, to: data.from, from: myId }));
-                    }
-                });
-
-                ws.send(JSON.stringify({ type: "join-audio", from: myId }));
+                await startAudio(ws);
+                setInCall(true);
             } catch (error) {
                 console.error("Audio error:", error);
                 setInCall(false);
@@ -188,6 +129,7 @@ export default function CodeEditor() {
 
     useEffect(() => {
         return () => {
+            stopAudio();
             bindingRef.current?.destroy();
             providerRef.current?.destroy();
             ydocRef.current?.destroy();
