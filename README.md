@@ -1,11 +1,34 @@
-# Real-time Collaboration Editor
+<div align="center">
+  <img src="frontend/public/session-logo-ascii-white.svg" alt="Session ASCII Art" width="550" />
+  
+  <p>
+    Get 10X more out of your pair programming sessions.
+  </p>
 
-This repository contains a real-time collaborative text editor consisting of a React frontend and a Node.js WebSocket backend.
+  <p>
+    <img src="https://img.shields.io/badge/build-passing-brightgreen" alt="Build" />
+    <img src="https://img.shields.io/badge/typescript-v5.0-blue" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/license-MIT-orange" alt="License" />
+  </p>
+  
+  <br />
+<hr />
+<br/>
+  <br/>
+  <br/>
+
+  <img src="frontend/public/session-landing.png" alt="Session Landing Page" width="100%" />
+  <br/>
+  <br/>
+  <br/>
+</div>
+
+Session is a real-time collaborative coding environment built for pair programming, interviews, and focused technical discussions — with audio, video, and live execution.
 
 ## Project Structure
 
-- **frontend/**: React application powered by Vite.
-- **backend/simple-ws-server/**: Node.js WebSocket server using Yjs for real-time state synchronization.
+- **frontend/**: React application (Vite + Tailwind CSS v4).
+- **backend/simple-ws-server/**: Node.js WebSocket server using Yjs for real-time synchronization.
 
 ## Getting Started
 
@@ -33,7 +56,7 @@ This repository contains a real-time collaborative text editor consisting of a R
 
 1. Navigate to the frontend directory:
    ```bash
-   cd frontend/vite-project
+   cd frontend
    ```
 2. Install dependencies:
    ```bash
@@ -43,25 +66,25 @@ This repository contains a real-time collaborative text editor consisting of a R
    ```bash
    npm run dev
    ```
-4. Open your browser and navigate to the local URL (e.g., `http://localhost:5173`).
+4. Open your browser and navigate to `http://localhost:5173`.
 
-## Deployment Notes
+## Deployment
 
 ### Production URLs
+
 - **Frontend**: https://mock-collab-editor.onrender.com
-- **Backend**: https://collab-editor-flc9.onrender.com
 
-### Render (Backend)
+### Deployment Configuration
 
-To deploy the backend on Render:
-1. Ensure the server listens on `process.env.PORT`.
-2. Set the "Build Command" to `npm install`.
-3. Set the "Start Command" to `npm start`.
+**Backend (Render)**
 
-### Render (Frontend)
+- Root Directory: `backend/simple-ws-server`
+- Build Command: `npm install`
+- Start Command: `npm start`
 
-To deploy the frontend on Render:
-1. Set the "Build Command" to `npm install && npm run build`.
-2. Set the "Start Command" to `npm start`.
-3. Add environment variable: `VITE_WS_URL=wss://collab-editor-flc9.onrender.com`.
-4. Redeploy after setting the environment variable (Vite bakes env vars at build time).
+**Frontend (Render)**
+
+- Root Directory: `frontend`
+- Build Command: `npm install && npm run build`
+- Start Command: `npm run preview` (or serve `dist` folder)
+- Environment Variable: `VITE_WS_URL=ws://localhost:1234`

@@ -1,0 +1,29 @@
+<svg
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  xmlns="http://www.w3.org/2000/svg"
+  fill="none"
+>
+  <!-- Left bracket -->
+  <path
+    d="M20 12 H14 V52 H20"
+    stroke="#00FF22"
+    stroke-width="4"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+
+  <!-- Colon (two dots) -->
+  <circle cx="32" cy="26" r="2.5" fill="#00FF22" />
+  <circle cx="32" cy="38" r="2.5" fill="#00FF22" />
+
+  <!-- Right bracket -->
+  <path
+    d="M44 12 H50 V52 H44"
+    stroke="#00FF22"
+    stroke-width="4"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
+  />
+</svg>
