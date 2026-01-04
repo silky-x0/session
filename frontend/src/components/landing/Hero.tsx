@@ -29,7 +29,7 @@ export const Hero: React.FC = () => {
         <p className='font-sans text-white/60 text-lg max-w-lg leading-relaxed'>
           Session is a real-time collaborative coding environment built for pair
           programming, interviews, and focused technical discussions — with
-          audio, video, and live execution.
+          audio, video, and live&nbsp;execution.
         </p>
 
         {/* Input Form Area */}

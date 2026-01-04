@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
             <path d="M86 5 V23" />
             <path d="M126 23 V5 L140 23 V5" />
           </g>
-          <circle cx="106" cy="14" r="7" fill="#00FF22" />
+          <circle cx="106" cy="14" r="11" fill="#00FF22" />
         </svg>
       </a>
 
