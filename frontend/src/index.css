@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans+Condensed:ital,wght@0,100..900;1,100..900&family=Inter:ital,wght@0,100..900;1,100..900&display=swap');
 @import "tailwindcss";
 
 
@@ -53,4 +54,42 @@ body {
   font-size: 10px;
   border-radius: 3px;
   font-weight: bold;
+}
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-condensed: 'IBM Plex Sans Condensed', sans-serif;
+
+  --color-session-green: #00FF22;
+  --color-session-dark: #1c1c1c;
+
+  --animate-marquee: marquee 25s linear infinite;
+  --animate-border-rotate: border-rotate 4s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes border-rotate {
+    from {
+      --border-angle: 0deg;
+    }
+
+    to {
+      --border-angle: 360deg;
+    }
+  }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }

@@ -1,4 +1,4 @@
-import CodeEditor from './components/Editor'
+import LandingPage from './pages/LandingPage';
 
 function App() {
   // Future: Add providers, routing, layouts here
@@ -11,7 +11,7 @@ function App() {
   //   </AuthProvider>
   // )
 
-  return <CodeEditor />
+  return <LandingPage />
 }
 
 export default App
