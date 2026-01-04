@@ -2,7 +2,7 @@ import React from "react";
 
 export const Header: React.FC = () => {
   return (
-    <header className="flex justify-between items-center px-6 py-6 sticky top-0 z-50 backdrop-blur-sm">
+    <header className="flex justify-between items-center px-6 py-6 sticky top-0 z-50 bg-transparent">
       <a href="/" className="justify-self-start">
         <svg width="170" height="28" viewBox="0 0 170 28" fill="none" xmlns="http://www.w3.org/2000/svg">
           <g stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
