@@ -3,7 +3,7 @@ import Editor, { type Monaco } from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
-import { startAudio, stopAudio } from "./useAudioCall";
+import { startAudio, stopAudio } from "../hooks/useAudioCall";
 
 const LANGUAGES = [
     "javascript",
