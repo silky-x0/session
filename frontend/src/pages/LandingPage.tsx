@@ -21,13 +21,13 @@ const LandingPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-[#1c1c1c] text-white font-sans selection:bg-loki-green selection:text-black overflow-x-hidden">
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.03]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.08]"></div>
                 
                 <div 
                     className="absolute inset-0 bg-[radial-gradient(#00FF22_1px,transparent_1px)] [background-size:24px_24px] opacity-40 transition-opacity duration-300"
                     style={{
-                        maskImage: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
-                        WebkitMaskImage: `radial-gradient(300px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
+                        maskImage: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
+                        WebkitMaskImage: `radial-gradient(200px circle at ${mousePosition.x}px ${mousePosition.y}px, black, transparent)`,
                     }}
                 ></div>
             </div>
