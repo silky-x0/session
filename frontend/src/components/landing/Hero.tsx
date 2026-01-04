@@ -5,21 +5,30 @@ export const Hero: React.FC = () => {
     <section className='flex flex-col items-center justify-center min-h-[80vh] px-4 relative z-10'>
       <div className='flex flex-col items-center gap-8 max-w-4xl text-center'>
         {/* Main Heading */}
-        <h1 className='flex flex-col items-center gap-2 font-display text-5xl md:text-7xl lg:text-[80px] font-bold leading-[0.95] tracking-tight lowercase'>
+        <h1 className='flex flex-col items-center gap-1 font-display text-5xl md:text-7xl lg:text-[100px] font-bold leading-[0.9] tracking-tight lowercase select-none'>
+          {/* "real-time" - Hollow/Outlined with wide stroke */}
           <span
-            className='text-stroke-green text-transparent'
-            style={{ WebkitTextStroke: "1px #00FF22" }}
+            className='text-transparent font-black tracking-tighter'
+            style={{ 
+                WebkitTextStroke: "2px #00FF22",
+                fontFamily: "var(--font-display)",
+            }}
           >
             real-time
           </span>
 
-          <span className='text-white font-normal italic my-1'>
+          {/* "coding sessions" - Solid White, Italic */}
+          <span className='text-white font-normal italic my-2 tracking-normal font-sans text-4xl md:text-6xl'>
             coding sessions
           </span>
 
+          {/* "that matter" - Hollow/Outlined */}
           <span
-            className='text-stroke-green text-transparent'
-            style={{ WebkitTextStroke: "1px #00FF22" }}
+            className='text-transparent font-black tracking-tighter'
+            style={{ 
+                WebkitTextStroke: "2px #00FF22", 
+                fontFamily: "var(--font-display)",
+            }}
           >
             that matter
           </span>

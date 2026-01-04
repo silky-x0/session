@@ -15,10 +15,17 @@ const LandingPage: React.FC = () => {
 
             <Header />
 
-            <main className="flex flex-col items-center w-full relative z-10">
-                <Hero />
+            <main className="flex flex-col items-center w-full relative min-h-screen justify-center overflow-x-hidden">
+                {/* Background Layer: Floating Images */}
                 <ImageGrid />
-                <Marquee />
+                
+                {/* Foreground Layer: Hero Text & Input */}
+                <Hero />
+                
+                {/* Scroll Indication / Marquee below */}
+                <div className="relative z-20 w-full mt-32">
+                    <Marquee />
+                </div>
             </main>
 
             <Footer />
