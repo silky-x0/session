@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans+Condensed:ital,wght@0,100..900;1,100..900&family=Inter:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans+Condensed:ital,wght@0,100..900;1,100..900&family=Inter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @import "tailwindcss";
 
 
@@ -58,11 +58,21 @@ body {
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'IBM Plex Sans', sans-serif;
   --font-condensed: 'IBM Plex Sans Condensed', sans-serif;
 
-  --color-session-green: #00FF22;
-  --color-session-dark: #1c1c1c;
+  --color-deep-carbon: #050505;
+  --color-neon-pulse: #00FF41;
+  --color-muted-emerald: rgba(0, 255, 65, 0.2);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A3A3A3;
+
+  --color-session-green: var(--color-neon-pulse);
+  --color-session-dark: var(--color-deep-carbon);
+
+
+
 
   --animate-marquee: marquee 10s linear infinite;
   --animate-border-rotate: border-rotate 4s linear infinite;
