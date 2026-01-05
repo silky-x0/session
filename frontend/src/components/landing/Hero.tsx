@@ -2,7 +2,7 @@ import React from "react";
 
 export const Hero: React.FC = () => {
   return (
-    <section className='flex flex-col items-center justify-center min-h-[80vh] px-4 relative z-10'>
+    <section className='flex flex-col items-center justify-center min-h-[75vh] px-4 relative z-10'>
       <div className='flex flex-col items-center gap-8 max-w-4xl text-center'>
         {/* Main Heading */}
         <h1 className='flex flex-col items-center gap-2 font-display text-5xl md:text-7xl lg:text-[80px] font-bold leading-[0.95] tracking-tight lowercase'>

@@ -64,7 +64,7 @@ body {
   --color-session-green: #00FF22;
   --color-session-dark: #1c1c1c;
 
-  --animate-marquee: marquee 25s linear infinite;
+  --animate-marquee: marquee 10s linear infinite;
   --animate-border-rotate: border-rotate 4s linear infinite;
 
   @keyframes marquee {
