@@ -43,7 +43,7 @@ export default function CodeEditor() {
         ydocRef.current = ydoc;
 
         // Use environment variable for WebSocket URL, fallback to localhost
-        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3000";
+        const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:1234";
 
         console.log("Connecting to WebSocket:", wsUrl);
 

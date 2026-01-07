@@ -3,15 +3,52 @@ import { useNavigate } from "react-router-dom";
 
 export const SessionInput: React.FC = () => {
   const [mode, setMode] = useState<"start" | "join">("start");
-  const [roomId, setRoomId] = useState("");
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleJoin = () => {
-    if (mode === "join" && roomId.trim()) {
-      navigate(`/editor?room=${roomId}`);
-    } else {
-        const newRoomId = Math.random().toString(36).substring(2, 9);
-        navigate(`/editor?room=${newRoomId}`);
+  const handleJoin = async () => {
+    if (mode === "join") {
+      // Join existing session
+      if (input.trim()) {
+        navigate(`/editor?room=${input}`);
+      }
+      return;
+    }
+
+    // Start new session
+    if (!input.trim()) {
+      // No prompt - redirect to editor with random room ID
+      const newRoomId = Math.random().toString(36).substring(2, 9);
+      navigate(`/editor?room=${newRoomId}`);
+      return;
+    }
+
+    // Prompt provided - call AI API
+    try {
+      setIsLoading(true);
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1234";
+      const response = await fetch(`${apiUrl}/api/ai/session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: input }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create AI session");
+      }
+
+      const data = await response.json();
+      navigate(`/editor?room=${data.roomId}`);
+    } catch (error) {
+      console.error("Error creating AI session:", error);
+      // Fallback: redirect to editor with random room ID
+      const newRoomId = Math.random().toString(36).substring(2, 9);
+      navigate(`/editor?room=${newRoomId}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,27 +89,54 @@ export const SessionInput: React.FC = () => {
         <div className='relative flex items-center bg-[#1f1f1f] rounded-full border-2 border-white/5 p-1.5 pl-5 focus-within:border-white/10 transition-colors'>
           <input
             type='text'
-            value={roomId}
-            onChange={(e) => setRoomId(e.target.value)}
-            placeholder={mode === 'start' ? 'Paste a problem, snippet, or interview prompt…' : 'Enter room ID...'}
-            className='flex-1 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-sm'
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isLoading) {
+                handleJoin();
+              }
+            }}
+            disabled={isLoading}
+            placeholder={
+              isLoading 
+                ? 'Joining room...' 
+                : mode === 'start' 
+                  ? 'Paste a problem, snippet, or interview prompt…' 
+                  : 'Enter room ID...'
+            }
+            className='flex-1 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-sm disabled:opacity-60'
           />
           <button
             onClick={handleJoin}
-            className='p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)]'>
-            <svg
-              width='20'
-              height='20'
-              viewBox='0 0 24 24'
-              fill='none'
-              stroke='black'
-              strokeWidth='2'
-              strokeLinecap='round'
-              strokeLinejoin='round'
-            >
-              <path d='M5 12h14'></path>
-              <path d='M12 5l7 7-7 7'></path>
-            </svg>
+            disabled={isLoading}
+            className='p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed'>
+            {isLoading ? (
+              <svg
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='black'
+                strokeWidth='2'
+                className='animate-spin'
+              >
+                <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83'></path>
+              </svg>
+            ) : (
+              <svg
+                width='20'
+                height='20'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='black'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              >
+                <path d='M5 12h14'></path>
+                <path d='M12 5l7 7-7 7'></path>
+              </svg>
+            )}
           </button>
         </div>
       </div>
