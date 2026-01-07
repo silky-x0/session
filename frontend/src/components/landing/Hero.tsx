@@ -1,15 +1,18 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 export const Hero: React.FC = () => {
   const [mode, setMode] = useState<"start" | "join">("start");
   const [roomId, setRoomId] = useState("");
+  const navigate = useNavigate();
 
   const handleJoin = () => {
     if (mode === "join" && roomId.trim()) {
-      window.location.href = `/?room=${roomId}`;
+      navigate(`/editor?room=${roomId}`);
     } else {
-        // Logic for start session could go here (e.g. create new room)
-        console.log("Start session clicked");
+        const newRoomId = Math.random().toString(36).substring(2, 9);
+        navigate(`/editor?room=${newRoomId}`);
     }
   };
 

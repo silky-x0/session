@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Editor, { type Monaco } from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
@@ -23,6 +24,7 @@ const randomColor = () =>
 const username = "User-" + Math.floor(Math.random() * 1000);
 
 export default function CodeEditor() {
+    const navigate = useNavigate();
     const ydocRef = useRef<Y.Doc | null>(null);
     const providerRef = useRef<WebsocketProvider | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
@@ -110,7 +112,7 @@ export default function CodeEditor() {
 
     const handleCreateRoom = () => {
         const id = crypto.randomUUID().slice(0, 8);
-        window.location.href = `/?room=${id}`;
+        navigate(`/editor?room=${id}`);
     };
 
     const handleStartAudio = async () => {
