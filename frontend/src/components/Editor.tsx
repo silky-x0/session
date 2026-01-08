@@ -5,6 +5,7 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
 import { startAudio, stopAudio } from "../hooks/useAudioCall";
+import ProblemPanel from "./ProblemPanel";
 
 const LANGUAGES = [
     "javascript",
@@ -23,6 +24,16 @@ const randomColor = () =>
 
 const username = "User-" + Math.floor(Math.random() * 1000);
 
+interface Metadata {
+    title?: string;
+    difficulty?: string;
+    question?: string;
+    hints?: string[];
+    complexity?: { time: string; space: string };
+    fullSolution?: string;
+    starterCode?: string;
+}
+
 export default function CodeEditor() {
     const navigate = useNavigate();
     const ydocRef = useRef<Y.Doc | null>(null);
@@ -31,6 +42,7 @@ export default function CodeEditor() {
     const [language, setLanguage] = useState("javascript");
     const [inCall, setInCall] = useState(false);
     const [isEditorReady, setIsEditorReady] = useState(false);
+    const [metadata, setMetadata] = useState<Metadata>({});
 
     const roomId =
         new URLSearchParams(window.location.search).get("room") || "default";
@@ -75,9 +87,11 @@ export default function CodeEditor() {
             bindingRef.current = binding;
         }
 
-        // Language Sync via Y.Map
+        // Metadata Sync via Y.Map
         const yMeta = ydoc.getMap("meta");
-        yMeta.observe(() => {
+        
+        // Function to read all metadata
+        const updateMetadata = () => {
             const lang = yMeta.get("language") as string;
             if (lang && lang !== language) {
                 setLanguage(lang);
@@ -86,18 +100,27 @@ export default function CodeEditor() {
                     monaco.editor.setModelLanguage(model, lang);
                 }
             }
-        });
 
-        // Initialize language if not set
+            // Read all metadata fields
+            setMetadata({
+                title: yMeta.get("title") as string | undefined,
+                difficulty: yMeta.get("difficulty") as string | undefined,
+                question: yMeta.get("question") as string | undefined,
+                hints: yMeta.get("hints") ? JSON.parse(yMeta.get("hints") as string) : undefined,
+                complexity: yMeta.get("complexity") ? JSON.parse(yMeta.get("complexity") as string) : undefined,
+                fullSolution: yMeta.get("fullSolution") as string | undefined,
+                starterCode: yMeta.get("starterCode") as string | undefined,
+            });
+        };
+
+        // Observe metadata changes
+        yMeta.observe(updateMetadata);
+
+        // Initialize language and metadata if not set
         if (!yMeta.get("language")) {
             yMeta.set("language", "javascript");
         } else {
-            const existingLang = yMeta.get("language") as string;
-            setLanguage(existingLang);
-            const model = editor.getModel();
-            if (model) {
-                monaco.editor.setModelLanguage(model, existingLang);
-            }
+            updateMetadata();
         }
     }
 
@@ -139,13 +162,9 @@ export default function CodeEditor() {
     }, []);
 
     return (
-        <div style={{ height: "100vh", position: "relative" }}>
+        <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
             {/* Top Bar */}
             <div style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
                 height: "50px",
                 background: "#1e1e1e",
                 borderBottom: "1px solid #333",
@@ -153,7 +172,8 @@ export default function CodeEditor() {
                 alignItems: "center",
                 padding: "0 15px",
                 zIndex: 10,
-                justifyContent: "space-between"
+                justifyContent: "space-between",
+                flexShrink: 0
             }}>
                 <div style={{ color: "#fff", fontWeight: "bold", fontSize: "16px" }}>
                     🚀 Room: <span style={{ fontFamily: "monospace", color: "#4CAF50" }}>{roomId}</span>
@@ -207,7 +227,12 @@ export default function CodeEditor() {
                 </div>
             </div>
 
-            <div style={{ paddingTop: "50px", height: "100%" }}>
+            {/* Problem Panel - conditionally shown */}
+            {metadata.title && (
+                <ProblemPanel metadata={metadata} />
+            )}
+
+            <div style={{ flex: 1, overflow: "hidden" }}>
                 <Editor
                     height="100%"
                     language={language}
