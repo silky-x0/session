@@ -4,7 +4,7 @@ import { SessionInput } from "./SessionInput";
 
 export const Hero: React.FC = () => {
   return (
-    <section className='flex flex-col items-center justify-center min-h-[65vh] pt-10 px-4 relative z-10'>
+    <section className='flex flex-col items-center justify-center min-h-[65vh] pt-25 px-4 relative z-10'>
       <div className='flex flex-col items-center gap-6 max-w-4xl text-center'>
         {/* Main Heading */}
         <h1 className='flex flex-col items-center gap-0 font-display text-4xl md:text-5xl lg:text-[64px] font-bold leading-[0.95] tracking-tight lowercase'>

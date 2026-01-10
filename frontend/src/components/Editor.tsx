@@ -1,23 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Editor, { type Monaco } from "@monaco-editor/react";
+import { type Monaco } from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
 import { startAudio, stopAudio } from "../hooks/useAudioCall";
-import ProblemPanel from "./ProblemPanel";
-
-const LANGUAGES = [
-    "javascript",
-    "typescript",
-    "python",
-    "cpp",
-    "java",
-    "go",
-    "html",
-    "css",
-    "json"
-];
+import { CodeEditor } from "./editor/CodeEditor";
+import { TopBar } from "./editor/TopBar";
+import { ProblemPanel } from "./editor/ProblemPanel";
+import { AIChat } from "./editor/AIChat";
+import { OutputPanel } from "./editor/OutputPanel";
+import { motion } from "framer-motion";
 
 const randomColor = () =>
     "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
@@ -34,14 +27,14 @@ interface Metadata {
     starterCode?: string;
 }
 
-export default function CodeEditor() {
+export default function CollaborativeEditor() {
     const navigate = useNavigate();
     const ydocRef = useRef<Y.Doc | null>(null);
     const providerRef = useRef<WebsocketProvider | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const [language, setLanguage] = useState("javascript");
     const [inCall, setInCall] = useState(false);
-    const [isEditorReady, setIsEditorReady] = useState(false);
+    const [isConnected, setIsConnected] = useState(false);
     const [metadata, setMetadata] = useState<Metadata>({});
 
     const roomId =
@@ -49,7 +42,31 @@ export default function CodeEditor() {
 
     function handleEditorDidMount(editor: any, monaco: Monaco) {
         console.log("Editor mounted!");
-        setIsEditorReady(true);
+        
+        // Custom theme definition to match design
+        monaco.editor.defineTheme("neon-dark", {
+            base: "vs-dark",
+            inherit: true,
+            rules: [
+                { token: "comment", foreground: "6A9955", fontStyle: "italic" },
+                { token: "keyword", foreground: "4EC9B0" },
+                { token: "string", foreground: "CE9178" },
+                { token: "number", foreground: "B5CEA8" },
+                { token: "type", foreground: "4EC9B0" },
+                { token: "function", foreground: "DCDCAA" },
+                { token: "variable", foreground: "9CDCFE" },
+            ],
+            colors: {
+                "editor.background": "#05050500", // Transparent to show through glass
+                "editor.foreground": "#E0E0E0",
+                "editor.lineHighlightBackground": "#111111",
+                "editor.selectionBackground": "#26735533",
+                "editorCursor.foreground": "#26A65B",
+                "editorLineNumber.foreground": "#3A3A3A",
+                "editorLineNumber.activeForeground": "#26A65B",
+            },
+        });
+        monaco.editor.setTheme("neon-dark");
 
         const ydoc = new Y.Doc();
         ydocRef.current = ydoc;
@@ -65,6 +82,10 @@ export default function CodeEditor() {
             ydoc
         );
         providerRef.current = provider;
+
+        provider.on('status', (event: any) => {
+            setIsConnected(event.status === 'connected');
+        });
 
         const yText = ydoc.getText("monaco");
         const awareness = provider.awareness;
@@ -124,8 +145,7 @@ export default function CodeEditor() {
         }
     }
 
-    const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const lang = e.target.value;
+    const handleLanguageChange = (lang: string) => {
         setLanguage(lang);
         if (ydocRef.current) {
             const yMeta = ydocRef.current.getMap("meta");
@@ -162,91 +182,48 @@ export default function CodeEditor() {
     }, []);
 
     return (
-        <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+        <div className="h-screen flex flex-col bg-background overflow-hidden p-3 gap-3">
             {/* Top Bar */}
-            <div style={{
-                height: "50px",
-                background: "#1e1e1e",
-                borderBottom: "1px solid #333",
-                display: "flex",
-                alignItems: "center",
-                padding: "0 15px",
-                zIndex: 10,
-                justifyContent: "space-between",
-                flexShrink: 0
-            }}>
-                <div style={{ color: "#fff", fontWeight: "bold", fontSize: "16px" }}>
-                    🚀 Room: <span style={{ fontFamily: "monospace", color: "#4CAF50" }}>{roomId}</span>
-                    {isEditorReady && <span style={{ marginLeft: "15px", color: "#4CAF50", fontSize: "12px" }}>● Connected</span>}
-                </div>
+            <TopBar
+                roomId={roomId}
+                isConnected={isConnected}
+                inCall={inCall}
+                language={language}
+                onJoinAudio={handleStartAudio}
+                onCreateRoom={handleCreateRoom}
+                onLanguageChange={handleLanguageChange}
+            />
 
-                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                    {!inCall && (
-                        <button onClick={handleStartAudio} style={{
-                            padding: "6px 12px",
-                            borderRadius: "4px",
-                            border: "none",
-                            background: "#2196F3",
-                            color: "#fff",
-                            cursor: "pointer"
-                        }}>
-                            📞 Join Audio
-                        </button>
-                    )}
-                    {inCall && <span style={{ color: "#4CAF50", fontSize: "14px" }}>🎤 Audio Active</span>}
-
-                    <button onClick={handleCreateRoom} style={{
-                        padding: "6px 12px",
-                        borderRadius: "4px",
-                        border: "none",
-                        background: "#FF9800",
-                        color: "#fff",
-                        cursor: "pointer"
-                    }}>
-                        ➕ New Room
-                    </button>
-
-                    <select
-                        value={language}
-                        onChange={handleLanguageChange}
-                        style={{
-                            padding: "6px 10px",
-                            borderRadius: "4px",
-                            border: "1px solid #555",
-                            background: "#2d2d2d",
-                            color: "#fff",
-                            cursor: "pointer"
-                        }}
-                    >
-                        {LANGUAGES.map((lang) => (
-                            <option key={lang} value={lang}>
-                                {lang}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {/* Problem Panel - conditionally shown */}
+            {/* Problem Panel */}
             {metadata.title && (
                 <ProblemPanel metadata={metadata} />
             )}
 
-            <div style={{ flex: 1, overflow: "hidden" }}>
-                <Editor
-                    height="100%"
-                    language={language}
-                    defaultValue="// Welcome to the collaborative editor!\n// Share the room URL to collaborate in real-time.\n\nconsole.log('Hello, World!');"
-                    theme="vs-dark"
-                    onMount={handleEditorDidMount}
-                    options={{
-                        fontSize: 14,
-                        minimap: { enabled: true },
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
-                    }}
-                />
+            {/* Main Content */}
+            <div className="flex-1 flex overflow-hidden gap-3">
+                {/* Left - Code Editor */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex-1 min-w-0"
+                >
+                    <CodeEditor language={language} onMount={handleEditorDidMount} />
+                </motion.div>
+
+                {/* Right - AI Chat & Output */}
+                <div className="w-[380px] flex flex-col gap-3 flex-shrink-0">
+                    {/* AI Chat - Top */}
+                    <div className="flex-1 min-h-0">
+                        <AIChat />
+                    </div>
+
+                    {/* Output - Bottom */}
+                    <div className="h-[280px] flex-shrink-0">
+                        <OutputPanel />
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
+

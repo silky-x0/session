@@ -9,7 +9,7 @@ const MarqueeItem = ({ children }: { children: React.ReactNode }) => (
 
 export const Marquee: React.FC = () => {
   return (
-    <section className="pt-24 py-6 overflow-hidden w-full relative">
+    <section className="pt-24 pb-10 py-6 overflow-hidden w-full relative">
       <h2 className="text-center font-bold font-sans uppercase text-xs tracking-widest text-white/40 mb-6">
         Trusted by top engineering teams
       </h2>

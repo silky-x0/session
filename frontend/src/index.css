@@ -1,33 +1,139 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans+Condensed:ital,wght@0,100..900;1,100..900&family=Inter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'IBM Plex Sans', sans-serif;
+  --font-condensed: 'IBM Plex Sans Condensed', sans-serif;
+
+  --color-border: hsl(0 0% 15%);
+  --color-input: hsl(0 0% 12%);
+  --color-ring: hsl(135 60% 40%);
+  --color-background: hsl(0 0% 2%);
+  --color-foreground: hsl(0 0% 100%);
+
+  --color-primary: hsl(135 80% 45%);
+  --color-primary-foreground: hsl(0 0% 2%);
+
+  --color-secondary: hsl(0 0% 12%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+
+  --color-destructive: hsl(0 70% 50%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  --color-muted: hsl(0 0% 12%);
+  --color-muted-foreground: hsl(0 0% 55%);
+
+  --color-accent: hsl(135 60% 40%);
+  --color-accent-foreground: hsl(0 0% 100%);
+
+  --color-popover: hsl(0 0% 6%);
+  --color-popover-foreground: hsl(0 0% 100%);
+
+  --color-card: hsl(0 0% 6%);
+  --color-card-foreground: hsl(0 0% 100%);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --color-deep-carbon: hsl(0 0% 2%);
+  --color-neon-pulse: hsl(135 70% 45%);
+  --color-muted-emerald: hsl(135 60% 45% / 0.15);
+  --color-glass-bg: hsl(0 0% 6% / 0.9);
+  --color-glass-border: hsl(0 0% 20%);
+  --color-panel-bg: hsl(0 0% 8%);
+
+  --color-session-green: hsl(135 70% 45%);
+  --color-session-dark: hsl(0 0% 2%);
+
+  --animate-marquee: marquee 10s linear infinite;
+  --animate-border-rotate: border-rotate 4s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes border-rotate {
+    from {
+      --border-angle: 0deg;
+    }
+    to {
+      --border-angle: 360deg;
+    }
+  }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+  --neon-pulse: 135 70% 45%;
+  --glass-bg: 0 0% 6% / 0.9;
+  --border: 0 0% 15%;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: hsl(0 0% 2%);
+  color: hsl(0 0% 100%);
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 #root {
   width: 100%;
   height: 100vh;
+}
+
+/* Custom Utilities */
+@layer utilities {
+  .glass-panel {
+    background: hsl(0 0% 6% / 0.9);
+    backdrop-filter: blur(24px);
+    border: 1px solid hsl(0 0% 15%);
+  }
+
+  .subtle-glow {
+    box-shadow: 0 0 10px hsl(135 70% 45% / 0.08);
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(135 70% 45% / 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(135 70% 45% / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(135 70% 45% / 0.5);
+  }
 }
 
 /* Remote Cursors */
@@ -54,52 +160,4 @@ body {
   font-size: 10px;
   border-radius: 3px;
   font-weight: bold;
-}
-
-@theme {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'IBM Plex Sans', sans-serif;
-  --font-condensed: 'IBM Plex Sans Condensed', sans-serif;
-
-  --color-deep-carbon: #050505;
-  --color-neon-pulse: #00FF41;
-  --color-muted-emerald: rgba(0, 255, 65, 0.2);
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #A3A3A3;
-
-  --color-session-green: var(--color-neon-pulse);
-  --color-session-dark: var(--color-deep-carbon);
-
-
-
-
-  --animate-marquee: marquee 10s linear infinite;
-  --animate-border-rotate: border-rotate 4s linear infinite;
-
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-
-    to {
-      transform: translateX(-50%);
-    }
-  }
-
-  @keyframes border-rotate {
-    from {
-      --border-angle: 0deg;
-    }
-
-    to {
-      --border-angle: 360deg;
-    }
-  }
-}
-
-@property --border-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
 }
