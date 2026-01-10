@@ -5,16 +5,20 @@ import { config } from "./config/env";
 
 const app = express();
 
+
+const corsOrigin = process.env.NODE_ENV === 'production' 
+  ? (config.frontendUrl || 'https://mock-collab-editor.onrender.com')
+  : '*';  
+
 app.use(cors({
-  origin: [config.frontendUrl || 'http://localhost:5173'],
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  credentials: process.env.NODE_ENV === 'production' // Enable credentials only in production
 }));
 app.use(express.json());
 
-// Routes
-// We can move this to a separate routes file, but for now this is clean enough
+
 const apiRouter = express.Router();
 apiRouter.post("/ai/session", createAiSession);
 
