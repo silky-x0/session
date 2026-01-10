@@ -28,6 +28,8 @@ export const SessionInput: React.FC = () => {
     try {
       setIsLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1234";
+      console.log("🔍 Making AI API call with prompt:", input);
+      console.log("🔍 API URL:", apiUrl);
       const response = await fetch(`${apiUrl}/api/ai/session`, {
         method: "POST",
         headers: {
@@ -43,7 +45,8 @@ export const SessionInput: React.FC = () => {
       const data = await response.json();
       navigate(`/editor?room=${data.roomId}`);
     } catch (error) {
-      console.error("Error creating AI session:", error);
+      console.error("❌ Error creating AI session:", error);
+      console.error("❌ Error details:", error instanceof Error ? error.message : String(error));
       // Fallback: redirect to editor with random room ID
       const newRoomId = Math.random().toString(36).substring(2, 9);
       navigate(`/editor?room=${newRoomId}`);
