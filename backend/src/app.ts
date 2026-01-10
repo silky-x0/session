@@ -1,11 +1,12 @@
 import express from "express";
 import cors from "cors";
 import { createAiSession } from "./controllers/aiController";
+import { config } from "./config/env";
 
 const app = express();
 
 app.use(cors({
-  origin: ['https://collab-editor-flc9.onrender.com', 'http://localhost:5173'],
+  origin: [config.frontendUrl || 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
