@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 // import { generateSessionContent } from "../services/aiService";
 import { initializeDoc } from "../services/yjsService";
 import { generateOpenRouterContent } from "../services/openRouterAi";
+import { normalizeLanguage } from "../utils/languageMapper";
 
 export const createAiSession = async (
   req: Request,
@@ -19,6 +20,11 @@ export const createAiSession = async (
     // const aiResponse = await generateSessionContent(prompt);
     const aiResponse = await generateOpenRouterContent(prompt);
 
+    const normalizedLanguage = normalizeLanguage(aiResponse.language);
+    console.log(
+      `AI returned language: "${aiResponse.language}" → normalized to: "${normalizedLanguage}"`
+    );
+
     // Generate a random room ID
     const roomId = Math.random().toString(36).substring(2, 9);
 
@@ -26,7 +32,7 @@ export const createAiSession = async (
     initializeDoc(
       roomId,
       aiResponse.content,
-      aiResponse.language,
+      normalizedLanguage,
       aiResponse.starter_code,
       aiResponse.title,
       aiResponse.difficulty,
@@ -34,7 +40,7 @@ export const createAiSession = async (
       aiResponse.complexity,
       aiResponse.question
     );
-    console.log(aiResponse);
+    console.log("AI Response:", aiResponse);
 
     res.json({ roomId });
   } catch (error) {

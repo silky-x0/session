@@ -14,7 +14,7 @@ export const generateOpenRouterContent = async (prompt: string) => {
   Return a raw JSON object (no markdown) with this structure:
   {
     "title": "Short descriptive title",
-    "language": "lowercase language identifier",
+    "language": "lowercase language identifier (use: javascript, typescript, python, cpp, java, go, rust, c, html, css, json)",
     "content": "The code template or solution",
     "difficulty": "Easy | Medium | Hard",
     "starter_code": "A boilerplate version with just the function signature and docstrings",
@@ -22,6 +22,14 @@ export const generateOpenRouterContent = async (prompt: string) => {
     "complexity": { "time": "O(...)", "space": "O(...)" },
     "question": "the question given by user if leetcode paste exact question with 1 example if not then generate a question according to user prompt"
   }
+  
+  IMPORTANT: For the "language" field:
+  - Use "cpp" for C++, NOT "c++" or "C++"
+  - Use "python" for Python
+  - Use "javascript" for JavaScript
+  - Use "typescript" for TypeScript
+  - Use "java" for Java
+  - Use "go" for Go/Golang
   
   If the prompt is an interview topic, provide a classic problem associated with it. 
   Ensure the 'content' includes clear comments explaining the logic for pair learning.
