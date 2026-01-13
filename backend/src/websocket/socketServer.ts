@@ -5,7 +5,7 @@ import * as syncProtocol from "y-protocols/sync";
 import * as awarenessProtocol from "y-protocols/awareness";
 import * as encoding from "lib0/encoding";
 import * as decoding from "lib0/decoding";
-import { getYDoc } from "../services/yjsService";
+import { getYDoc } from "../services/yjs.service";
 
 const awarenessStates = new Map<string, awarenessProtocol.Awareness>();
 
