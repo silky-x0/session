@@ -1,11 +1,4 @@
-import { OpenRouter } from "@openrouter/sdk";
-import { config } from "../config/env";
-
-const openRouter = new OpenRouter({
-  apiKey: config.openRouterApiKey,
-  httpReferer: config.frontendUrl || "http://localhost:5173", // Update with production URL when deployed
-  xTitle: "Session Editor",
-});
+import { openRouter } from "../config/openRouter";
 
 export const generateOpenRouterContent = async (prompt: string) => {
   try {
