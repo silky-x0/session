@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 // import { generateSessionContent } from "../services/aiService";
-import { initializeDoc } from "../services/yjsService";
-import { generateOpenRouterContent } from "../services/openRouterAi";
+import { initializeDoc } from "../services/yjs.service";
+import { generateOpenRouterContent } from "../services/session.service";
 import { normalizeLanguage } from "../utils/languageMapper";
+import { handleAiChat } from "../services/aichat.service";
 
 export const createAiSession = async (
   req: Request,
