@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { initializeDoc } from "../services/yjs.service";
 import { generateOpenRouterContent } from "../services/session.service";
 import { normalizeLanguage } from "../utils/languageMapper";
-import { handleAiChat } from "../services/aichat.service";
+// import { handleAiChat } from "../services/aichat.service";
 
 export const createAiSession = async (
   req: Request,
