@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, Sparkles, User } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Message {
   id: string;
@@ -18,6 +18,15 @@ export function AIChat() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -32,8 +41,7 @@ export function AIChat() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    timeoutRef.current = window.setTimeout(() => {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -41,6 +49,7 @@ export function AIChat() {
       };
       setMessages((prev) => [...prev, aiMessage]);
       setIsTyping(false);
+      timeoutRef.current = null;
     }, 1500);
   };
 

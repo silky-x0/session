@@ -1,5 +1,5 @@
 {
-  "name": "Session",
+  "name": "session",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "serve -s dist -l $PORT"
+    "start": "serve -s dist -l ${PORT:-5173}"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

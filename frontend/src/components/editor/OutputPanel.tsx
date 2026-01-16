@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Trash2, Terminal, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface OutputLine {
   id: string;
@@ -25,6 +25,15 @@ export function OutputPanel() {
     },
   ]);
   const [isRunning, setIsRunning] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRun = () => {
     setIsRunning(true);
@@ -39,9 +48,10 @@ export function OutputPanel() {
         second: "2-digit",
       }),
     };
-    setTimeout(() => {
+    timeoutRef.current = window.setTimeout(() => {
       setOutputs((prev) => [...prev, newOutput]);
       setIsRunning(false);
+      timeoutRef.current = null;
     }, 500);
   };
 
