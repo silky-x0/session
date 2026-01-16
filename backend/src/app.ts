@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { createAiSession } from "./controllers/aiController";
+import { createAiSession } from "./controllers/session.controller";
 import { config } from "./config/env";
 
 const app = express();
