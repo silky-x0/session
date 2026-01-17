@@ -32,6 +32,7 @@ export default function CollaborativeEditor() {
     const ydocRef = useRef<Y.Doc | null>(null);
     const providerRef = useRef<WebsocketProvider | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
+    const yMetaObserverRef = useRef<(() => void) | null>(null);
     const [language, setLanguage] = useState("javascript");
     const [inCall, setInCall] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -134,8 +135,9 @@ export default function CollaborativeEditor() {
             });
         };
 
-        // Observe metadata changes
+        // Observe metadata changes and store cleanup function
         yMeta.observe(updateMetadata);
+        yMetaObserverRef.current = () => yMeta.unobserve(updateMetadata);
 
         // Initialize language and metadata if not set
         if (!yMeta.get("language")) {
@@ -175,6 +177,7 @@ export default function CollaborativeEditor() {
     useEffect(() => {
         return () => {
             stopAudio();
+            yMetaObserverRef.current?.(); // Unobserve yMeta to prevent memory leak
             bindingRef.current?.destroy();
             providerRef.current?.destroy();
             ydocRef.current?.destroy();
