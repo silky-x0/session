@@ -15,12 +15,10 @@ export default defineConfig({
   },
 
   build: {
-    sourcemap: false, // Disable source maps in production to save memory
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split Monaco Editor (largest dependency)
-          'monaco-editor': ['@monaco-editor/react'],
           // Split Yjs and WebSocket libraries
           'yjs-core': ['yjs', 'y-websocket', 'y-monaco'],
           // Split React and React DOM
@@ -29,11 +27,17 @@ export default defineConfig({
           'framer-motion': ['framer-motion'],
           // Split icons
           'lucide-react': ['lucide-react'],
+          // Monaco will be lazy loaded separately
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Increase warning limit
-    minify: 'esbuild', // Use esbuild for fast minification
+    chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
+  },
+
+  // Optimize Monaco - only include needed languages
+  optimizeDeps: {
+    include: ['@monaco-editor/react'],
   },
 
   plugins: [

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { type Monaco } from "@monaco-editor/react";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { MonacoBinding } from "y-monaco";
@@ -41,7 +40,7 @@ export default function CollaborativeEditor() {
     const roomId =
         new URLSearchParams(window.location.search).get("room") || "default";
 
-    function handleEditorDidMount(editor: any, monaco: Monaco) {
+    function handleEditorDidMount(editor: any, monaco: any) {
         console.log("Editor mounted!");
         
         // Custom theme definition to match design
