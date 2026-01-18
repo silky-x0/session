@@ -18,8 +18,7 @@ export const SessionInput: React.FC = () => {
 
     // Start new session
     if (!input.trim()) {
-      // No prompt - redirect to editor with random room ID
-      const newRoomId = Math.random().toString(36).substring(2, 9);
+      const newRoomId = crypto.randomUUID().slice(0, 8);
       navigate(`/editor?room=${newRoomId}`);
       return;
     }
@@ -28,8 +27,6 @@ export const SessionInput: React.FC = () => {
     try {
       setIsLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1234";
-      console.log("🔍 Making AI API call with prompt:", input);
-      console.log("🔍 API URL:", apiUrl);
       const response = await fetch(`${apiUrl}/api/ai/session`, {
         method: "POST",
         headers: {
@@ -46,9 +43,11 @@ export const SessionInput: React.FC = () => {
       navigate(`/editor?room=${data.roomId}`);
     } catch (error) {
       console.error("❌ Error creating AI session:", error);
-      console.error("❌ Error details:", error instanceof Error ? error.message : String(error));
-      // Fallback: redirect to editor with random room ID
-      const newRoomId = Math.random().toString(36).substring(2, 9);
+      console.error(
+        "❌ Error details:",
+        error instanceof Error ? error.message : String(error),
+      );
+      const newRoomId = crypto.randomUUID().slice(0, 8);
       navigate(`/editor?room=${newRoomId}`);
     } finally {
       setIsLoading(false);
@@ -56,11 +55,13 @@ export const SessionInput: React.FC = () => {
   };
 
   return (
-    <div className={`w-full mt-10 transition-all duration-300 ease-in-out ${mode === 'join' ? 'max-w-xs' : 'max-w-lg'}`}>
+    <div
+      className={`w-full mt-10 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-xs" : "max-w-lg"}`}
+    >
       <div className='flex justify-center mb-5'>
         <div className='relative flex bg-[#1c1c1c] border border-white/5 rounded-full p-1'>
-           {/* Animated Background Pill */}
-           <div
+          {/* Animated Background Pill */}
+          <div
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white transition-all duration-300 ease-out ${
               mode === "start" ? "left-1" : "left-[calc(50%+2px)]"
             }`}
@@ -95,24 +96,25 @@ export const SessionInput: React.FC = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !isLoading) {
+              if (e.key === "Enter" && !isLoading) {
                 handleJoin();
               }
             }}
             disabled={isLoading}
             placeholder={
-              isLoading 
-                ? 'Joining room...' 
-                : mode === 'start' 
-                  ? 'Paste a problem, snippet, or interview prompt…' 
-                  : 'Enter room ID...'
+              isLoading
+                ? "Joining room..."
+                : mode === "start"
+                  ? "Paste a problem, snippet, or interview prompt…"
+                  : "Enter room ID..."
             }
             className='flex-1 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-sm disabled:opacity-60'
           />
           <button
             onClick={handleJoin}
             disabled={isLoading}
-            className='p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed'>
+            className='p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed'
+          >
             {isLoading ? (
               <svg
                 width='20'

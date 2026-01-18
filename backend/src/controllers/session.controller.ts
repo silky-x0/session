@@ -27,7 +27,7 @@ export const createAiSession = async (
     );
 
     // Generate a random room ID
-    const roomId = Math.random().toString(36).substring(2, 9);
+    const roomId = crypto.randomUUID().slice(0, 8);
 
     // Seed the Yjs document
     initializeDoc(
