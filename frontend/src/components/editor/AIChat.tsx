@@ -8,27 +8,86 @@ interface Message {
   content: string;
 }
 
-export function AIChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "Hi! I'm your AI coding assistant. Ask me anything about your code or programming concepts.",
-    },
-  ]);
+interface AIChatProps {
+  editorRef: React.MutableRefObject<any>;
+}
+
+function getCodeContext(editor: any, linesAbove: number = 10, linesBelow: number = 10): { code: string; cursorLine: number } | null {
+  if (!editor) return null;
+
+  const model = editor.getModel();
+  if (!model) return null;
+
+  const position = editor.getPosition();
+  if (!position) return null;
+
+  const cursorLine = position.lineNumber;
+  const totalLines = model.getLineCount();
+
+  const startLine = Math.max(1, cursorLine - linesAbove);
+  const endLine = Math.min(totalLines, cursorLine + linesBelow);
+
+  const range = {
+    startLineNumber: startLine,
+    startColumn: 1,
+    endLineNumber: endLine,
+    endColumn: model.getLineMaxColumn(endLine)
+  };
+
+  const code = model.getValueInRange(range);
+
+  // Add line numbers and cursor marker
+  const linesWithNumbers = code.split('\n').map((line: string, index: number) => {
+    const lineNum = startLine + index;
+    if (lineNum === cursorLine) {
+      return `${lineNum}: ${line}  // <-- cursor here`;
+    }
+    return `${lineNum}: ${line}`;
+  }).join('\n');
+
+  return {
+    code: linesWithNumbers,
+    cursorLine
+  };
+}
+
+const DEFAULT_MESSAGE: Message = {
+  id: "1",
+  role: "assistant",
+  content: "Hi! I'm Kernel, your AI coding assistant. Ask me anything about your code or programming concepts. I can see the code around your cursor!",
+};
+
+export function AIChat({ editorRef }: AIChatProps) {
+  const roomId = new URLSearchParams(window.location.search).get("room") || "default";
+  const storageKey = `ai-chat-messages-${roomId}`;
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Load messages from localStorage on initial render
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return [DEFAULT_MESSAGE];
+      }
+    }
+    return [DEFAULT_MESSAGE];
+  });
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Persist messages to localStorage whenever they change
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, storageKey]);
 
-  const handleSend = () => {
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = {
@@ -41,16 +100,47 @@ export function AIChat() {
     setInput("");
     setIsTyping(true);
 
-    timeoutRef.current = window.setTimeout(() => {
+    try {
+      // Extract code context (10 lines above and below cursor)
+      const codeContext = getCodeContext(editorRef.current, 10, 10);
+
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      
+      const response = await fetch(`${apiUrl}/api/ai/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: input,
+          codeContext: codeContext?.code,
+          cursorLine: codeContext?.cursorLine,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "I understand you're working on this code. Here's a suggestion to improve it...",
+        content: data.response || "I couldn't generate a response. Please try again.",
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      console.error("AI Chat Error:", error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-      timeoutRef.current = null;
-    }, 1500);
+    }
   };
 
   return (
@@ -61,17 +151,9 @@ export function AIChat() {
       className="h-full flex flex-col glass-panel rounded-lg overflow-hidden"
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card/50">
-        <motion.div
-          animate={{ rotate: [0, 10, -10, 0] }}
-          transition={{ repeat: Infinity, duration: 3 }}
-        >
-          <Sparkles className="w-4 h-4 text-primary" />
-        </motion.div>
-        <span className="text-sm font-semibold text-foreground">AI Assistant</span>
-        <span className="ml-auto px-2 py-0.5 text-[10px] font-mono bg-primary/20 text-primary rounded-full">
-          GPT-4
-        </span>
+      <div className="flex items-center gap-1 px-4 py-2 border-b border-border bg-card/50">
+        <Sparkles className="w-4 h-4 text-primary" />
+        <span className="text-sm font-semibold text-foreground">Ask Kernel</span>
       </div>
 
       {/* Messages */}
@@ -138,17 +220,19 @@ export function AIChat() {
             </div>
           </motion.div>
         )}
+        {/* Scroll anchor */}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border bg-card/30">
+      <div className="p-1 border-t border-border bg-card/30">
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask AI anything..."
+            placeholder="Ask Kernel anything..."
             className="flex-1 px-3 py-2 rounded-lg bg-secondary border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
           />
           <motion.button

@@ -18,11 +18,10 @@ function EditorLoader() {
 }
 
 interface CodeEditorProps {
-  language: string;
   onMount?: (editor: any, monaco: any) => void;
 }
 
-export function CodeEditor({ language, onMount }: CodeEditorProps) {
+export function CodeEditor({ onMount }: CodeEditorProps) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -33,7 +32,7 @@ export function CodeEditor({ language, onMount }: CodeEditorProps) {
       <Suspense fallback={<EditorLoader />}>
         <Editor
           height="100%"
-          language={language}
+          defaultLanguage="javascript"
           defaultValue={`// 🚀 Welcome to the collaborative editor!
 // Share the room URL to collaborate in real-time.
 

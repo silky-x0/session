@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { editor } from "monaco-editor";
 import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
@@ -32,6 +33,8 @@ export default function CollaborativeEditor() {
     const providerRef = useRef<WebsocketProvider | null>(null);
     const bindingRef = useRef<MonacoBinding | null>(null);
     const yMetaObserverRef = useRef<(() => void) | null>(null);
+    const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
+    const monacoRef = useRef<any>(null);
     const [language, setLanguage] = useState("javascript");
     const [inCall, setInCall] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
@@ -42,8 +45,9 @@ export default function CollaborativeEditor() {
 
     function handleEditorDidMount(editor: any, monaco: any) {
         console.log("Editor mounted!");
+        editorRef.current = editor;
+        monacoRef.current = monaco;
         
-        // Custom theme definition to match design
         monaco.editor.defineTheme("neon-dark", {
             base: "vs-dark",
             inherit: true,
@@ -114,15 +118,18 @@ export default function CollaborativeEditor() {
         // Function to read all metadata
         const updateMetadata = () => {
             const lang = yMeta.get("language") as string;
-            if (lang && lang !== language) {
+            console.log('updateMetadata called, lang:', lang);
+            if (lang) {
                 setLanguage(lang);
                 const model = editor.getModel();
+                console.log('Model exists:', !!model, 'Current model language:', model?.getLanguageId());
                 if (model) {
+                    console.log('Setting model language to:', lang);
                     monaco.editor.setModelLanguage(model, lang);
+                    console.log('Model language after set:', model.getLanguageId());
                 }
             }
 
-            // Read all metadata fields
             setMetadata({
                 title: yMeta.get("title") as string | undefined,
                 difficulty: yMeta.get("difficulty") as string | undefined,
@@ -134,20 +141,47 @@ export default function CollaborativeEditor() {
             });
         };
 
-        // Observe metadata changes and store cleanup function
         yMeta.observe(updateMetadata);
         yMetaObserverRef.current = () => yMeta.unobserve(updateMetadata);
 
-        // Initialize language and metadata if not set
-        if (!yMeta.get("language")) {
-            yMeta.set("language", "javascript");
-        } else {
-            updateMetadata();
+        provider.on('sync', (isSynced: boolean) => {
+            console.log('Y.js sync event:', isSynced, 'language:', yMeta.get("language"));
+            if (isSynced) {
+                const syncedLang = yMeta.get("language");
+                if (!syncedLang) {
+                    console.log('No language found, setting default to javascript');
+                    yMeta.set("language", "javascript");
+                } else {
+                    console.log('Found synced language:', syncedLang);
+                    updateMetadata();
+                }
+            }
+        });
+
+        // Check immediately in case already synced
+        console.log('Initial sync state:', provider.synced, 'language:', yMeta.get("language"));
+        if (provider.synced) {
+            const syncedLang = yMeta.get("language");
+            if (!syncedLang) {
+                yMeta.set("language", "javascript");
+            } else {
+                updateMetadata();
+            }
         }
     }
 
     const handleLanguageChange = (lang: string) => {
         setLanguage(lang);
+        
+        // Update Monaco model language directly
+        if (editorRef.current && monacoRef.current) {
+            const model = editorRef.current.getModel();
+            if (model) {
+                monacoRef.current.editor.setModelLanguage(model, lang);
+            }
+        }
+        
+        // Sync to Y.js
         if (ydocRef.current) {
             const yMeta = ydocRef.current.getMap("meta");
             yMeta.set("language", lang);
@@ -209,14 +243,14 @@ export default function CollaborativeEditor() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="flex-1 min-w-0"
                 >
-                    <CodeEditor language={language} onMount={handleEditorDidMount} />
+                    <CodeEditor onMount={handleEditorDidMount} />
                 </motion.div>
 
                 {/* Right - AI Chat & Output */}
                 <div className="w-[380px] flex flex-col gap-3 flex-shrink-0">
                     {/* AI Chat - Top */}
                     <div className="flex-1 min-h-0">
-                        <AIChat />
+                        <AIChat editorRef={editorRef} />
                     </div>
 
                     {/* Output - Bottom */}
