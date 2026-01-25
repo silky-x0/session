@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { createAiSession } from "./controllers/session.controller";
+import { chatWithAI } from "./controllers/aichat.controller";
 import { config } from "./config/env";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use(express.json());
 
 const apiRouter = express.Router();
 apiRouter.post("/ai/session", createAiSession);
+apiRouter.post("/ai/chat", chatWithAI);
 
 app.use("/api", apiRouter);
 
