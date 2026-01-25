@@ -14,7 +14,7 @@ export function OutputPanel() {
     {
       id: "1",
       type: "log",
-      content: "Welcome to the collaborative editor!",
+      content: "Welcome to the session editor!",
       timestamp: "12:00:01",
     },
     {
