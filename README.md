@@ -46,7 +46,7 @@
 
 ---
 
-## ✨ Features
+## Features
 
 ### 🖥 Real-Time Collaborative Editor
 
@@ -55,25 +55,25 @@
 - **Multi-language Support** — JavaScript, TypeScript, Python, Java, C++, Go, HTML, CSS, and more
 - **Cursor & Selection Awareness** — See collaborators' cursors and selections in real-time with distinct colors
 
-### 🤖 AI-Powered Assistance
+### AI-Powered Assistance
 
 - **Integrated AI Chat** — Get instant help with coding problems, explanations, and suggestions
 - **AI Session Bootstrapping** — Start sessions with AI-generated problem statements and starter code
 - **Powered by Google Gemini** — Leveraging cutting-edge AI for intelligent code generation
 
-### 🎨 Modern, Premium UI/UX
+### Modern, Premium UI/UX
 
 - **Glassmorphism Design** — Beautiful translucent panels with subtle blur effects
 - **Dark Mode First** — Elegant dark theme with neon green accents optimized for long coding sessions
 - **Smooth Animations** — Powered by Framer Motion for delightful micro-interactions
 - **Responsive Layout** — Adaptive design that works on various screen sizes
 
-### 🔊 Communication (Coming Soon)
+### Communication (Coming Soon)
 
 - **WebRTC Audio Calls** — Voice communication with your pair programming partner
 - **Peer-to-Peer Connection** — Low-latency audio powered by WebRTC
 
-### 📝 Coding Interview Mode
+### Coding Interview Mode
 
 - **Problem Panel** — Display problem statements with difficulty levels
 - **Hints System** — Progressive hints to guide candidates
@@ -82,7 +82,7 @@
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -162,7 +162,7 @@ session/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -232,7 +232,7 @@ The frontend runs on `http://localhost:5173`. Open this URL in your browser to a
 
 ---
 
-## 🌍 Deployment
+## Deployment
 
 ### Production URLs
 
@@ -259,7 +259,7 @@ The frontend runs on `http://localhost:5173`. Open this URL in your browser to a
 
 ---
 
-## 🔧 Environment Variables
+## Environment Variables
 
 Both the backend and frontend require environment variables to run. Example files are provided in the repository.
 
