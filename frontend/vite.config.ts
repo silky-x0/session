@@ -27,11 +27,12 @@ export default defineConfig({
           'framer-motion': ['framer-motion'],
           // Split icons
           'lucide-react': ['lucide-react'],
-          // Monaco will be lazy loaded separately
+          // Split Monaco Editor into its own chunk (large library)
+          'monaco-editor': ['@monaco-editor/react', 'monaco-editor'],
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2500,
     minify: 'esbuild',
   },
 
