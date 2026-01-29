@@ -19,8 +19,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Yjs core (without y-monaco which bundles Monaco code)
-          'yjs-core': ['yjs', 'y-websocket', 'y-protocols'],
+          // Yjs core
+          'yjs-core': ['yjs', 'y-websocket'],
           // y-monaco binds Yjs to Monaco - contains Monaco code
           'yjs-monaco': ['y-monaco'],
           // Split React and React DOM
