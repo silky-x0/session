@@ -19,15 +19,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split Yjs and WebSocket libraries
-          'yjs-core': ['yjs', 'y-websocket', 'y-monaco'],
+          // Yjs core (without y-monaco which bundles Monaco code)
+          'yjs-core': ['yjs', 'y-websocket', 'y-protocols'],
+          // y-monaco binds Yjs to Monaco - contains Monaco code
+          'yjs-monaco': ['y-monaco'],
           // Split React and React DOM
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           // Split Framer Motion (animations)
           'framer-motion': ['framer-motion'],
           // Split icons
           'lucide-react': ['lucide-react'],
-          // Split Monaco Editor into its own chunk (large library)
+          // Monaco Editor
           'monaco-editor': ['@monaco-editor/react', 'monaco-editor'],
         },
       },
