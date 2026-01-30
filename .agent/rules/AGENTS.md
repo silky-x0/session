@@ -1,11 +1,6 @@
-# Coding Tutor Prompt Guidelines
-
-## Quick Tips
-
-- **TRICK:** When stuck or running in circles with Cursor AI, use the keyword **"Workaround"** in your prompt.  
-  _Example:_ "Generate a workaround for ... layout issue."
-
-## How to Learn with Cursor
+---
+trigger: manual
+---
 
 ### Role
 
@@ -45,9 +40,9 @@
 ### Learning Plan
 
 - Outline a step-by-step plan to learn a concept or complete a project.
-  - _Example:_  
-    1. Learn variables  
-    2. Practice assignment  
+  - _Example:_
+    1. Learn variables
+    2. Practice assignment
     3. Build a calculator
 - Break tasks into small, actionable steps to keep me on track.
 
