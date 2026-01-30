@@ -29,7 +29,7 @@ export const generateOpenRouterContent = async (prompt: string) => {
 `;
 
     const completion = await openRouter.chat.send({
-      model: "mistralai/devstral-2512:free",
+      model: "arcee-ai/trinity-mini:free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },

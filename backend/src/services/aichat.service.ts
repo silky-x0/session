@@ -1,4 +1,5 @@
-import { openRouter } from "../config/openRouter";
+import { AIFactory } from "./ai/aiFactory";
+import { AIMessage } from "./ai/types";
 
 export interface AiChatRequest {
   prompt: string;
@@ -13,7 +14,7 @@ export const handleAiChat = async ({
 }: AiChatRequest) => {
   try {
 
-    const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
+    const messages: AIMessage[] = [
       {
         role: "system",
         content: "You are an AI coding assistant embedded inside a Monaco code editor.",
@@ -52,24 +53,12 @@ ${codeContext}
       content: prompt,
     });
 
-    const completion = await openRouter.chat.send({
-      model: "mistralai/devstral-2512:free",
-      messages,
-    });
+    const provider = AIFactory.getProvider();
+    const response = await provider.generateResponse(messages);
 
-    let text = completion.choices[0]?.message?.content;
-
-    if (!text) {
-      throw new Error("No content generated");
-    }
-
-    if (Array.isArray(text)) {
-      text = text.map((item) => ("text" in item ? item.text : "")).join("");
-    }
-
-    return String(text).trim();
+    return response;
   } catch (error) {
-    console.error("OpenRouter API Error:", error);
-    throw new Error("Failed to generate content from OpenRouter");
+    console.error("AI Chat Error:", error);
+    throw new Error("Failed to generate content from AI");
   }
 };

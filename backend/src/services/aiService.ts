@@ -1,7 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
-import { config } from "../config/env";
-
-const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+import { AIFactory } from "./ai/aiFactory";
+import { AIMessage } from "./ai/types";
 
 export const generateSessionContent = async (prompt: string) => {
   try {
@@ -15,26 +13,19 @@ export const generateSessionContent = async (prompt: string) => {
       Do not include markdown formatting like \`\`\`json. Return raw JSON only.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        { role: "user", parts: [{ text: systemPrompt }] },
-        { role: "user", parts: [{ text: prompt }] }
-      ],
-      config: {
-          responseMimeType: "application/json"
-      }
-    });
+    const messages: AIMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt }
+    ];
 
-    const text = response.text;
+    const provider = AIFactory.getProvider();
+    const jsonString = await provider.generateResponse(messages, true); // validation done via jsonMode hints where supported
     
-    if (!text) {
-        throw new Error("No content generated");
-    }
-
-    return JSON.parse(text);
+    return JSON.parse(jsonString);
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw new Error("Failed to generate content from AI");
+    console.error("AI Generation Error:", error);
+    // Re-throw standardized or wrapped error? 
+    // For now, keeping the original behavior but the error might be an AIProviderError
+    throw new Error("Failed to generate content from AI"); 
   }
 };

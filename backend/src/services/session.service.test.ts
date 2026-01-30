@@ -45,7 +45,7 @@ describe('session.service', () => {
       expect(openRouter.chat.send).toHaveBeenCalledOnce();
       expect(openRouter.chat.send).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'mistralai/devstral-2512:free',
+          model: 'qwen/qwen3-next-80b-a3b-instruct:free',
           messages: expect.arrayContaining([
             expect.objectContaining({ role: 'user', content: 'Two sum problem in JavaScript' }),
           ]),
