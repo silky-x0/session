@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Code2, Clock, Lightbulb, Unlock, X } from "lucide-react";
 import { useState } from "react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ProblemMetadata {
   title?: string;
@@ -14,10 +16,11 @@ interface ProblemMetadata {
 
 interface ProblemPanelProps {
   metadata: ProblemMetadata;
+  language: string; 
   onSolutionClick?: () => void;
 }
 
-export function ProblemPanel({ metadata }: ProblemPanelProps) {
+export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showHints, setShowHints] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
@@ -217,9 +220,27 @@ export function ProblemPanel({ metadata }: ProblemPanelProps) {
                   </button>
                 </div>
                 
-                <pre className="text-sm text-muted-foreground bg-card/50 p-4 rounded-md overflow-auto leading-relaxed whitespace-pre-wrap break-words">
-                  <code>{metadata.fullSolution}</code>
-                </pre>
+                <SyntaxHighlighter
+                  language={language}
+                  style={vscDarkPlus}
+                  customStyle={{
+                    margin: 0,
+                    borderRadius: '0.375rem',
+                    fontSize: '0.875rem',
+                    maxHeight: '60vh',
+                    background: 'rgba(0, 0, 0, 0.3)',
+                  }}
+                  showLineNumbers
+                  wrapLines
+                  lineNumberStyle={{
+                    minWidth: '3em',
+                    paddingRight: '1em',
+                    color: '#858585',
+                    userSelect: 'none',
+                  }}
+                >
+                  {metadata.fullSolution}
+                </SyntaxHighlighter>
               </div>
             </motion.div>
           </>

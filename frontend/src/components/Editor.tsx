@@ -232,7 +232,7 @@ export default function CollaborativeEditor() {
 
             {/* Problem Panel */}
             {metadata.title && (
-                <ProblemPanel metadata={metadata} />
+                <ProblemPanel metadata={metadata} language={language} />
             )}
 
             {/* Main Content */}
