@@ -1,29 +1,21 @@
 import express from "express";
 import cors from "cors";
-import { createAiSession } from "./controllers/session.controller";
-import { chatWithAI } from "./controllers/aichat.controller";
 import { config } from "./config/env";
+import { errorHandler } from "./middleware/errorHandler";
+import aiRoutes from "./routes/ai.routes";
 
 const app = express();
 
-
-const corsOrigin = process.env.NODE_ENV === 'production' 
-  ? (config.frontendUrl || 'https://mock-collab-editor.onrender.com')
-  : '*';  
-
 app.use(cors({
-  origin: corsOrigin,
+  origin: config.cors.origin,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: process.env.NODE_ENV === 'production' // Enable credentials only in production
+  credentials: config.cors.credentials,
 }));
 app.use(express.json());
 
+app.use("/api/ai", aiRoutes);
 
-const apiRouter = express.Router();
-apiRouter.post("/ai/session", createAiSession);
-apiRouter.post("/ai/chat", chatWithAI);
-
-app.use("/api", apiRouter);
+app.use(errorHandler);
 
 export default app;
