@@ -103,12 +103,29 @@
 | Technology           | Purpose                               |
 | -------------------- | ------------------------------------- |
 | **Node.js**          | Runtime environment                   |
-| **Express**          | HTTP server and API routing           |
+| **Express**          | HTTP server and layered API routing   |
 | **TypeScript**       | Type-safe server development          |
 | **WebSocket (ws)**   | Real-time bidirectional communication |
 | **y-websocket**      | Yjs WebSocket provider                |
 | **Google GenAI SDK** | AI-powered content generation         |
 | **OpenRouter SDK**   | Alternative AI model access           |
+
+#### Backend Architecture
+
+The backend follows a **production-ready layered architecture**:
+
+```
+Request Flow:
+  Routes → Controllers → Services → Database/External APIs
+```
+
+**Key Patterns:**
+
+- 🏗️ **Modular Routing** — Routes organized by domain (e.g., `ai.routes.ts`)
+- 🛡️ **Global Error Handling** — Centralized error handler with custom `AppError` class
+- 🔄 **Async Safety** — `asyncHandler` middleware prevents unhandled promise rejections
+- ⚙️ **Config Layer** — All environment variables and computed config in one place
+- 🎯 **Clear Separation** — Controllers handle HTTP, services contain business logic
 
 ---
 
@@ -143,14 +160,27 @@ session/
 │   ├── tailwind.config.js          # Tailwind configuration
 │   └── package.json
 │
-├── 📂 backend/                     # Node.js server
+├── 📂 backend/                     # Node.js server (Layered Architecture)
 │   ├── 📂 src/
-│   │   ├── 📂 config/              # Environment configuration
-│   │   ├── 📂 controllers/         # Request handlers
-│   │   ├── 📂 services/            # Business logic
-│   │   │   └── aiService.ts        # Gemini AI integration
+│   │   ├── 📂 config/              # Environment & configuration
+│   │   │   └── env.ts              # Centralized config with CORS
+│   │   ├── 📂 controllers/         # HTTP request handlers
+│   │   │   ├── session.controller.ts
+│   │   │   └── aichat.controller.ts
+│   │   ├── 📂 middleware/          # Express middleware
+│   │   │   ├── errorHandler.ts    # Global error handling
+│   │   │   └── asyncHandler.ts    # Async error safety
+│   │   ├── 📂 routes/              # Modular API routes
+│   │   │   └── ai.routes.ts       # AI-related endpoints
+│   │   ├── 📂 services/            # Business logic layer
+│   │   │   ├── session.service.ts # AI session generation
+│   │   │   ├── aichat.service.ts  # AI chat logic
+│   │   │   └── yjs.service.ts     # Yjs document management
+│   │   ├── 📂 utils/               # Helper utilities
+│   │   │   └── languageMapper.ts  # Language normalization
 │   │   ├── 📂 websocket/           # WebSocket handlers
-│   │   ├── app.ts                  # Express app setup
+│   │   │   └── socketServer.ts    # Yjs WebSocket server
+│   │   ├── app.ts                  # Express app configuration
 │   │   └── index.ts                # Server entry point
 │   ├── tsconfig.json
 │   └── package.json
