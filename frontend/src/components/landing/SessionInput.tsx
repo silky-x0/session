@@ -56,9 +56,9 @@ export const SessionInput: React.FC = () => {
 
   return (
     <div
-      className={`w-full mt-10 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-xs" : "max-w-lg"}`}
+      className={`w-full mt-6 sm:mt-10 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-[280px] sm:max-w-xs" : "max-w-[calc(100%-1rem)] sm:max-w-lg"}`}
     >
-      <div className='flex justify-center mb-5'>
+      <div className='flex justify-center mb-4 sm:mb-5'>
         <div className='relative flex bg-[#1c1c1c] border border-white/5 rounded-full p-1'>
           {/* Animated Background Pill */}
           <div
@@ -69,7 +69,7 @@ export const SessionInput: React.FC = () => {
 
           <button
             onClick={() => setMode("start")}
-            className={`relative z-10 px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
+            className={`relative z-10 px-3 sm:px-5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
               mode === "start" ? "text-black" : "text-white/60 hover:text-white"
             }`}
           >
@@ -77,7 +77,7 @@ export const SessionInput: React.FC = () => {
           </button>
           <button
             onClick={() => setMode("join")}
-            className={`relative z-10 px-5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
+            className={`relative z-10 px-3 sm:px-5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
               mode === "join" ? "text-black" : "text-white/60 hover:text-white"
             }`}
           >
@@ -90,7 +90,7 @@ export const SessionInput: React.FC = () => {
         {/* Conic Gradient Border Effect */}
         <div className='absolute -inset-[1px] bg-gradient-to-r from-transparent via-neon-pulse/50 to-transparent rounded-3xl opacity-20 group-hover:opacity-100 transition-opacity duration-500 blur-sm'></div>
 
-        <div className='relative flex items-center bg-[#1f1f1f] rounded-full border-2 border-white/5 p-1.5 pl-5 focus-within:border-white/10 transition-colors'>
+        <div className='relative flex items-center bg-[#1f1f1f] rounded-full border-2 border-white/5 p-1 sm:p-1.5 pl-3 sm:pl-5 focus-within:border-white/10 transition-colors'>
           <input
             type='text'
             value={input}
@@ -105,38 +105,39 @@ export const SessionInput: React.FC = () => {
               isLoading
                 ? "Joining room..."
                 : mode === "start"
-                  ? "Paste a problem, snippet, or interview prompt…"
+                  ? "Paste a prompt or start empty…"
                   : "Enter room ID..."
             }
-            className='flex-1 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-sm disabled:opacity-60'
+            className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-xs sm:text-sm disabled:opacity-60'
           />
           <button
             onClick={handleJoin}
             disabled={isLoading}
-            className='p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed'
+            className='p-1.5 sm:p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0'
           >
             {isLoading ? (
               <svg
-                width='20'
-                height='20'
+                width='18'
+                height='18'
                 viewBox='0 0 24 24'
                 fill='none'
                 stroke='black'
                 strokeWidth='2'
-                className='animate-spin'
+                className='animate-spin sm:w-5 sm:h-5'
               >
                 <path d='M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83'></path>
               </svg>
             ) : (
               <svg
-                width='20'
-                height='20'
+                width='18'
+                height='18'
                 viewBox='0 0 24 24'
                 fill='none'
                 stroke='black'
                 strokeWidth='2'
                 strokeLinecap='round'
                 strokeLinejoin='round'
+                className='sm:w-5 sm:h-5'
               >
                 <path d='M5 12h14'></path>
                 <path d='M12 5l7 7-7 7'></path>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 // Using placeholder images for now, can be replaced with real assets later.
 const placeholders = [
@@ -12,27 +12,40 @@ const placeholders = [
 
 export const ImageGrid: React.FC = () => {
   return (
-    <section className="relative w-full py-20 overflow-hidden">
-        {/* Floating "Run Code" Button Overlay */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-             <button className="flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-condensed font-bold uppercase tracking-wider shadow-2xl hover:bg-white/20 transition-all group">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-session-green">
-                    <path d="M5 3l14 9-14 9V3z" />
-                </svg>
-                Run Code
-             </button>
-        </div>
+    <section className='relative w-full py-10 sm:py-16 lg:py-20 overflow-hidden'>
+      {/* Floating "Run Code" Button Overlay */}
+      <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20'>
+        <button className='flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-condensed font-bold uppercase text-xs sm:text-base tracking-wider shadow-2xl hover:bg-white/20 transition-all group'>
+          <svg
+            width='14'
+            height='14'
+            viewBox='0 0 24 24'
+            fill='currentColor'
+            className='text-session-green sm:w-4 sm:h-4'
+          >
+            <path d='M5 3l14 9-14 9V3z' />
+          </svg>
+          Run Code
+        </button>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 px-4 opacity-50 relative z-10 scale-110 pointer-events-none select-none">
-            {placeholders.map((src, i) => (
-                <div key={i} className="rounded-xl overflow-hidden shadow-2xl border border-white/5">
-                    <img src={src} alt={`Visual ${i}`} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
-                </div>
-            ))}
-        </div>
-        
-        {/* Gradient fade to integrate with background */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1c] via-transparent to-[#1c1c1c] z-10"></div>
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 opacity-50 relative z-10 sm:scale-105 lg:scale-110 pointer-events-none select-none'>
+        {placeholders.map((src, i) => (
+          <div
+            key={i}
+            className='rounded-lg sm:rounded-xl overflow-hidden shadow-2xl border border-white/5'
+          >
+            <img
+              src={src}
+              alt={`Visual ${i}`}
+              className='w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700'
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Gradient fade to integrate with background */}
+      <div className='absolute inset-0 bg-gradient-to-t from-[#1c1c1c] via-transparent to-[#1c1c1c] z-10'></div>
     </section>
   );
 };
