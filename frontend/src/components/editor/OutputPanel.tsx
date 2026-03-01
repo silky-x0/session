@@ -8,8 +8,15 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react";
-import { useState, useRef, useEffect, type MutableRefObject } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  type MutableRefObject,
+} from "react";
 import type { editor } from "monaco-editor";
+import * as Y from "yjs";
 
 const SUPPORTED_LANGUAGES = ["python", "javascript", "c", "cpp"];
 
@@ -25,6 +32,8 @@ interface OutputLine {
 interface OutputPanelProps {
   editorRef: MutableRefObject<editor.IStandaloneCodeEditor | null>;
   language: string;
+  yOutput: Y.Array<any> | null;
+  yExec: Y.Map<any> | null;
 }
 
 function getTimestamp() {
@@ -36,30 +45,67 @@ function getTimestamp() {
   });
 }
 
-export function OutputPanel({ editorRef, language }: OutputPanelProps) {
-  const [outputs, setOutputs] = useState<OutputLine[]>([
-    {
-      id: "1",
-      type: "log",
-      content: "Welcome to the session editor!",
-      timestamp: getTimestamp(),
-    },
-  ]);
+export function OutputPanel({
+  editorRef,
+  language,
+  yOutput,
+  yExec,
+}: OutputPanelProps) {
+  const [outputs, setOutputs] = useState<OutputLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const outputEndRef = useRef<HTMLDivElement>(null);
 
   const isSupported = SUPPORTED_LANGUAGES.includes(language.toLowerCase());
 
-  // Auto-scroll to bottom when new output is added
+  
+  const syncFromYjs = useCallback(() => {
+    if (!yOutput) return;
+    setOutputs(yOutput.toArray() as OutputLine[]);
+  }, [yOutput]);
+
+  
+  const syncExecState = useCallback(() => {
+    if (!yExec) return;
+    setIsRunning(!!yExec.get("isRunning"));
+  }, [yExec]);
+
+  useEffect(() => {
+    if (!yOutput || !yExec) return;
+
+    
+    syncFromYjs();
+    syncExecState();
+
+    
+    yOutput.observe(syncFromYjs);
+    yExec.observe(syncExecState);
+
+    return () => {
+      yOutput.unobserve(syncFromYjs);
+      yExec.unobserve(syncExecState);
+    };
+  }, [yOutput, yExec, syncFromYjs, syncExecState]);
+
+  
   useEffect(() => {
     outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [outputs]);
 
+
+  const pushOutputLines = (lines: OutputLine[]) => {
+    if (!yOutput) return;
+    yOutput.push(lines);
+  };
+
   const handleRun = async () => {
+    if (!yExec || !yOutput) return;
+
+    
+    if (yExec.get("isRunning")) return;
+
     const code = editorRef.current?.getValue();
     if (!code?.trim()) {
-      setOutputs((prev) => [
-        ...prev,
+      pushOutputLines([
         {
           id: Date.now().toString(),
           type: "warning",
@@ -70,11 +116,11 @@ export function OutputPanel({ editorRef, language }: OutputPanelProps) {
       return;
     }
 
-    setIsRunning(true);
+    // Acquire lock
+    yExec.set("isRunning", true);
 
     // Add a "running" indicator
-    setOutputs((prev) => [
-      ...prev,
+    pushOutputLines([
       {
         id: `run-${Date.now()}`,
         type: "log",
@@ -93,8 +139,7 @@ export function OutputPanel({ editorRef, language }: OutputPanelProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setOutputs((prev) => [
-          ...prev,
+        pushOutputLines([
           {
             id: Date.now().toString(),
             type: "error",
@@ -143,29 +188,28 @@ export function OutputPanel({ editorRef, language }: OutputPanelProps) {
         newOutputs.push({
           id: `${now}-timeout`,
           type: "warning",
-          content: `⏱ Execution timed out (10s limit)`,
+          content: "Execution timed out (10s limit)",
           timestamp: getTimestamp(),
         });
       } else if (data.exitCode === 0) {
         newOutputs.push({
           id: `${now}-exit`,
           type: "success",
-          content: `✓ Process exited with code 0`,
+          content: "Process exited with code 0",
           timestamp: getTimestamp(),
         });
       } else {
         newOutputs.push({
           id: `${now}-exit`,
           type: "error",
-          content: `✗ Process exited with code ${data.exitCode}`,
+          content: `Process exited with code ${data.exitCode}`,
           timestamp: getTimestamp(),
         });
       }
 
-      setOutputs((prev) => [...prev, ...newOutputs]);
+      pushOutputLines(newOutputs);
     } catch (err: any) {
-      setOutputs((prev) => [
-        ...prev,
+      pushOutputLines([
         {
           id: Date.now().toString(),
           type: "error",
@@ -174,12 +218,14 @@ export function OutputPanel({ editorRef, language }: OutputPanelProps) {
         },
       ]);
     } finally {
-      setIsRunning(false);
+      // Release lock
+      yExec.set("isRunning", false);
     }
   };
 
   const handleClear = () => {
-    setOutputs([]);
+    if (!yOutput) return;
+    yOutput.delete(0, yOutput.length);
   };
 
   const getIcon = (type: OutputLine["type"]) => {
@@ -229,9 +275,11 @@ export function OutputPanel({ editorRef, language }: OutputPanelProps) {
             whileTap={{ scale: 0.95 }}
             disabled={isRunning || !isSupported}
             title={
-              !isSupported
-                ? `"${language}" is not supported for execution`
-                : "Run code"
+              isRunning
+                ? "Code is running..."
+                : !isSupported
+                  ? `"${language}" is not supported for execution`
+                  : "Run code"
             }
             className='flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors border border-primary/30'
           >

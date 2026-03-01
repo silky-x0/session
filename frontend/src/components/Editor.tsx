@@ -41,6 +41,8 @@ export default function CollaborativeEditor() {
   const yMetaObserverRef = useRef<(() => void) | null>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
   const monacoRef = useRef<any>(null);
+  const yOutputRef = useRef<Y.Array<any> | null>(null);
+  const yExecRef = useRef<Y.Map<any> | null>(null);
   const [language, setLanguage] = useState("javascript");
   const [inCall, setInCall] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -81,6 +83,10 @@ export default function CollaborativeEditor() {
 
     const ydoc = new Y.Doc();
     ydocRef.current = ydoc;
+
+    // Shared output and execution lock for all collaborators
+    yOutputRef.current = ydoc.getArray("output");
+    yExecRef.current = ydoc.getMap("execution");
 
     // Use environment variable for WebSocket URL, fallback to localhost
     const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3000";
@@ -312,7 +318,12 @@ export default function CollaborativeEditor() {
 
           {/* Output - Bottom */}
           <div className='h-[240px] xl:h-[280px] flex-shrink-0'>
-            <OutputPanel editorRef={editorRef} language={language} />
+            <OutputPanel
+              editorRef={editorRef}
+              language={language}
+              yOutput={yOutputRef.current}
+              yExec={yExecRef.current}
+            />
           </div>
         </div>
 
@@ -352,7 +363,12 @@ export default function CollaborativeEditor() {
                 transition={{ duration: 0.15 }}
                 className='h-full'
               >
-                <OutputPanel editorRef={editorRef} language={language} />
+                <OutputPanel
+                  editorRef={editorRef}
+                  language={language}
+                  yOutput={yOutputRef.current}
+                  yExec={yExecRef.current}
+                />
               </motion.div>
             )}
           </AnimatePresence>
