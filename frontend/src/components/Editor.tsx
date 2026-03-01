@@ -312,7 +312,7 @@ export default function CollaborativeEditor() {
 
           {/* Output - Bottom */}
           <div className='h-[240px] xl:h-[280px] flex-shrink-0'>
-            <OutputPanel />
+            <OutputPanel editorRef={editorRef} language={language} />
           </div>
         </div>
 
@@ -352,7 +352,7 @@ export default function CollaborativeEditor() {
                 transition={{ duration: 0.15 }}
                 className='h-full'
               >
-                <OutputPanel />
+                <OutputPanel editorRef={editorRef} language={language} />
               </motion.div>
             )}
           </AnimatePresence>
