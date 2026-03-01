@@ -1,7 +1,8 @@
 import { openRouter } from "../config/openRouter";
+import { AppError } from "../middleware/errorHandler";
 
 export const generateOpenRouterContent = async (prompt: string) => {
-  try {
+
     const systemPrompt = `
   You are an expert technical interview coach. The user will provide a problem or topic.
   Return a raw JSON object (no markdown) with this structure:
@@ -39,7 +40,7 @@ export const generateOpenRouterContent = async (prompt: string) => {
     let text = completion.choices[0]?.message?.content;
 
     if (!text) {
-      throw new Error("No content generated");
+      throw new AppError(501,"No content generated");
     }
 
     // Handle case where content is an array (multimodal response)
@@ -54,9 +55,9 @@ export const generateOpenRouterContent = async (prompt: string) => {
     // Clean up markdown if present, just in case
     const cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
 
+    if (!cleanText) {
+      throw new AppError(502, "Falied To generate content")
+    }
+
     return JSON.parse(cleanText);
-  } catch (error) {
-    console.error("OpenRouter API Error:", error);
-    throw new Error("Failed to generate content from OpenRouter");
-  }
 };
