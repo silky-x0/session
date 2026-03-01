@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "dev": "nodemon --exec tsx src/index.ts",
     "postinstall": "npm run build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -23,6 +24,7 @@
     "@types/node": "^25.0.3",
     "@types/ws": "^8.18.1",
     "cors": "^2.8.5",
+    "dockerode": "^4.0.9",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "nodemon": "^3.1.11",
@@ -34,9 +36,11 @@
     "yjs": "^13.6.29"
   },
   "devDependencies": {
+    "@types/dockerode": "^4.0.1",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.18",
     "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
     "vitest": "^4.0.18"
   }
 }
