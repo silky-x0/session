@@ -4,9 +4,9 @@ dotenv.config();
 
 
 const getCorsOrigin = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.FRONTEND_URL || 'https://session-ecru.vercel.app';
-  }
+  // if (process.env.NODE_ENV === 'production') {
+  //   return process.env.FRONTEND_URL || 'https://session-ecru.vercel.app';
+  // }
   return '*';
 };
 
