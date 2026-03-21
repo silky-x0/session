@@ -16,6 +16,9 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@liveblocks/client": "^3.15.2",
+    "@liveblocks/react": "^3.15.2",
+    "@liveblocks/yjs": "^3.15.2",
     "@monaco-editor/react": "^4.7.0",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -32,7 +35,6 @@
     "tailwindcss": "^4.1.18",
     "y-monaco": "^0.1.6",
     "y-protocols": "^1.0.7",
-    "y-websocket": "^3.0.0",
     "yjs": "^13.6.28"
   },
   "devDependencies": {
