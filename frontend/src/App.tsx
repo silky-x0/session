@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { LiveblocksProvider } from "@liveblocks/react/suspense";
 import LandingPage from './pages/LandingPage';
 
 const CodeEditor = lazy(() => import("./components/Editor"));
@@ -17,19 +18,21 @@ function EditorLoadingFallback() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route 
-          path="/editor" 
-          element={
-            <Suspense fallback={<EditorLoadingFallback />}>
-              <CodeEditor />
-            </Suspense>
-          } 
-        />
-      </Routes>
-    </BrowserRouter>
+    <LiveblocksProvider publicApiKey={import.meta.env.VITE_LIVEBLOCKS_PUBLIC_KEY as string}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route 
+            path="/editor" 
+            element={
+              <Suspense fallback={<EditorLoadingFallback />}>
+                <CodeEditor />
+              </Suspense>
+            } 
+          />
+        </Routes>
+      </BrowserRouter>
+    </LiveblocksProvider>
   );
 }
 

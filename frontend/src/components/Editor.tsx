@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { editor } from "monaco-editor";
 import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
-import { WebsocketProvider } from "y-websocket";
+import { LiveblocksYjsProvider } from "@liveblocks/yjs";
+import { useRoom } from "@liveblocks/react/suspense";
+import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { MonacoBinding } from "y-monaco";
-import { startAudio, stopAudio } from "../hooks/useAudioCall";
 import { CodeEditor } from "./editor/CodeEditor";
 import { TopBar } from "./editor/TopBar";
 import { ProblemPanel } from "./editor/ProblemPanel";
 import { AIChat } from "./editor/AIChat";
 import { OutputPanel } from "./editor/OutputPanel";
+import LiveCursors from "./editor/LiveCursors";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code2, MessageSquare, Terminal } from "lucide-react";
 
@@ -33,18 +35,22 @@ interface Metadata {
 
 type MobilePanel = "editor" | "chat" | "output";
 
-export default function CollaborativeEditor() {
+/**
+ * Inner component that uses the Liveblocks room.
+ * Must be rendered inside a RoomProvider.
+ */
+function CollaborativeEditorInner() {
   const navigate = useNavigate();
-  const ydocRef = useRef<Y.Doc | null>(null);
-  const providerRef = useRef<WebsocketProvider | null>(null);
+  const room = useRoom();
+  const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
   const yMetaObserverRef = useRef<(() => void) | null>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
   const monacoRef = useRef<any>(null);
   const yOutputRef = useRef<Y.Array<any> | null>(null);
   const yExecRef = useRef<Y.Map<any> | null>(null);
+  const cursorPanelRef = useRef<HTMLDivElement>(null);
   const [language, setLanguage] = useState("javascript");
-  const [inCall, setInCall] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [metadata, setMetadata] = useState<Metadata>({});
   const [activePanel, setActivePanel] = useState<MobilePanel>("editor");
@@ -52,9 +58,9 @@ export default function CollaborativeEditor() {
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
 
-  function handleEditorDidMount(editor: any, monaco: any) {
+  function handleEditorDidMount(editorInstance: any, monaco: any) {
     console.log("Editor mounted!");
-    editorRef.current = editor;
+    editorRef.current = editorInstance;
     monacoRef.current = monaco;
 
     monaco.editor.defineTheme("neon-dark", {
@@ -81,27 +87,20 @@ export default function CollaborativeEditor() {
     });
     monaco.editor.setTheme("neon-dark");
 
-    const ydoc = new Y.Doc();
-    ydocRef.current = ydoc;
+    // Create the Liveblocks Yjs provider
+    const yDoc = new Y.Doc();
+    const yProvider = new LiveblocksYjsProvider(room, yDoc);
+    providerRef.current = yProvider;
 
     // Shared output and execution lock for all collaborators
-    yOutputRef.current = ydoc.getArray("output");
-    yExecRef.current = ydoc.getMap("execution");
+    yOutputRef.current = yDoc.getArray("output");
+    yExecRef.current = yDoc.getMap("execution");
 
-    // Use environment variable for WebSocket URL, fallback to localhost
-    const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:3000";
+    // Track connection status
+    setIsConnected(true);
 
-    console.log("Connecting to WebSocket:", wsUrl);
-
-    const provider = new WebsocketProvider(wsUrl, roomId, ydoc);
-    providerRef.current = provider;
-
-    provider.on("status", (event: any) => {
-      setIsConnected(event.status === "connected");
-    });
-
-    const yText = ydoc.getText("monaco");
-    const awareness = provider.awareness;
+    const yText = yDoc.getText("monaco");
+    const awareness = yProvider.awareness;
 
     // Set local user state for awareness
     awareness.setLocalStateField("user", {
@@ -109,38 +108,30 @@ export default function CollaborativeEditor() {
       color: randomColor(),
     });
 
-    // Use y-monaco binding for proper incremental sync
-    const model = editor.getModel();
+    const model = editorInstance.getModel();
     if (model) {
-      const binding = new MonacoBinding(
+      const existingYjsContent = yText.toString();
+      if (existingYjsContent.length > 0) {
+        model.setValue("");
+      }
+      bindingRef.current = new MonacoBinding(
         yText,
         model,
-        new Set([editor]),
-        awareness,
+        new Set([editorInstance]),
+        awareness as any,
       );
-      bindingRef.current = binding;
     }
 
     // Metadata Sync via Y.Map
-    const yMeta = ydoc.getMap("meta");
+    const yMeta = yDoc.getMap("meta");
 
-    // Function to read all metadata
     const updateMetadata = () => {
       const lang = yMeta.get("language") as string;
-      console.log("updateMetadata called, lang:", lang);
       if (lang) {
         setLanguage(lang);
-        const model = editor.getModel();
-        console.log(
-          "Model exists:",
-          !!model,
-          "Current model language:",
-          model?.getLanguageId(),
-        );
+        const model = editorInstance.getModel();
         if (model) {
-          console.log("Setting model language to:", lang);
           monaco.editor.setModelLanguage(model, lang);
-          console.log("Model language after set:", model.getLanguageId());
         }
       }
 
@@ -162,33 +153,21 @@ export default function CollaborativeEditor() {
     yMeta.observe(updateMetadata);
     yMetaObserverRef.current = () => yMeta.unobserve(updateMetadata);
 
-    provider.on("sync", (isSynced: boolean) => {
-      console.log(
-        "Y.js sync event:",
-        isSynced,
-        "language:",
-        yMeta.get("language"),
-      );
-      if (isSynced) {
+    // Handle metadata defaults on sync
+    yProvider.on("sync", (synced: boolean) => {
+      if (synced) {
+        setIsConnected(true);
         const syncedLang = yMeta.get("language");
         if (!syncedLang) {
-          console.log("No language found, setting default to javascript");
           yMeta.set("language", "javascript");
         } else {
-          console.log("Found synced language:", syncedLang);
           updateMetadata();
         }
       }
     });
 
-    // Check immediately in case already synced
-    console.log(
-      "Initial sync state:",
-      provider.synced,
-      "language:",
-      yMeta.get("language"),
-    );
-    if (provider.synced) {
+    // Check immediately in case already synced (most likely yes)
+    if (yProvider.synced) {
       const syncedLang = yMeta.get("language");
       if (!syncedLang) {
         yMeta.set("language", "javascript");
@@ -209,9 +188,10 @@ export default function CollaborativeEditor() {
       }
     }
 
-    // Sync to Y.js
-    if (ydocRef.current) {
-      const yMeta = ydocRef.current.getMap("meta");
+    // Sync to Y.js via Liveblocks
+    if (providerRef.current) {
+      const yDoc = providerRef.current.getYDoc();
+      const yMeta = yDoc.getMap("meta");
       yMeta.set("language", lang);
     }
   };
@@ -221,27 +201,11 @@ export default function CollaborativeEditor() {
     navigate(`/editor?room=${id}`);
   };
 
-  const handleStartAudio = async () => {
-    if (!providerRef.current) return;
-    const ws = providerRef.current.ws;
-    if (ws) {
-      try {
-        await startAudio(ws);
-        setInCall(true);
-      } catch (error) {
-        console.error("Audio error:", error);
-        setInCall(false);
-      }
-    }
-  };
-
   useEffect(() => {
     return () => {
-      stopAudio();
       yMetaObserverRef.current?.(); // Unobserve yMeta to prevent memory leak
       bindingRef.current?.destroy();
       providerRef.current?.destroy();
-      ydocRef.current?.destroy();
     };
   }, []);
 
@@ -265,9 +229,9 @@ export default function CollaborativeEditor() {
       <TopBar
         roomId={roomId}
         isConnected={isConnected}
-        inCall={inCall}
+        inCall={false}
         language={language}
-        onJoinAudio={handleStartAudio}
+        onJoinAudio={() => {}}
         onCreateRoom={handleCreateRoom}
         onLanguageChange={handleLanguageChange}
       />
@@ -296,7 +260,13 @@ export default function CollaborativeEditor() {
       </div>
 
       {/* Main Content — Desktop: side-by-side, Mobile/Tablet: tabbed panels */}
-      <div className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3'>
+      <div
+        ref={cursorPanelRef}
+        className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
+      >
+        {/* Live Cursors */}
+        <LiveCursors cursorPanel={cursorPanelRef} />
+
         {/* ─── Desktop Layout (lg+) ─── */}
         {/* Left - Code Editor (desktop only, always visible) */}
         <motion.div
@@ -375,5 +345,33 @@ export default function CollaborativeEditor() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Outer wrapper that extracts roomId from URL and provides the RoomProvider.
+ * This is the default export used by App.tsx.
+ */
+export default function CollaborativeEditor() {
+  const roomId =
+    new URLSearchParams(window.location.search).get("room") || "default";
+
+  return (
+    <RoomProvider id={roomId} initialPresence={{ cursor: null }}>
+      <ClientSideSuspense
+        fallback={
+          <div className='h-screen w-screen flex items-center justify-center bg-background'>
+            <div className='flex flex-col items-center gap-4'>
+              <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
+              <span className='text-muted-foreground text-sm'>
+                Connecting to room...
+              </span>
+            </div>
+          </div>
+        }
+      >
+        <CollaborativeEditorInner />
+      </ClientSideSuspense>
+    </RoomProvider>
   );
 }
