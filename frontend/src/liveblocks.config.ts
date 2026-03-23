@@ -1,30 +1,63 @@
-// Liveblocks v3 — hooks are imported directly from @liveblocks/react/suspense
-// No need for createRoomContext; LiveblocksProvider + RoomProvider handles everything.
-//
-// Usage:
-//   import { useRoom, useSelf, useOthers } from "@liveblocks/react/suspense";
-//
-// This file exists as a central place for Liveblocks type declarations.
-// Extend these types as you add features (cursors, avatars, etc.)
-
 declare global {
   interface Liveblocks {
-    // Presence — cursor position for live cursors
+    // ─── Presence ───────────────────────────────────────────────
+    // Temporary per-user data, resets on disconnect
     Presence: {
       cursor: { x: number; y: number } | null;
+      isTyping: boolean;
+      selectedLineNumber: number | null;
     };
 
-    // User metadata attached to each connection
+    // ─── User Metadata ──────────────────────────────────────────
+    // Set via authentication endpoint
     UserMeta: {
       id: string;
       info: {
         name: string;
         color: string;
+        avatar?: string;
       };
     };
 
-    // Room event payloads (for useBroadcastEvent / useEventListener)
-    RoomEvent: {};
+    // ─── Broadcast Events ───────────────────────────────────────
+    // Custom events sent between clients via useBroadcastEvent
+    RoomEvent:
+      | { type: "ATTENTION_PING"; lineNumber: number; fromUser: string }
+      | { type: "REACTION"; emoji: string; fromUser: string }
+      | {
+          type: "SYSTEM";
+          message: string;
+          severity: "info" | "warning" | "error";
+        };
+
+    // ─── Thread Metadata ────────────────────────────────────────
+    ThreadMetadata: {
+      lineNumber: number;
+      fileName: string;
+      resolved: boolean;
+    };
+
+    // ─── Room Info ──────────────────────────────────────────────
+    RoomInfo: {
+      title: string;
+      url: string;
+    };
+
+    // ─── Group Info ─────────────────────────────────────────────
+    GroupInfo: {
+      name: string;
+    };
+
+    // ─── Custom Notification Activities ─────────────────────────
+    ActivitiesData: {
+      $codeExecution: {
+        status: "success" | "error";
+        language: string;
+      };
+      $userJoined: {
+        userName: string;
+      };
+    };
   }
 }
 

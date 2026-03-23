@@ -5,6 +5,7 @@ import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import { useRoom } from "@liveblocks/react/suspense";
 import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
+import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
 import { CodeEditor } from "./editor/CodeEditor";
 import { TopBar } from "./editor/TopBar";
@@ -12,6 +13,8 @@ import { ProblemPanel } from "./editor/ProblemPanel";
 import { AIChat } from "./editor/AIChat";
 import { OutputPanel } from "./editor/OutputPanel";
 import LiveCursors from "./editor/LiveCursors";
+import { ConnectionToast } from "./editor/ConnectionToast";
+import { BroadcastProvider } from "./editor/BroadcastProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { Code2, MessageSquare, Terminal } from "lucide-react";
 
@@ -51,7 +54,6 @@ function CollaborativeEditorInner() {
   const yExecRef = useRef<Y.Map<any> | null>(null);
   const cursorPanelRef = useRef<HTMLDivElement>(null);
   const [language, setLanguage] = useState("javascript");
-  const [isConnected, setIsConnected] = useState(false);
   const [metadata, setMetadata] = useState<Metadata>({});
   const [activePanel, setActivePanel] = useState<MobilePanel>("editor");
 
@@ -89,15 +91,12 @@ function CollaborativeEditorInner() {
 
     // Create the Liveblocks Yjs provider
     const yDoc = new Y.Doc();
-    const yProvider = new LiveblocksYjsProvider(room, yDoc);
+    const yProvider = new LiveblocksYjsProvider(room as any, yDoc);
     providerRef.current = yProvider;
 
     // Shared output and execution lock for all collaborators
     yOutputRef.current = yDoc.getArray("output");
     yExecRef.current = yDoc.getMap("execution");
-
-    // Track connection status
-    setIsConnected(true);
 
     const yText = yDoc.getText("monaco");
     const awareness = yProvider.awareness;
@@ -112,6 +111,8 @@ function CollaborativeEditorInner() {
     if (model) {
       const existingYjsContent = yText.toString();
       if (existingYjsContent.length > 0) {
+        // Existing room — clear defaultValue so MonacoBinding
+        // populates the editor from yText (source of truth)
         model.setValue("");
       }
       bindingRef.current = new MonacoBinding(
@@ -120,6 +121,18 @@ function CollaborativeEditorInner() {
         new Set([editorInstance]),
         awareness as any,
       );
+
+      // For a NEW room, yText is empty after binding.
+      // Populate it with starter code (from API metadata) or a default.
+      if (yText.toString().length === 0) {
+        const yMeta = yDoc.getMap("meta");
+        const starterCode = yMeta.get("starterCode") as string | undefined;
+        if (starterCode) {
+          yText.insert(0, starterCode);
+        } else {
+          yText.insert(0, ``);
+        }
+      }
     }
 
     // Metadata Sync via Y.Map
@@ -156,7 +169,6 @@ function CollaborativeEditorInner() {
     // Handle metadata defaults on sync
     yProvider.on("sync", (synced: boolean) => {
       if (synced) {
-        setIsConnected(true);
         const syncedLang = yMeta.get("language");
         if (!syncedLang) {
           yMeta.set("language", "javascript");
@@ -225,124 +237,159 @@ function CollaborativeEditorInner() {
 
   return (
     <div className='h-screen flex flex-col bg-background overflow-hidden p-1.5 sm:p-2 lg:p-3 gap-1.5 sm:gap-2 lg:gap-3'>
-      {/* Top Bar */}
-      <TopBar
-        roomId={roomId}
-        isConnected={isConnected}
-        inCall={false}
-        language={language}
-        onJoinAudio={() => {}}
-        onCreateRoom={handleCreateRoom}
-        onLanguageChange={handleLanguageChange}
-      />
+      {/* Connection Toast — global position: fixed overlay */}
+      <ConnectionToast />
 
-      {/* Problem Panel */}
-      {metadata.title && (
-        <ProblemPanel metadata={metadata} language={language} />
-      )}
+      {/* BroadcastProvider wraps everything to enable event listening */}
+      <BroadcastProvider>
+        {/* Top Bar — now uses useStatus internally instead of isConnected prop */}
+        <TopBar
+          roomId={roomId}
+          inCall={false}
+          language={language}
+          onJoinAudio={() => {}}
+          onCreateRoom={handleCreateRoom}
+          onLanguageChange={handleLanguageChange}
+        />
 
-      {/* Mobile/Tablet Tab Bar — visible below lg */}
-      <div className='lg:hidden flex items-center gap-1 glass-panel rounded-lg p-1'>
-        {mobileTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActivePanel(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-              activePanel === tab.id
-                ? "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_10px_rgba(0,255,65,0.15)]"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-            }`}
-          >
-            {tab.icon}
-            <span className='hidden sm:inline'>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+        {/* Problem Panel */}
+        {metadata.title && (
+          <ProblemPanel metadata={metadata} language={language} />
+        )}
 
-      {/* Main Content — Desktop: side-by-side, Mobile/Tablet: tabbed panels */}
-      <div
-        ref={cursorPanelRef}
-        className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
-      >
-        {/* Live Cursors */}
-        <LiveCursors cursorPanel={cursorPanelRef} />
+        {/* Mobile/Tablet Tab Bar — visible below lg */}
+        <div className='lg:hidden flex items-center gap-1 glass-panel rounded-lg p-1'>
+          {mobileTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActivePanel(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
+                activePanel === tab.id
+                  ? "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_10px_rgba(0,255,65,0.15)]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              }`}
+            >
+              {tab.icon}
+              <span className='hidden sm:inline'>{tab.label}</span>
+            </button>
+          ))}
+        </div>
 
-        {/* ─── Desktop Layout (lg+) ─── */}
-        {/* Left - Code Editor (desktop only, always visible) */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className='hidden lg:flex flex-1 min-w-0'
+        {/* Main Content — Desktop: side-by-side, Mobile/Tablet: tabbed panels */}
+        <div
+          ref={cursorPanelRef}
+          className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
         >
-          <div className='w-full h-full'>
-            <CodeEditor onMount={handleEditorDidMount} />
-          </div>
-        </motion.div>
+          {/* Live Cursors */}
+          <LiveCursors cursorPanel={cursorPanelRef} />
 
-        {/* Right - AI Chat & Output (desktop only) */}
-        <div className='hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0'>
-          {/* AI Chat - Top */}
-          <div className='flex-1 min-h-0'>
-            <AIChat editorRef={editorRef} />
+          {/* ─── Desktop Layout (lg+) ─── */}
+          {/* Left - Code Editor (desktop only, always visible) */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className='hidden lg:flex flex-1 min-w-0'
+          >
+            <div className='w-full h-full'>
+              <CodeEditor onMount={handleEditorDidMount} />
+            </div>
+          </motion.div>
+
+          {/* Right - AI Chat & Output (desktop only) */}
+          <div className='hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0'>
+            {/* AI Chat - Top */}
+            <div className='flex-1 min-h-0'>
+              <AIChat editorRef={editorRef} />
+            </div>
+
+            {/* Output - Bottom */}
+            <div className='h-[240px] xl:h-[280px] flex-shrink-0'>
+              <OutputPanel
+                editorRef={editorRef}
+                language={language}
+                yOutput={yOutputRef.current}
+                yExec={yExecRef.current}
+              />
+            </div>
           </div>
 
-          {/* Output - Bottom */}
-          <div className='h-[240px] xl:h-[280px] flex-shrink-0'>
-            <OutputPanel
-              editorRef={editorRef}
-              language={language}
-              yOutput={yOutputRef.current}
-              yExec={yExecRef.current}
-            />
+          {/* ─── Mobile/Tablet Layout (<lg) ─── */}
+          <div className='lg:hidden flex-1 min-w-0 min-h-0'>
+            <AnimatePresence mode='wait'>
+              {activePanel === "editor" && (
+                <motion.div
+                  key='editor-panel'
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.15 }}
+                  className='h-full'
+                >
+                  <CodeEditor onMount={handleEditorDidMount} />
+                </motion.div>
+              )}
+              {activePanel === "chat" && (
+                <motion.div
+                  key='chat-panel'
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.15 }}
+                  className='h-full'
+                >
+                  <AIChat editorRef={editorRef} />
+                </motion.div>
+              )}
+              {activePanel === "output" && (
+                <motion.div
+                  key='output-panel'
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.15 }}
+                  className='h-full'
+                >
+                  <OutputPanel
+                    editorRef={editorRef}
+                    language={language}
+                    yOutput={yOutputRef.current}
+                    yExec={yExecRef.current}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
+      </BroadcastProvider>
+    </div>
+  );
+}
 
-        {/* ─── Mobile/Tablet Layout (<lg) ─── */}
-        <div className='lg:hidden flex-1 min-w-0 min-h-0'>
-          <AnimatePresence mode='wait'>
-            {activePanel === "editor" && (
-              <motion.div
-                key='editor-panel'
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.15 }}
-                className='h-full'
-              >
-                <CodeEditor onMount={handleEditorDidMount} />
-              </motion.div>
-            )}
-            {activePanel === "chat" && (
-              <motion.div
-                key='chat-panel'
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.15 }}
-                className='h-full'
-              >
-                <AIChat editorRef={editorRef} />
-              </motion.div>
-            )}
-            {activePanel === "output" && (
-              <motion.div
-                key='output-panel'
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.15 }}
-                className='h-full'
-              >
-                <OutputPanel
-                  editorRef={editorRef}
-                  language={language}
-                  yOutput={yOutputRef.current}
-                  yExec={yExecRef.current}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+/**
+ * Error fallback for within the room context
+ */
+function RoomErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: unknown;
+  resetErrorBoundary: () => void;
+}) {
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 max-w-md text-center p-6">
+        <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+          <span className="text-red-400 text-xl">⚠</span>
         </div>
+        <h2 className="text-foreground text-lg font-semibold">Room Error</h2>
+        <p className="text-muted-foreground text-sm">{error instanceof Error ? error.message : String(error)}</p>
+        <button
+          onClick={resetErrorBoundary}
+          className="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30 
+                     hover:bg-primary/30 transition-colors text-sm font-medium cursor-pointer"
+        >
+          Reconnect
+        </button>
       </div>
     </div>
   );
@@ -357,21 +404,26 @@ export default function CollaborativeEditor() {
     new URLSearchParams(window.location.search).get("room") || "default";
 
   return (
-    <RoomProvider id={roomId} initialPresence={{ cursor: null }}>
-      <ClientSideSuspense
-        fallback={
-          <div className='h-screen w-screen flex items-center justify-center bg-background'>
-            <div className='flex flex-col items-center gap-4'>
-              <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
-              <span className='text-muted-foreground text-sm'>
-                Connecting to room...
-              </span>
-            </div>
-          </div>
-        }
+    <ErrorBoundary FallbackComponent={RoomErrorFallback}>
+      <RoomProvider
+        id={roomId}
+        initialPresence={{ cursor: null, isTyping: false, selectedLineNumber: null }}
       >
-        <CollaborativeEditorInner />
-      </ClientSideSuspense>
-    </RoomProvider>
+        <ClientSideSuspense
+          fallback={
+            <div className='h-screen w-screen flex items-center justify-center bg-background'>
+              <div className='flex flex-col items-center gap-4'>
+                <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
+                <span className='text-muted-foreground text-sm'>
+                  Connecting to room...
+                </span>
+              </div>
+            </div>
+          }
+        >
+          <CollaborativeEditorInner />
+        </ClientSideSuspense>
+      </RoomProvider>
+    </ErrorBoundary>
   );
 }
