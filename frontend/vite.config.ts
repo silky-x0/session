@@ -20,7 +20,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Yjs core
-          'yjs-core': ['yjs', 'y-websocket'],
+          'yjs-core': ['yjs'],
           // y-monaco binds Yjs to Monaco - contains Monaco code
           'yjs-monaco': ['y-monaco'],
           // Split React and React DOM

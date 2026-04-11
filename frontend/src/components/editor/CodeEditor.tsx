@@ -68,11 +68,7 @@ export function CodeEditor({ onMount }: CodeEditorProps) {
         <Editor
           height='100%'
           defaultLanguage='javascript'
-          defaultValue={`// 🚀 Welcome to the collaborative editor!
-// Share the room URL to collaborate in real-time.
-
-console.log('Hello, World!');
-`}
+          defaultValue=""
           theme='vs-dark'
           onMount={editorInstanceRef}
           loading={<EditorLoader />}
