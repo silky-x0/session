@@ -1,22 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../config/openRouter', () => ({
-  openRouter: {
+vi.mock('../config/kimi2thinking', () => ({
+  openai: {
     chat: {
-      send: vi.fn(),
+      completions: {
+        create: vi.fn(),
+      },
     },
   },
 }));
 
-import { generateOpenRouterContent } from './session.service';
-import { openRouter } from '../config/openRouter';
+import { generateAIContent } from './session.service';
+import { openai as kimi } from '../config/kimi2thinking';
 
 describe('session.service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('generateOpenRouterContent', () => {
+  describe('generateAIContent', () => {
     it('should generate content from a prompt', async () => {
       const mockResponse = {
         title: 'Two Sum Problem',
@@ -29,7 +31,7 @@ describe('session.service', () => {
         question: 'Given an array of integers...',
       };
 
-      vi.mocked(openRouter.chat.send).mockResolvedValue({
+      vi.mocked(kimi.chat.completions.create).mockResolvedValue({
         choices: [
           {
             message: {
@@ -39,13 +41,13 @@ describe('session.service', () => {
         ],
       } as any);
 
-      const result = await generateOpenRouterContent('Two sum problem in JavaScript');
+      const result = await generateAIContent('Two sum problem in JavaScript');
 
       expect(result).toEqual(mockResponse);
-      expect(openRouter.chat.send).toHaveBeenCalledOnce();
-      expect(openRouter.chat.send).toHaveBeenCalledWith(
+      expect(kimi.chat.completions.create).toHaveBeenCalledOnce();
+      expect(kimi.chat.completions.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          model: 'qwen/qwen3-next-80b-a3b-instruct:free',
+          model: 'moonshotai/kimi-k2-thinking',
           messages: expect.arrayContaining([
             expect.objectContaining({ role: 'user', content: 'Two sum problem in JavaScript' }),
           ]),
@@ -55,8 +57,8 @@ describe('session.service', () => {
 
     it('should handle markdown-wrapped JSON responses', async () => {
       const mockResponse = { title: 'Test', language: 'python', content: 'pass' };
-      
-      vi.mocked(openRouter.chat.send).mockResolvedValue({
+
+      vi.mocked(kimi.chat.completions.create).mockResolvedValue({
         choices: [
           {
             message: {
@@ -66,28 +68,26 @@ describe('session.service', () => {
         ],
       } as any);
 
-      const result = await generateOpenRouterContent('Test prompt');
+      const result = await generateAIContent('Test prompt');
 
       expect(result).toEqual(mockResponse);
     });
 
     it('should throw error when no content is generated', async () => {
-      vi.mocked(openRouter.chat.send).mockResolvedValue({
+      vi.mocked(kimi.chat.completions.create).mockResolvedValue({
         choices: [{ message: { content: null } }],
       } as any);
 
-      // The service wraps errors with "Failed to generate content from OpenRouter"
-      await expect(generateOpenRouterContent('Test')).rejects.toThrow(
-        'Failed to generate content from OpenRouter'
+      await expect(generateAIContent('Test')).rejects.toThrow(
+        'No content generated'
       );
     });
 
     it('should throw error on API failure', async () => {
-      vi.mocked(openRouter.chat.send).mockRejectedValue(new Error('API Error'));
+      vi.mocked(kimi.chat.completions.create).mockRejectedValue(new Error('API Error'));
 
-      await expect(generateOpenRouterContent('Test')).rejects.toThrow(
-        'Failed to generate content from OpenRouter'
-      );
+      await expect(generateAIContent('Test')).rejects.toThrow('API Error');
     });
   });
 });
+
