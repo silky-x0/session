@@ -24,7 +24,11 @@ const randomColor = () =>
     .toString(16)
     .padStart(6, "0");
 
-const username = "User-" + Math.floor(Math.random() * 1000);
+const getNickname = () => {
+  const params = new URLSearchParams(window.location.search);
+  const nickname = params.get("nickname");
+  return nickname ? decodeURIComponent(nickname) : "Anonymous";
+};
 
 interface Metadata {
   title?: string;
@@ -103,7 +107,7 @@ function CollaborativeEditorInner() {
 
     // Set local user state for awareness
     awareness.setLocalStateField("user", {
-      name: username,
+      name: getNickname(),
       color: randomColor(),
     });
 
@@ -403,11 +407,23 @@ export default function CollaborativeEditor() {
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
 
+  // Provide the nickname in initial presence so other Liveblocks hooks (AvatarStack, LiveCursors) can access it
+  const nickname = getNickname();
+  const color = randomColor();
+
   return (
     <ErrorBoundary FallbackComponent={RoomErrorFallback}>
       <RoomProvider
         id={roomId}
-        initialPresence={{ cursor: null, isTyping: false, selectedLineNumber: null }}
+        initialPresence={{
+          cursor: null,
+          isTyping: false,
+          selectedLineNumber: null,
+          info: {
+            name: nickname,
+            color: color,
+          },
+        }}
       >
         <ClientSideSuspense
           fallback={

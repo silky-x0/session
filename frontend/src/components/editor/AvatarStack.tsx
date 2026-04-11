@@ -16,8 +16,8 @@ const UserAvatar = React.memo(function UserAvatar({
   connectionId: number;
 }) {
   const data = useOther(connectionId, (other) => ({
-    name: other.info?.name ?? "Anonymous",
-    color: other.info?.color ?? "#888",
+    name: other.presence.info?.name ?? other.info?.name ?? "Anonymous",
+    color: other.presence.info?.color ?? other.info?.color ?? "#888",
     avatar: other.info?.avatar,
   }));
 
@@ -72,8 +72,8 @@ const UserAvatar = React.memo(function UserAvatar({
  */
 export function AvatarStack() {
   const currentUser = useSelf((me) => ({
-    name: me.info?.name ?? "You",
-    color: me.info?.color ?? "#00FF41",
+    name: me.presence.info?.name ?? me.info?.name ?? "You",
+    color: me.presence.info?.color ?? me.info?.color ?? "#00FF41",
     avatar: me.info?.avatar,
     canWrite: me.canWrite,
   }));

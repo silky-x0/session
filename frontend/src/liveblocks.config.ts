@@ -6,6 +6,10 @@ declare global {
       cursor: { x: number; y: number } | null;
       isTyping: boolean;
       selectedLineNumber: number | null;
+      info?: {
+        name: string;
+        color: string;
+      };
     };
 
     // ─── User Metadata ──────────────────────────────────────────

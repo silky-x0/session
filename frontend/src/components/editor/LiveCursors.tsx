@@ -19,7 +19,10 @@ export default function LiveCursors({ cursorPanel }: Props) {
   const others = useOthersMapped(
     (other) => ({
       cursor: other.presence.cursor,
-      info: other.info,
+      info: {
+        name: other.presence.info?.name ?? other.info?.name,
+        color: other.presence.info?.color ?? other.info?.color,
+      },
     }),
     shallow,
   );
