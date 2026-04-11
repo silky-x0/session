@@ -161,3 +161,12 @@ body {
   border-radius: 3px;
   font-weight: bold;
 }
+
+/* Hide Liveblocks Badge */
+#liveblocks-badge,
+div[id="liveblocks-badge"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
