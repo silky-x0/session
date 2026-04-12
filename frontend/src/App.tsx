@@ -1,20 +1,18 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { LiveblocksProvider } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import LandingPage from "./pages/LandingPage";
+import { AnimatePresence } from "framer-motion";
+import { RouteTransition } from "./components/RouteTransition";
+import HeroText from "./components/ui/hero-shutter-text";
 
 const CodeEditor = lazy(() => import("./components/Editor"));
 
 function EditorLoadingFallback() {
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-muted-foreground text-sm">
-          Loading editor...
-        </span>
-      </div>
+    <div className="h-screen w-screen flex items-center justify-center bg-background fixed inset-0 z-50">
+      <HeroText text="LOADING" hideControls={true} />
     </div>
   );
 }
@@ -48,24 +46,45 @@ function GlobalErrorFallback({
   );
 }
 
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route 
+          path="/" 
+          element={
+            <RouteTransition text="SESSION">
+              <LandingPage />
+            </RouteTransition>
+          } 
+        />
+        <Route
+          path="/editor"
+          element={
+            <RouteTransition text="WORKSPACE">
+              <Suspense fallback={<EditorLoadingFallback />}>
+                <CodeEditor />
+              </Suspense>
+            </RouteTransition>
+          }
+        />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary FallbackComponent={GlobalErrorFallback}>
       <LiveblocksProvider
         publicApiKey={import.meta.env.VITE_LIVEBLOCKS_PUBLIC_KEY as string}
-        // ─── Performance ───
-        throttle={50} // ~20 FPS for smooth cursor updates
-        // ─── Data Safety ───
-        preventUnsavedChanges // Warn before closing tab with pending changes
-        // ─── Connection Resilience ───
-        lostConnectionTimeout={5000} // Fire lost-connection event after 5s
-        // ─── Background Tab Optimization ───
-        backgroundKeepAliveTimeout={15 * 60 * 1000} // Disconnect after 15min inactive
-        // ─── User Resolution ───
-        // Resolves user IDs into display info for Comments/Notifications
+        throttle={50}
+        preventUnsavedChanges
+        lostConnectionTimeout={5000}
+        backgroundKeepAliveTimeout={15 * 60 * 1000}
         resolveUsers={async ({ userIds }) => {
-          // Return user objects matching the UserMeta["info"] shape
-          // In production, fetch from your API. For now, generate from ID.
           return userIds.map((id) => ({
             name: id.startsWith("User-") ? id : `User ${id.slice(0, 6)}`,
             color:
@@ -79,7 +98,6 @@ function App() {
             avatar: undefined,
           }));
         }}
-        // ─── Room Info Resolution (for Notifications) ───
         resolveRoomsInfo={async ({ roomIds }) => {
           return roomIds.map((roomId) => ({
             title: `Room: ${roomId}`,
@@ -88,17 +106,7 @@ function App() {
         }}
       >
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route
-              path="/editor"
-              element={
-                <Suspense fallback={<EditorLoadingFallback />}>
-                  <CodeEditor />
-                </Suspense>
-              }
-            />
-          </Routes>
+          <AnimatedRoutes />
         </BrowserRouter>
       </LiveblocksProvider>
     </ErrorBoundary>
