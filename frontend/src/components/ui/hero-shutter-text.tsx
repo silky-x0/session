@@ -52,7 +52,7 @@ export default function HeroText({
                     animate={{ opacity: 1, filter: "blur(0px)" }}
                     exit={{ opacity: 0, filter: "blur(10px)" }}
                     transition={{ delay: i * 0.04 + 0.3, duration: 0.8 }}
-                    className="leading-none font-black text-zinc-900 dark:text-white tracking-tighter"
+                    className="leading-none font-bold font-mono text-zinc-900 dark:text-white tracking-widest"
                     style={{ fontSize: `min(10vw, ${85 / characters.length}vw)` }}
                   >
                     {char === " " ? "\u00A0" : char}
@@ -68,7 +68,7 @@ export default function HeroText({
                       delay: i * 0.04,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-black text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-tighter"
+                    className="absolute inset-0 leading-none font-bold font-mono text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-widest"
                     style={{ 
                       clipPath: "polygon(0 0, 100% 0, 100% 35%, 0 35%)",
                       fontSize: `min(10vw, ${85 / characters.length}vw)`
@@ -87,7 +87,7 @@ export default function HeroText({
                       delay: i * 0.04 + 0.1,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-black text-zinc-800 dark:text-zinc-200 z-10 pointer-events-none tracking-tighter"
+                    className="absolute inset-0 leading-none font-bold font-mono text-zinc-800 dark:text-zinc-200 z-10 pointer-events-none tracking-widest"
                     style={{
                       clipPath: "polygon(0 35%, 100% 35%, 100% 65%, 0 65%)",
                       fontSize: `min(10vw, ${85 / characters.length}vw)`
@@ -106,7 +106,7 @@ export default function HeroText({
                       delay: i * 0.04 + 0.2,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-black text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-tighter"
+                    className="absolute inset-0 leading-none font-bold font-mono text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-widest"
                     style={{
                       clipPath: "polygon(0 65%, 100% 65%, 100% 100%, 0 100%)",
                       fontSize: `min(10vw, ${85 / characters.length}vw)`
