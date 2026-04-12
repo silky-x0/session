@@ -43,6 +43,8 @@
 
   --color-deep-carbon: hsl(0 0% 2%);
   --color-neon-pulse: hsl(135 70% 45%);
+  --color-gold: #FFD700;
+  --color-neon-orange: #FF6B00;
   --color-muted-emerald: hsl(135 60% 45% / 0.15);
   --color-glass-bg: hsl(0 0% 6% / 0.9);
   --color-glass-border: hsl(0 0% 20%);

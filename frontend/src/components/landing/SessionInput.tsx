@@ -18,7 +18,9 @@ export const SessionInput: React.FC = () => {
   // Ref to track if component is still mounted
   const mountedRef = useRef(true);
   React.useEffect(() => {
-    return () => { mountedRef.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   // Fire AI API call in background
@@ -90,13 +92,12 @@ export const SessionInput: React.FC = () => {
     [pendingRoomId, navigate],
   );
 
-
   return (
     <>
       <div
-        className={`w-full mt-6 sm:mt-10 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-[280px] sm:max-w-xs" : "max-w-[calc(100%-1rem)] sm:max-w-lg"}`}
+        className={`w-full mt-6 sm:mt-8 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-[260px] sm:max-w-[280px]" : "max-w-[calc(100%-1rem)] sm:max-w-md"}`}
       >
-        <div className='flex justify-center mb-4 sm:mb-5'>
+        <div className='flex justify-center mb-4'>
           <div className='relative flex bg-[#1c1c1c] border border-white/5 rounded-full p-1'>
             {/* Animated Background Pill */}
             <div
@@ -107,16 +108,20 @@ export const SessionInput: React.FC = () => {
 
             <button
               onClick={() => setMode("start")}
-              className={`relative z-10 px-3 sm:px-5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
-                mode === "start" ? "text-black" : "text-white/60 hover:text-white"
+              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+                mode === "start"
+                  ? "text-black"
+                  : "text-white/60 hover:text-white"
               }`}
             >
               Start Session
             </button>
             <button
               onClick={() => setMode("join")}
-              className={`relative z-10 px-3 sm:px-5 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors duration-300 ${
-                mode === "join" ? "text-black" : "text-white/60 hover:text-white"
+              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+                mode === "join"
+                  ? "text-black"
+                  : "text-white/60 hover:text-white"
               }`}
             >
               Join Session
@@ -128,7 +133,7 @@ export const SessionInput: React.FC = () => {
           {/* Conic Gradient Border Effect */}
           <div className='absolute -inset-[1px] bg-gradient-to-r from-transparent via-neon-pulse/50 to-transparent rounded-3xl opacity-20 group-hover:opacity-100 transition-opacity duration-500 blur-sm'></div>
 
-          <div className='relative flex items-center bg-[#1f1f1f] rounded-full border-2 border-white/5 p-1 sm:p-1.5 pl-3 sm:pl-5 focus-within:border-white/10 transition-colors'>
+          <div className='relative flex items-center bg-[#1f1f1f] rounded-full border border-white/5 p-1 pl-3 sm:pl-4 focus-within:border-white/10 transition-colors'>
             <input
               type='text'
               value={input}
@@ -144,23 +149,23 @@ export const SessionInput: React.FC = () => {
                   ? "Paste a prompt or start empty…"
                   : "Enter room ID..."
               }
-              className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-xs sm:text-sm disabled:opacity-60'
+              className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-xs sm:text-[13px] disabled:opacity-60 py-1'
             />
             <button
               onClick={handleJoin}
               disabled={showOverlay}
-              className='p-1.5 sm:p-2 bg-neon-pulse rounded-3xl hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0'
+              className='p-1.5 bg-neon-pulse rounded-full hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0'
             >
               <svg
-                width='18'
-                height='18'
+                width='16'
+                height='16'
                 viewBox='0 0 24 24'
                 fill='none'
                 stroke='black'
-                strokeWidth='2'
+                strokeWidth='2.2'
                 strokeLinecap='round'
                 strokeLinejoin='round'
-                className='sm:w-5 sm:h-5'
+                className='sm:w-4 sm:h-4 ml-0.5'
               >
                 <path d='M5 12h14'></path>
                 <path d='M12 5l7 7-7 7'></path>
@@ -179,10 +184,10 @@ export const SessionInput: React.FC = () => {
             roomId={pendingRoomId}
             nicknameOnly={overlayMode === "nickname-only"}
             onEnter={handleEnter}
+            onCancel={() => setShowOverlay(false)}
           />
         )}
       </AnimatePresence>
     </>
   );
 };
-
