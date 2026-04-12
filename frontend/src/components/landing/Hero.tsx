@@ -1,5 +1,6 @@
 import React from "react";
 import { SessionInput } from "./SessionInput";
+import { LinkPreview } from "../ui/link-preview";
 
 export const Hero: React.FC = () => {
   return (
@@ -23,10 +24,17 @@ export const Hero: React.FC = () => {
         </h1>
 
         {/* Subheading */}
-        <p className='font-sans text-text-secondary text-sm sm:text-base max-w-[320px] sm:max-w-lg leading-relaxed px-2'>
-          Session is a real-time collaborative coding environment built for pair
-          programming, interviews, and focused technical discussions with audio,
-          video, and live execution.
+        <p className='font-sans text-white/50 text-sm sm:text-base max-w-[320px] sm:max-w-lg leading-relaxed px-2'>
+          Session is a{" "}
+          <LinkPreview url="#" isStatic imageSrc="/realtime.mp4" className="text-neon-orange/70 hover:text-neon-orange transition-colors font-semibold">real-time</LinkPreview>{" "}
+          collaborative coding environment built for{" "}
+          <LinkPreview url="#" isStatic imageSrc="/realtime.mp4" className="text-neon-orange/70 hover:text-neon-orange transition-colors font-semibold">pair programming</LinkPreview>
+          ,{" "}
+          <LinkPreview url="#" isStatic imageSrc="/cale.mp4" className="text-neon-orange/70 hover:text-neon-orange transition-colors font-semibold">interviews</LinkPreview>
+          , and focused technical discussions with audio, video, and 
+          {" "}
+          <LinkPreview url="#" isStatic imageSrc="/livexec.mp4" className="text-neon-orange/70 hover:text-neon-orange transition-colors font-semibold">live execution</LinkPreview>
+          .
         </p>
       </div>
 
