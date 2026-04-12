@@ -262,13 +262,13 @@ export function OutputPanel({
       className='h-full flex flex-col glass-panel rounded-lg overflow-hidden'
     >
       {/* Header */}
-      <div className='flex items-center justify-between px-4 py-3 border-b border-border bg-card/50'>
-        <div className='flex items-center gap-2'>
-          <Terminal className='w-4 h-4 text-primary' />
-          <span className='text-sm font-semibold text-foreground'>Output</span>
+      <div className='flex items-center justify-between px-3 py-2 border-b border-border bg-card/50'>
+        <div className='flex items-center gap-1.5'>
+          <Terminal className='w-3.5 h-3.5 text-primary' />
+          <span className='text-[11px] font-semibold text-foreground uppercase tracking-wider'>Output</span>
         </div>
 
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center gap-1.5'>
           <motion.button
             onClick={handleRun}
             whileHover={{ scale: 1.05 }}
@@ -281,7 +281,7 @@ export function OutputPanel({
                   ? `"${language}" is not supported for execution`
                   : "Run code"
             }
-            className='flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors border border-primary/30'
+            className='flex items-center gap-1 px-2 py-0.5 rounded pl-1.5 bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-medium transition-colors border border-primary/30 uppercase tracking-wider'
           >
             {isRunning ? (
               <Clock className='w-3 h-3 animate-spin' />
@@ -295,7 +295,7 @@ export function OutputPanel({
             onClick={handleClear}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className='p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors'
+            className='p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors'
           >
             <Trash2 className='w-3.5 h-3.5' />
           </motion.button>

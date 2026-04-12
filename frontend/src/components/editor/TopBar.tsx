@@ -55,18 +55,18 @@ export function TopBar({
     <motion.div
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="min-h-[3rem] sm:min-h-[3.5rem] glass-panel border-b border-border flex flex-wrap items-center justify-between px-2 sm:px-4 py-1.5 sm:py-0 z-10 rounded-lg gap-2"
+      className="min-h-[2.5rem] sm:min-h-[2.75rem] glass-panel border-b border-border flex flex-wrap items-center justify-between px-2 sm:px-3 py-1 sm:py-0 z-10 rounded-lg gap-2"
     >
       {/* Left section - Room Info */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
         <motion.div
-          className="flex items-center gap-1.5 sm:gap-2"
+          className="flex items-center gap-1.5"
           whileHover={{ scale: 1.02 }}
         >
-          <span className="hidden sm:inline text-sm font-medium text-muted-foreground">
-            Room:
+          <span className="hidden sm:inline text-xs font-medium text-muted-foreground mr-0.5">
+            Room
           </span>
-          <code className="font-mono text-primary text-xs sm:text-sm bg-primary/10 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded max-w-[80px] sm:max-w-none truncate">
+          <code className="font-mono text-primary text-[10px] sm:text-[11px] bg-primary/10 px-1.5 py-0.5 rounded max-w-none truncate">
             {roomId}
           </code>
         </motion.div>
@@ -87,14 +87,14 @@ export function TopBar({
       </div>
 
       {/* Center section — Sync + Undo/Redo */}
-      <div className="hidden md:flex items-center gap-2">
+      <div className="hidden md:flex items-center gap-1.5">
         <ErrorBoundary fallback={null}>
           <ClientSideSuspense fallback={null}>
             <SyncStatusBadge />
           </ClientSideSuspense>
         </ErrorBoundary>
 
-        <div className="w-px h-5 bg-border" />
+        <div className="w-px h-4 bg-border mx-1" />
 
         <ErrorBoundary fallback={null}>
           <ClientSideSuspense fallback={null}>
@@ -102,7 +102,7 @@ export function TopBar({
           </ClientSideSuspense>
         </ErrorBoundary>
 
-        <div className="w-px h-5 bg-border" />
+        <div className="w-px h-4 bg-border mx-1" />
 
         {/* Quick reactions (broadcast) */}
         <ErrorBoundary fallback={null}>
@@ -113,27 +113,29 @@ export function TopBar({
       </div>
 
       {/* Right section - Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Notifications */}
-        <NotificationBell />
+        <div className="scale-90 transform origin-right">
+          <NotificationBell />
+        </div>
 
         {!inCall ? (
           <motion.button
             onClick={onJoinAudio}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors text-xs sm:text-sm font-medium cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer"
           >
-            <Phone className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+            <Phone className="w-3 h-3" />
             <span className="hidden sm:inline">Join Audio</span>
           </motion.button>
         ) : (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-primary text-xs sm:text-sm"
+            className="flex items-center gap-1.5 px-2 py-1 text-primary text-[10px] sm:text-[11px]"
           >
-            <PhoneCall className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+            <PhoneCall className="w-3 h-3" />
             <span className="hidden sm:inline">Audio Active</span>
           </motion.div>
         )}
@@ -142,9 +144,9 @@ export function TopBar({
           onClick={onCreateRoom}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg bg-secondary text-foreground hover:bg-secondary/80 transition-colors text-xs sm:text-sm font-medium border border-border cursor-pointer"
+          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors text-[10px] sm:text-[11px] font-medium border border-border cursor-pointer"
         >
-          <Plus className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
+          <Plus className="w-3 h-3" />
           <span className="hidden sm:inline">New Room</span>
         </motion.button>
 
@@ -152,7 +154,7 @@ export function TopBar({
           value={language}
           onChange={(e) => onLanguageChange(e.target.value)}
           whileHover={{ scale: 1.02 }}
-          className="px-1.5 sm:px-3 py-1.5 rounded-lg bg-secondary text-foreground border border-border text-xs sm:text-sm font-mono cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary"
+          className="px-1.5 py-1 rounded-md bg-secondary text-foreground border border-border text-[10px] sm:text-[11px] font-mono cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
         >
           {LANGUAGES.map((lang) => (
             <option key={lang} value={lang} className="bg-card">

@@ -26,7 +26,7 @@ export const Header: React.FC = () => {
         </a>
         <a
           href="/new"
-          className="px-3 py-1.5 rounded-lg bg-neon-pulse text-black uppercase text-[10px] font-semibold tracking-wide shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32),inset_0px_0.06px_0.23px_0px_rgba(255,255,255,0.44)] hover:brightness-110 transition-all font-bold"
+          className="px-3 py-1.5 rounded-lg bg-neon-orange/70 text-black uppercase text-[10px] font-semibold tracking-wide shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32),inset_0px_0.06px_0.23px_0px_rgba(255,255,255,0.44)] hover:brightness-110 transition-all font-bold"
         >
           Sign up
         </a>

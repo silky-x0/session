@@ -31,10 +31,9 @@ const UserAvatar = React.memo(function UserAvatar({
       transition={{ type: "spring", stiffness: 500, damping: 25 }}
       className="relative group"
     >
-      {/* Avatar circle */}
       <div
-        className="w-7 h-7 rounded-full border-2 border-background flex items-center justify-center 
-                   text-[10px] font-bold text-white shadow-lg cursor-default
+        className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[1.5px] border-background flex items-center justify-center 
+                   text-[9px] font-bold text-white shadow-md cursor-default
                    transition-transform duration-200 group-hover:scale-110"
         style={{
           backgroundColor: data.color,
@@ -85,8 +84,8 @@ export function AvatarStack() {
       {/* Current user (always first) */}
       <div className="relative group">
         <div
-          className="w-7 h-7 rounded-full border-2 border-primary/50 flex items-center justify-center 
-                     text-[10px] font-bold text-white shadow-lg cursor-default"
+          className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[1.5px] border-primary/50 flex items-center justify-center 
+                     text-[9px] font-bold text-white shadow-md cursor-default"
           style={{
             backgroundColor: currentUser.color,
             boxShadow: `0 0 10px ${currentUser.color}50`,
@@ -110,7 +109,7 @@ export function AvatarStack() {
           You {!currentUser.canWrite && "(read-only)"}
         </div>
         {/* Online indicator */}
-        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-background" />
+        <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-background" />
       </div>
 
       {/* Other users (stacked with overlap) */}

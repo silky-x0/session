@@ -6,7 +6,7 @@ export const Hero: React.FC = () => {
     <section className='flex flex-col items-center justify-center min-h-[85vh] sm:min-h-[60vh] lg:min-h-[65vh] pt-20 sm:pt-20 lg:pt-25 px-4 relative z-10 gap-10 sm:gap-12'>
       <div className='flex flex-col items-center gap-5 sm:gap-6 max-w-4xl text-center'>
         {/* Main Heading */}
-        <h1 className='flex flex-col items-center gap-0 font-display text-[40px] sm:text-5xl md:text-6xl lg:text-[64px] font-bold leading-[1.1] sm:leading-[0.95] tracking-tight lowercase'>
+        <h1 className='flex flex-col items-center gap-0 font-display text-4xl sm:text-5xl md:text-[56px] font-bold leading-[1.1] sm:leading-[0.95] tracking-tight lowercase'>
           <span className='text-outline'>real-time</span>
 
           <span className='text-white font-normal italic my-1 -tracking-[0.02em]'>
@@ -19,7 +19,7 @@ export const Hero: React.FC = () => {
             </span>
           </span>
 
-          <span className='text-outline'>that matter</span>
+          <span className='text-outline'>that matters</span>
         </h1>
 
         {/* Subheading */}
