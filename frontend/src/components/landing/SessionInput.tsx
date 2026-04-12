@@ -179,6 +179,7 @@ export const SessionInput: React.FC = () => {
             roomId={pendingRoomId}
             nicknameOnly={overlayMode === "nickname-only"}
             onEnter={handleEnter}
+            onCancel={() => setShowOverlay(false)}
           />
         )}
       </AnimatePresence>

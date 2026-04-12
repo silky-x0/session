@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { WeaveSpinner } from "../ui/weave-spinner";
 
@@ -33,6 +34,8 @@ type SessionLoadingScreenProps = {
   nicknameOnly?: boolean;
   /** Called when user submits nickname and is ready to enter */
   onEnter: (nickname: string) => void;
+  /** Called to cancel/abort joining the room */
+  onCancel?: () => void;
 };
 
 export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
@@ -41,6 +44,7 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
   roomId,
   nicknameOnly = false,
   onEnter,
+  onCancel,
 }) => {
   const [statusIndex, setStatusIndex] = useState(0);
   const [nickname, setNickname] = useState("");
@@ -103,6 +107,17 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
     };
   }, []);
 
+  // Handle Escape key to cancel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && onCancel) {
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel]);
+
   const handleNicknameSubmit = () => {
     if (!nickname.trim()) return;
     setNicknameSubmitted(true);
@@ -114,16 +129,30 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
     // Otherwise, wait for AI to finish (handled by the useEffect above)
   };
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" />
+      <div className="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" onClick={onCancel} />
+
+      {/* Close Button */}
+      {onCancel && (
+        <button 
+          onClick={onCancel}
+          className="absolute top-6 right-6 z-20 p-2 text-white/50 hover:text-white transition-colors"
+          aria-label="Cancel and close"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      )}
 
       {/* Content */}
       <motion.div
@@ -263,6 +292,7 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
           </motion.div>
         )}
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 };
