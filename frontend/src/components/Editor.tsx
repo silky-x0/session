@@ -3,7 +3,7 @@ import { editor } from "monaco-editor";
 import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
-import { useRoom } from "@liveblocks/react/suspense";
+import { useRoom, useStatus } from "@liveblocks/react/suspense";
 import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
@@ -46,9 +46,11 @@ type MobilePanel = "editor" | "chat" | "output";
  * Inner component that uses the Liveblocks room.
  * Must be rendered inside a RoomProvider.
  */
-function CollaborativeEditorInner() {
+function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void }) {
   const navigate = useNavigate();
   const room = useRoom();
+  const status = useStatus();
+  const hasCalledReadyRef = useRef(false);
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
   const yMetaObserverRef = useRef<(() => void) | null>(null);
@@ -63,6 +65,14 @@ function CollaborativeEditorInner() {
 
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
+
+  // Signal the parent (RouteTransition) that the room is live
+  useEffect(() => {
+    if (status === "connected" && !hasCalledReadyRef.current) {
+      hasCalledReadyRef.current = true;
+      onRoomReady?.();
+    }
+  }, [status, onRoomReady]);
 
   function handleEditorDidMount(editorInstance: any, monaco: any) {
     console.log("Editor mounted!");
@@ -403,7 +413,7 @@ function RoomErrorFallback({
  * Outer wrapper that extracts roomId from URL and provides the RoomProvider.
  * This is the default export used by App.tsx.
  */
-export default function CollaborativeEditor() {
+export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () => void }) {
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
 
@@ -437,7 +447,7 @@ export default function CollaborativeEditor() {
             </div>
           }
         >
-          <CollaborativeEditorInner />
+          <CollaborativeEditorInner onRoomReady={onRoomReady} />
         </ClientSideSuspense>
       </RoomProvider>
     </ErrorBoundary>

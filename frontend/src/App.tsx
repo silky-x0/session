@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { LiveblocksProvider } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import LandingPage from "./pages/LandingPage";
@@ -48,6 +48,12 @@ function GlobalErrorFallback({
 
 function AnimatedRoutes() {
   const location = useLocation();
+  const [editorReady, setEditorReady] = useState(false);
+
+  // Reset ready state every time we navigate to a fresh route
+  useEffect(() => {
+    setEditorReady(false);
+  }, [location.pathname]);
 
   return (
     <AnimatePresence mode="wait">
@@ -63,9 +69,9 @@ function AnimatedRoutes() {
         <Route
           path="/editor"
           element={
-            <RouteTransition text="WORKSPACE">
+            <RouteTransition text="WORKSPACE" isReady={editorReady}>
               <Suspense fallback={<EditorLoadingFallback />}>
-                <CodeEditor />
+                <CodeEditor onRoomReady={() => setEditorReady(true)} />
               </Suspense>
             </RouteTransition>
           }
