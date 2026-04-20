@@ -1,9 +1,12 @@
 import React from 'react';
 import { Header } from '../components/landing/Header';
 import { Hero } from '../components/landing/Hero';
-import { ImageGrid } from '../components/landing/ImageGrid';
 import { Marquee } from '../components/landing/Marquee';
-import { Footer } from '../components/landing/Footer';
+import { EditorShowcase } from '../components/landing/EditorShowcase';
+import { GeneratorSection } from '../components/landing/GeneratorSection';
+import { TypographyBreak } from '../components/landing/TypographyBreak';
+import { LoveGallery } from '../components/landing/LoveGallery';
+import { FinalCTA } from '../components/landing/FinalCTA';
 
 const LandingPage: React.FC = () => {
     const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
@@ -37,10 +40,12 @@ const LandingPage: React.FC = () => {
             <main className="flex flex-col items-center w-full relative z-10">
                 <Hero />
                 <Marquee />
-                <ImageGrid />
+                <EditorShowcase />
+                <GeneratorSection />
+                <TypographyBreak />
+                <LoveGallery />
+                <FinalCTA />
             </main>
-
-            <Footer />
         </div>
     );
 };
