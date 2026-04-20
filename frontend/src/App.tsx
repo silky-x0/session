@@ -3,6 +3,9 @@ import { Suspense, lazy, useState, useEffect } from "react";
 import { LiveblocksProvider } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import LandingPage from "./pages/LandingPage";
+import FeaturesPage from "./pages/FeaturesPage";
+import PricingPage from "./pages/PricingPage";
+import AboutPage from "./pages/AboutPage";
 import { AnimatePresence } from "framer-motion";
 import { RouteTransition } from "./components/RouteTransition";
 import HeroText from "./components/ui/hero-shutter-text";
@@ -63,6 +66,30 @@ function AnimatedRoutes() {
           element={
             <RouteTransition text="SESSION">
               <LandingPage />
+            </RouteTransition>
+          } 
+        />
+        <Route 
+          path="/features" 
+          element={
+            <RouteTransition text="FEATURES">
+              <FeaturesPage />
+            </RouteTransition>
+          } 
+        />
+        <Route 
+          path="/pricing" 
+          element={
+            <RouteTransition text="PRICING">
+              <PricingPage />
+            </RouteTransition>
+          } 
+        />
+        <Route 
+          path="/about" 
+          element={
+            <RouteTransition text="ABOUT">
+              <AboutPage />
             </RouteTransition>
           } 
         />

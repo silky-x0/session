@@ -17,6 +17,13 @@ export const Header: React.FC = () => {
         </svg>
       </a>
 
+      <nav className="hidden md:flex gap-6 absolute left-1/2 -translate-x-1/2">
+        <a href="/" className="text-white/60 hover:text-white transition-colors text-[10px] font-medium tracking-wide uppercase">Home</a>
+        <a href="/features" className="text-white/60 hover:text-white transition-colors text-[10px] font-medium tracking-wide uppercase">Features</a>
+        <a href="/pricing" className="text-white/60 hover:text-white transition-colors text-[10px] font-medium tracking-wide uppercase">Pricing</a>
+        <a href="/about" className="text-white/60 hover:text-white transition-colors text-[10px] font-medium tracking-wide uppercase">About</a>
+      </nav>
+
       <div className="flex gap-3 items-center">
         <a
           href="/login"
