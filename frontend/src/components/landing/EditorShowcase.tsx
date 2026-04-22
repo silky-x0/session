@@ -1,7 +1,119 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+type FileData = {
+  name: string;
+  language: string;
+  code: string;
+};
+
+const FILES: FileData[] = [
+  {
+    name: "index.ts",
+    language: "typescript",
+    code: `import express from "express"
+import { router } from "./router"
+import { connectDB } from "./db"
+
+const app = express()
+app.use(express.json())
+app.use("/api", router)
+
+connectDB().then(() => app.listen(3000))`,
+  },
+  {
+    name: "router.ts",
+    language: "typescript",
+    code: `import { Router } from "express"
+import { authenticate } from "./auth"
+
+export const router = Router()
+
+router.get("/health", (req, res) => {
+    res.json({ status: "ok" })
+})
+
+router.post("/sessions", authenticate, async (req, res) => {
+    const session = await Session.create(req.body)
+    res.status(201).json(session)
+})`,
+  },
+  {
+    name: "auth.ts",
+    language: "typescript",
+    code: `import jwt from "jsonwebtoken"
+import { Request, Response, NextFunction } from "express"
+
+const SECRET = process.env.JWT_SECRET!
+
+export function authenticate(
+    req: Request, res: Response, next: NextFunction
+) {
+    const token = req.headers.authorization?.split(" ")[1]
+    if (!token) return res.status(401).end()
+
+    req.user = jwt.verify(token, SECRET)
+    next()
+}`,
+  },
+  {
+    name: "db.ts",
+    language: "typescript",
+    code: `import { Pool } from "pg"
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 20,
+})
+
+export async function connectDB() {
+    await pool.connect()
+    console.log("Database connected")
+}
+
+export const query = (sql: string, params?: unknown[]) =>
+    pool.query(sql, params).then(r => r.rows)`,
+  },
+  {
+    name: "tsconfig.json",
+    language: "json",
+    code: `{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"]
+}`,
+  },
+];
+
+const editorTheme: { [key: string]: React.CSSProperties } = {
+  ...vscDarkPlus,
+  'pre[class*="language-"]': {
+    ...(vscDarkPlus['pre[class*="language-"]'] as React.CSSProperties),
+    background: "transparent",
+    margin: 0,
+    padding: 0,
+    fontSize: "inherit",
+    lineHeight: "inherit",
+  },
+  'code[class*="language-"]': {
+    ...(vscDarkPlus['code[class*="language-"]'] as React.CSSProperties),
+    background: "transparent",
+    fontSize: "inherit",
+    lineHeight: "inherit",
+  },
+};
 
 export const EditorShowcase: React.FC = () => {
+  const [activeFile, setActiveFile] = useState(0);
+  const currentFile = FILES[activeFile];
+
   return (
     <section className="relative w-full px-3 sm:px-4 pt-16 sm:pt-24 md:pt-32 pb-10 sm:pb-16 flex flex-col items-center bg-[#050505] z-10 overflow-hidden">
       
@@ -23,7 +135,7 @@ export const EditorShowcase: React.FC = () => {
           </span>
         </h2>
         <p className="font-sans text-white/50 text-sm sm:text-base md:text-lg max-w-xl mx-auto mt-1 sm:mt-2 px-2">
-          Create sessions, execute code, and pair program faster than ever before.
+          Create sessions, execute code, and pair program faster than <br/> ever before.
         </p>
       </div>
 
@@ -36,7 +148,9 @@ export const EditorShowcase: React.FC = () => {
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/20"></div>
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/20"></div>
           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white/20"></div>
-          <div className="mx-auto text-[8px] sm:text-[10px] uppercase tracking-widest font-mono text-white/40">Session // Editor-V1</div>
+          <div className="mx-auto text-[8px] sm:text-[10px] uppercase tracking-widest font-mono text-white/40">
+            Session // {currentFile.name}
+          </div>
         </div>
 
         {/* 3-Column Mockup Interface */}
@@ -46,30 +160,58 @@ export const EditorShowcase: React.FC = () => {
           <div className="w-64 border-r border-white/5 p-4 flex-col gap-4 hidden md:flex">
              <div className="text-xs uppercase tracking-widest text-[#00FF41] font-mono mb-4 border-b border-white/5 pb-2">Workspace</div>
              
-             {['main.py', 'utils.py', 'app.ts', 'server.js', 'package.json'].map((file, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm text-white/50 hover:text-white/80 cursor-default transition-colors">
-                  <div className="w-4 h-4 rounded-sm border border-white/20"></div>
-                  {file}
+             {FILES.map((file, i) => (
+                <div
+                  key={i}
+                  onClick={() => setActiveFile(i)}
+                  className={`flex items-center gap-3 text-sm cursor-pointer transition-colors ${
+                    i === activeFile
+                      ? "text-[#00FF41]"
+                      : "text-white/50 hover:text-white/80"
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-sm border ${
+                    i === activeFile ? "border-[#00FF41]/60 bg-[#00FF41]/10" : "border-white/20"
+                  }`}></div>
+                  {file.name}
                 </div>
              ))}
           </div>
 
           {/* Center Main Canvas */}
-          <div className="flex-1 bg-[#0a0a0a] relative overflow-hidden flex items-center justify-center p-2 sm:p-4 md:p-8">
-             <div className="w-full h-full border border-white/10 rounded-lg sm:rounded-xl bg-black flex flex-col relative">
-                {/* Code Lines Mock */}
-                <div className="p-2 sm:p-4 md:p-6 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed sm:leading-loose w-full max-w-full overflow-hidden text-white/40 select-none">
-                  <div className="flex gap-2 sm:gap-4"><span className="text-white/20 shrink-0">1</span><span className="text-pink-500">import</span> <span className="text-blue-300">React</span> <span className="text-pink-500">from</span> <span className="text-green-300">"react"</span>;</div>
-                  <div className="flex gap-2 sm:gap-4"><span className="text-white/20 shrink-0">2</span></div>
-                  <div className="flex gap-2 sm:gap-4"><span className="text-white/20 shrink-0">3</span><span className="text-pink-500">export const</span> <span className="text-blue-300">MockComponent</span> = () =&gt; {'{'}</div>
-                  <div className="flex gap-2 sm:gap-4 pl-2 sm:pl-4"><span className="text-white/20 shrink-0">4</span><span className="text-[#00FF41]">console</span>.log(<span className="text-green-300">"Real-time execution running..."</span>);</div>
-                  <div className="flex gap-2 sm:gap-4 pl-2 sm:pl-4"><span className="text-white/20 shrink-0">5</span><span className="text-pink-500">return</span> (</div>
-                  <div className="flex gap-2 sm:gap-4 pl-4 sm:pl-8"><span className="text-white/20 shrink-0">6</span>&lt;<span className="text-blue-400">div</span> <span className="text-yellow-200">className</span>=<span className="text-green-300">"absolute inset-0"</span>&gt;</div>
-                  <div className="flex gap-2 sm:gap-4 pl-6 sm:pl-12"><span className="text-white/20 shrink-0">7</span>Collaborative IDE </div>
-                  <div className="flex gap-2 sm:gap-4 pl-4 sm:pl-8"><span className="text-white/20 shrink-0">8</span>&lt;/<span className="text-blue-400">div</span>&gt;</div>
-                  <div className="flex gap-2 sm:gap-4 pl-2 sm:pl-4"><span className="text-white/20 shrink-0">9</span>);</div>
-                  <div className="flex gap-2 sm:gap-4"><span className="text-white/20 shrink-0">10</span>{'}'};</div>
-                </div>
+          <div className="flex-1 bg-[#0a0a0a] relative overflow-hidden flex items-start justify-start p-2 sm:p-4 md:p-8">
+             <div className="w-full h-full border border-white/10 rounded-lg sm:rounded-xl bg-black flex flex-col relative overflow-hidden">
+                {/* Code Block */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeFile}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="p-3 sm:p-4 md:p-6 text-[11px] sm:text-xs md:text-sm leading-relaxed sm:leading-loose w-full overflow-x-auto"
+                  >
+                    <SyntaxHighlighter
+                      language={currentFile.language}
+                      style={editorTheme}
+                      showLineNumbers
+                      lineNumberStyle={{
+                        color: "rgba(255,255,255,0.2)",
+                        minWidth: "1.5em",
+                        paddingRight: "1em",
+                        userSelect: "none",
+                      }}
+                      wrapLines
+                      customStyle={{
+                        background: "transparent",
+                        margin: 0,
+                        padding: 0,
+                      }}
+                    >
+                      {currentFile.code}
+                    </SyntaxHighlighter>
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* Floating cursor mock */}
                 <motion.div 
