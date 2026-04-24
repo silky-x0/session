@@ -6,7 +6,7 @@ import { EditorShowcase } from '../components/landing/EditorShowcase';
 import { GeneratorSection } from '../components/landing/GeneratorSection';
 import { TypographyBreak } from '../components/landing/TypographyBreak';
 import { LoveGallery } from '../components/landing/LoveGallery';
-import { FinalCTA } from '../components/landing/FinalCTA';
+import { CinematicFooter } from '../components/ui/motion-footer';
 
 const LandingPage: React.FC = () => {
     const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
@@ -44,8 +44,9 @@ const LandingPage: React.FC = () => {
                 <GeneratorSection />
                 <TypographyBreak />
                 <LoveGallery />
-                <FinalCTA />
             </main>
+
+            <CinematicFooter />
         </div>
     );
 };
