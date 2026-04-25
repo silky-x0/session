@@ -3,9 +3,10 @@ import { Suspense, lazy, useState, useEffect } from "react";
 import { LiveblocksProvider } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import LandingPage from "./pages/LandingPage";
-import FeaturesPage from "./pages/FeaturesPage";
-import PricingPage from "./pages/PricingPage";
-import AboutPage from "./pages/AboutPage";
+// import FeaturesPage from "./pages/FeaturesPage";
+// import PricingPage from "./pages/PricingPage";
+// import AboutPage from "./pages/AboutPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import { AnimatePresence } from "framer-motion";
 import { RouteTransition } from "./components/RouteTransition";
 import HeroText from "./components/ui/hero-shutter-text";
@@ -69,7 +70,7 @@ function AnimatedRoutes() {
             </RouteTransition>
           } 
         />
-        <Route 
+        {/* <Route 
           path="/features" 
           element={
             <RouteTransition text="FEATURES">
@@ -84,15 +85,15 @@ function AnimatedRoutes() {
               <PricingPage />
             </RouteTransition>
           } 
-        />
-        <Route 
+        /> */}
+        {/* <Route 
           path="/about" 
           element={
             <RouteTransition text="ABOUT">
               <AboutPage />
             </RouteTransition>
           } 
-        />
+        /> */}
         <Route
           path="/editor"
           element={
@@ -103,6 +104,7 @@ function AnimatedRoutes() {
             </RouteTransition>
           }
         />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AnimatePresence>
   );
