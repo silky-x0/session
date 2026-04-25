@@ -53,7 +53,12 @@
   --color-session-green: hsl(135 70% 45%);
   --color-session-dark: hsl(0 0% 2%);
 
-  --animate-marquee: marquee 10s linear infinite;
+  --color-cyber-cyan: #00F0FF;
+  --color-voltage-violet: #BC00FF;
+  --color-warning-amber: #FFB800;
+  --color-deep-depth: #0A0A0F;
+
+  --animate-marquee: marquee 80s linear infinite;
   --animate-border-rotate: border-rotate 4s linear infinite;
 
   @keyframes marquee {
@@ -135,6 +140,16 @@ body {
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(135 70% 45% / 0.5);
+  }
+
+  .mask-gradient {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
   }
 }
 

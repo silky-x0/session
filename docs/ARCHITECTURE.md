@@ -180,6 +180,15 @@ User clicks "Run"
                 → Y.Array("output").push(...)   ← synced to all users
 ```
 
+<br>
+
+> The diagram below illustrates the full Docker execution lifecycle — from the browser "Run" click, through the Express backend, to the ephemeral container and back.
+
+
+<br>
+
+![Docker Execution Service Diagram](../frontend/public/exec-backend.excalidraw.png)
+
 ### Container Constraints
 
 ```json

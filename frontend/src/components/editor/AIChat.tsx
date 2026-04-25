@@ -1,6 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Bot, Send, Sparkles, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 interface Message {
   id: string;
@@ -189,7 +192,37 @@ export function AIChat({ editorRef }: AIChatProps) {
                     : "bg-primary/20 text-foreground border border-primary/30"
                 }`}
               >
-                {message.content}
+                <div className="prose prose-invert prose-xs max-w-none text-xs leading-relaxed">
+                  <ReactMarkdown
+                    components={{
+                      code({ className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || "");
+                        const isBlock = !props.inline && match;
+                        return isBlock ? (
+                          <SyntaxHighlighter
+                            style={vscDarkPlus}
+                            language={match[1]}
+                            PreTag="div"
+                            className="rounded-md text-[11px] my-1"
+                          >
+                            {String(children).replace(/\n$/, "")}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code className="bg-black/30 px-1 py-0.5 rounded text-primary text-[11px]" {...props}>
+                            {children}
+                          </code>
+                        );
+                      },
+                      p({ children }) { return <p className="mb-1 last:mb-0">{children}</p>; },
+                      ul({ children }) { return <ul className="list-disc list-inside mb-1 space-y-0.5">{children}</ul>; },
+                      ol({ children }) { return <ol className="list-decimal list-inside mb-1 space-y-0.5">{children}</ol>; },
+                      li({ children }) { return <li className="text-xs">{children}</li>; },
+                      strong({ children }) { return <strong className="font-semibold text-foreground">{children}</strong>; },
+                    }}
+                  >
+                    {message.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </motion.div>
           ))}
