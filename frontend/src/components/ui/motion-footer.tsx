@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { cn } from "@/lib/utils";
@@ -289,6 +289,8 @@ export function CinematicFooter() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const currentYear = useMemo(() => new Date().getFullYear(), [])
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLES }} />
@@ -362,7 +364,7 @@ export function CinematicFooter() {
               className='text-white/30 text-[10px] md:text-xs font-semibold tracking-widest uppercase order-2 md:order-1'
               style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
-              © 2026 Session. All rights reserved.
+              © {currentYear} Session. All rights reserved.
             </div>
 
             {/* Socials & Back to top */}
