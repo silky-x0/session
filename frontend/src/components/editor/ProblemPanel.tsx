@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Code2, Clock, Lightbulb, Unlock, X, BookOpen, ChevronRight } from "lucide-react";
+import { Code2, Clock, Lightbulb, Unlock, X, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
