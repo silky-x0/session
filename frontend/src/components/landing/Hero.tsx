@@ -26,24 +26,27 @@ export const Hero: React.FC = () => {
         {/* Main Heading */}
         <h1 className='flex flex-col items-center gap-0 font-display text-4xl sm:text-5xl md:text-[56px] font-bold leading-[1.1] sm:leading-[0.95] tracking-tight lowercase'>
           <span className='text-outline'>stop juggling tabs.</span>
-          <span className='text-white font-normal italic my-1 -tracking-[0.02em] flex flex-wrap items-center justify-center gap-x-2 sm:gap-x-3'>
-            your entire{" "}
-            <span className="inline-flex min-w-[140px] sm:min-w-[240px] justify-center overflow-hidden pb-1">
-              <AnimatePresence mode="wait">
+          <motion.span layout className='text-white font-normal italic my-1 -tracking-[0.02em] flex flex-nowrap whitespace-nowrap items-center justify-center gap-x-1.5 sm:gap-x-3 text-[30px] min-[390px]:text-4xl sm:text-inherit'>
+            <motion.span layout transition={{ duration: 1, ease: "easeInOut" }}>
+              your entire{" "}
+            </motion.span>
+            <motion.span layout className='relative inline-flex min-w-[140px] sm:min-w-[240px] justify-center overflow-hidden pb-1'>
+              <AnimatePresence mode='popLayout'>
                 <motion.span
+                  layout
                   key={wordIndex}
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -20, opacity: 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className='text-stroke-green text-transparent'
+                  className='text-stroke-green text-transparent whitespace-nowrap'
                   style={{ WebkitTextStroke: "1px #00FF41" }}
                 >
                   {WORDS[wordIndex]}
                 </motion.span>
               </AnimatePresence>
-            </span>
-          </span>
+            </motion.span>
+          </motion.span>
           <span className='text-outline' style={{ textTransform: "none" }}>
             ONE{" "}
             <span
@@ -92,8 +95,8 @@ export const Hero: React.FC = () => {
 
         {/* Trust / social proof line */}
         <p className='font-mono text-[10px] sm:text-[11px] text-white/20 tracking-wide text-center'>
-  no setup · no credit card · just describe your session
-</p>
+          no setup · no credit card · just describe your session
+        </p>
       </div>
 
       {/* SessionInput — naturally flows after text */}
