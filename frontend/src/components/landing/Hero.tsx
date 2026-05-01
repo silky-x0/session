@@ -30,7 +30,7 @@ export const Hero: React.FC = () => {
             <motion.span layout transition={{ duration: 1, ease: "easeInOut" }}>
               your entire{" "}
             </motion.span>
-            <motion.span layout className='relative inline-flex min-w-[140px] sm:min-w-[240px] justify-center overflow-hidden pb-1'>
+            <motion.span layout className='relative inline-flex justify-center overflow-hidden pb-1'>
               <AnimatePresence mode='popLayout'>
                 <motion.span
                   layout
