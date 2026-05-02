@@ -303,13 +303,8 @@ export function CinematicFooter() {
       >
         {/* Fixed footer behind content */}
         <footer
-          className='fixed bottom-0 left-0 flex h-screen w-full flex-col justify-between overflow-hidden text-white cinematic-footer-wrapper'
-          style={{ backgroundColor: "#050505" }}
+          className='fixed bottom-0 left-0 flex h-screen w-full flex-col justify-between overflow-hidden text-white cinematic-footer-wrapper bg-gradient-to-b from-transparent via-[#050505] via-80% to-[#050505]'
         >
-          {/* Ambient Neon Glow & Grid */}
-          <div className='footer-aurora absolute left-1/2 top-1/2 h-[60vh] w-[80vw] -translate-x-1/2 -translate-y-1/2 animate-footer-breathe rounded-[50%] blur-[80px] pointer-events-none z-0' />
-          <div className='footer-bg-grid absolute inset-0 z-0 pointer-events-none' />
-
           {/* Giant background text */}
           <div
             ref={giantTextRef}
