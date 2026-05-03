@@ -16,7 +16,7 @@ const CodeEditor = lazy(() => import("./components/Editor"));
 function EditorLoadingFallback() {
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-background fixed inset-0 z-50">
-      <HeroText text="LOADING" hideControls={true} />
+      <HeroText text="LOADING" />
     </div>
   );
 }
