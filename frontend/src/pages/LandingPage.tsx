@@ -5,7 +5,7 @@ import { Marquee } from '../components/landing/Marquee';
 import { EditorShowcase } from '../components/landing/EditorShowcase';
 import { GeneratorSection } from '../components/landing/GeneratorSection';
 import { TypographyBreak } from '../components/landing/TypographyBreak';
-import { LoveGallery } from '../components/landing/LoveGallery';
+import { FeatureGallery } from '../components/landing/FeatureGallery';
 import { CinematicFooter } from '../components/ui/motion-footer';
 
 const LandingPage: React.FC = () => {
@@ -43,7 +43,7 @@ const LandingPage: React.FC = () => {
                 <EditorShowcase />
                 <GeneratorSection />
                 <TypographyBreak />
-                <LoveGallery />
+                <FeatureGallery />
             </main>
 
             <CinematicFooter />

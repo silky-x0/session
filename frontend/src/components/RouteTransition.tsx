@@ -73,7 +73,6 @@ export function RouteTransition({ children, text, isReady }: RouteTransitionProp
           >
             <HeroText
               text={text}
-              hideControls={true}
               isExiting={isTextExiting}
               className="bg-session-dark dark:bg-zinc-950"
             />

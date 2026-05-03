@@ -1,115 +1,100 @@
 "use client";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RefreshCw } from "lucide-react";
 
 interface HeroTextProps {
   text?: string;
   className?: string;
-  hideControls?: boolean;
   isExiting?: boolean;
 }
 
 export default function HeroText({
   text = "SESSION",
   className = "",
-  hideControls = false,
   isExiting = false,
 }: HeroTextProps) {
-  const [count, setCount] = useState(0);
   const characters = text.split("");
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center h-full w-full 
-      bg-white dark:bg-zinc-950 transition-colors duration-700 ${className}`}
+      className={`relative flex flex-col items-center justify-center w-full bg-transparent ${className}`}
     >
-      {/* Immersive Background Grid */}
-      <div
-        className="absolute inset-0 opacity-[0.05] dark:opacity-[0.15] pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(to right, #888 1px, transparent 1px), linear-gradient(to bottom, #888 1px, transparent 1px)`,
-          backgroundSize: "clamp(20px, 5vw, 60px) clamp(20px, 5vw, 60px)",
-        }}
-      />
+      <div className='absolute left-1/2 top-1/2 h-[250px] w-[60vw] max-w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(0,255,65,0.07)_0%,rgba(0,240,255,0.03)_40%,transparent_70%)] blur-[60px] pointer-events-none z-0' />
 
-      {/* Main Text Container */}
-      <div className="relative z-10 w-full px-4 flex flex-col items-center">
-        <AnimatePresence mode="wait">
+      <div className='relative z-10 w-full px-4 flex flex-col items-center'>
+        <AnimatePresence mode='wait'>
           {!isExiting && (
-            <motion.div
-              key={count}
-              className="flex flex-wrap justify-center items-center w-full"
-            >
+            <motion.div className='flex flex-wrap justify-center items-center w-full'>
               {characters.map((char, i) => (
                 <div
                   key={i}
-                  className="relative px-[0.1vw] overflow-hidden group"
+                  className='relative px-[0.2vw] overflow-hidden group'
                 >
-                  {/* Main Character */}
                   <motion.span
-                    initial={{ opacity: 0, filter: "blur(10px)" }}
-                    animate={{ opacity: 1, filter: "blur(0px)" }}
+                    initial={{ opacity: 0, filter: "blur(10px)", scale: 0.95 }}
+                    animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
                     exit={{ opacity: 0, filter: "blur(10px)" }}
-                    transition={{ delay: i * 0.04 + 0.3, duration: 0.8 }}
-                    className="leading-none font-bold font-mono text-zinc-900 dark:text-white tracking-widest"
-                    style={{ fontSize: `min(10vw, ${85 / characters.length}vw)` }}
+                    transition={{
+                      delay: i * 0.05 + 0.3,
+                      duration: 0.8,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
+                    className='leading-none font-black font-display text-white tracking-tighter'
+                    style={{
+                      fontSize: `min(15vw, ${100 / characters.length}vw)`,
+                    }}
                   >
                     {char === " " ? "\u00A0" : char}
                   </motion.span>
 
-                  {/* Top Slice Layer */}
                   <motion.span
                     initial={{ x: "-100%", opacity: 0 }}
                     animate={{ x: "100%", opacity: [0, 1, 0] }}
                     exit={{ x: ["100%", "-100%"], opacity: [0, 1, 0] }}
                     transition={{
-                      duration: 0.7,
+                      duration: 0.9,
                       delay: i * 0.04,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-bold font-mono text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-widest"
-                    style={{ 
+                    className='absolute inset-0 leading-none font-black font-display text-[#00F0FF] z-10 pointer-events-none tracking-tighter mix-blend-screen'
+                    style={{
                       clipPath: "polygon(0 0, 100% 0, 100% 35%, 0 35%)",
-                      fontSize: `min(10vw, ${85 / characters.length}vw)`
+                      fontSize: `min(15vw, ${100 / characters.length}vw)`,
                     }}
                   >
                     {char}
                   </motion.span>
 
-                  {/* Middle Slice Layer */}
                   <motion.span
                     initial={{ x: "100%", opacity: 0 }}
                     animate={{ x: "-100%", opacity: [0, 1, 0] }}
                     exit={{ x: ["-100%", "100%"], opacity: [0, 1, 0] }}
                     transition={{
-                      duration: 0.7,
+                      duration: 0.9,
                       delay: i * 0.04 + 0.1,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-bold font-mono text-zinc-800 dark:text-zinc-200 z-10 pointer-events-none tracking-widest"
+                    className='absolute inset-0 leading-none font-black font-display text-white z-10 pointer-events-none tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]'
                     style={{
                       clipPath: "polygon(0 35%, 100% 35%, 100% 65%, 0 65%)",
-                      fontSize: `min(10vw, ${85 / characters.length}vw)`
+                      fontSize: `min(15vw, ${100 / characters.length}vw)`,
                     }}
                   >
                     {char}
                   </motion.span>
 
-                  {/* Bottom Slice Layer */}
                   <motion.span
                     initial={{ x: "-100%", opacity: 0 }}
                     animate={{ x: "100%", opacity: [0, 1, 0] }}
                     exit={{ x: ["100%", "-100%"], opacity: [0, 1, 0] }}
                     transition={{
-                      duration: 0.7,
+                      duration: 0.9,
                       delay: i * 0.04 + 0.2,
                       ease: "easeInOut",
                     }}
-                    className="absolute inset-0 leading-none font-bold font-mono text-indigo-600 dark:text-emerald-400 z-10 pointer-events-none tracking-widest"
+                    className='absolute inset-0 leading-none font-black font-display text-[#00FF41] z-10 pointer-events-none tracking-tighter mix-blend-screen'
                     style={{
                       clipPath: "polygon(0 65%, 100% 65%, 100% 100%, 0 100%)",
-                      fontSize: `min(10vw, ${85 / characters.length}vw)`
+                      fontSize: `min(15vw, ${100 / characters.length}vw)`,
                     }}
                   >
                     {char}
@@ -120,30 +105,6 @@ export default function HeroText({
           )}
         </AnimatePresence>
       </div>
-
-      {!hideControls && (
-        <>
-          {/* Floating UI Controls */}
-          <div className="absolute bottom-12 flex flex-col items-center gap-6 z-20">
-            <motion.button
-              whileHover={{ scale: 1.1, rotate: 180 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setCount((c) => c + 1)}
-              className="p-4 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full shadow-2xl transition-colors duration-300"
-            >
-              <RefreshCw size={24} />
-            </motion.button>
-
-            <p className="text-[10px] uppercase tracking-[0.5em] font-bold text-zinc-400 dark:text-zinc-500">
-              Click to re-shutter
-            </p>
-          </div>
-
-          {/* Corner Accents */}
-          <div className="absolute top-8 left-8 border-l border-t border-zinc-200 dark:border-zinc-800 w-12 h-12" />
-          <div className="absolute bottom-8 right-8 border-r border-b border-zinc-200 dark:border-zinc-800 w-12 h-12" />
-        </>
-      )}
     </div>
   );
 }
