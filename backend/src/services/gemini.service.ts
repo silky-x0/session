@@ -18,9 +18,10 @@ export type AIRawResponse = {
   question: string;
 };
 
-export const generateAIContentGemini = async (prompt: string): Promise<AIRawResponse> => {
-
-    const systemPrompt = `
+export const generateAIContentGemini = async (
+  prompt: string,
+): Promise<AIRawResponse> => {
+  const systemPrompt = `
   You are an expert technical interview coach. The user will provide a problem or topic.
   Return a raw JSON object (no markdown) with this structure:
   {
@@ -46,28 +47,23 @@ export const generateAIContentGemini = async (prompt: string): Promise<AIRawResp
   Ensure the 'content' includes clear comments explaining the logic for pair learning.
 `;
 
-    const response = await ai.models.generateContent({
-        model: SESSION_MODEL,
-        contents: prompt,
-        config: {
-            systemInstruction: systemPrompt,
-            responseMimeType: "application/json",
-            thinkingConfig: {
-              thinkingBudget:10,
-            },
-        },
-         
-    });
+  const response = await ai.models.generateContent({
+    model: SESSION_MODEL,
+    contents: prompt,
+    config: {
+      systemInstruction: systemPrompt,
+      responseMimeType: "application/json",
+      thinkingConfig: {
+        thinkingBudget: 10,
+      },
+    },
+  });
 
-    const raw = response.text;
+  const raw = response.text;
 
-    console.log(raw);
+  if (!raw) {
+    throw new AppError(501, "No content generated");
+  }
 
-    if (!raw) {
-      throw new AppError(501, "No content generated");
-    }
-
-    console.log(JSON.parse(raw));
-
-    return JSON.parse(raw);
+  return JSON.parse(raw);
 };

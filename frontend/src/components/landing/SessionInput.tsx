@@ -9,22 +9,17 @@ export const SessionInput: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Overlay state
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayMode, setOverlayMode] = useState<"ai" | "nickname-only">("ai");
   const [aiReady, setAiReady] = useState(false);
   const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
 
-  // Ref to track if component is still mounted
-  const mountedRef = useRef(true);
-  React.useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  // abort controller
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Fire AI API call in background
   const startAISession = useCallback(async (prompt: string) => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = new AbortController();
     try {
       setIsLoading(true);
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:1234";
@@ -32,26 +27,33 @@ export const SessionInput: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
+        signal: abortControllerRef.current.signal,
       });
 
       if (!response.ok) throw new Error("Failed to create AI session");
 
       const data = await response.json();
-      if (mountedRef.current) {
-        setPendingRoomId(data.roomId);
-        setAiReady(true);
-      }
+
+      setPendingRoomId(data.roomId);
+      setAiReady(true);
     } catch (error) {
-      console.error("❌ Error creating AI session:", error);
+      if (abortControllerRef.current?.signal.aborted) return;
+      console.error(" Error creating AI session:", error);
+
       // Fallback: create a plain room
-      if (mountedRef.current) {
-        const fallbackId = crypto.randomUUID().slice(0, 8);
-        setPendingRoomId(fallbackId);
-        setAiReady(true);
-      }
+
+      const fallbackId = crypto.randomUUID().slice(0, 8);
+      setPendingRoomId(fallbackId);
+      setAiReady(true);
     } finally {
-      if (mountedRef.current) setIsLoading(false);
+      setIsLoading(false);
     }
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, []);
 
   const handleJoin = () => {
