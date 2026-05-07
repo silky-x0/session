@@ -4,9 +4,9 @@
   <br />
   <br />
   
-  <h3>Get 10X more out of your pair programming sessions</h3>
+  <h3>the coding room that thinks with you</h3>
   
-  <p>A real-time collaborative coding environment built for pair programming, technical interviews, and focused coding discussions — with live code sync, AI assistance, and more.</p>
+  <p>Stop juggling tabs. Session gives interviewers and engineers a shared live IDE, AI-generated questions tuned to experience level, audio &amp; video, and post-session analysis — all from a single link. No setup. No credit card.</p>
 
   <br />
 
@@ -46,12 +46,13 @@
 | Category | What's Included |
 |---|---|
 | **Real-Time Collaboration** | Live code sync via Yjs + Liveblocks, Monaco Editor (VS Code engine), multi-language support, live cursors & selections with user colors |
-| **AI Assistance** | AI-powered session bootstrap (generates problem + starter code), integrated AI chat panel, powered by OpenRouter (Kimi model) |
+| **AI Assistance** | AI-generated questions tuned to experience level, integrated AI chat panel, session bootstrap (problem + starter code), powered by OpenRouter (Kimi model) |
 | **Code Execution** | Docker-isolated execution for Python, JavaScript, C, C++ — shared output synced to all collaborators |
-| **Interview Mode** | Problem panel with difficulty, hints system, complexity display, solution reveal |
-| **Premium UI/UX** | Glassmorphism, dark mode, JetBrains Mono, Framer Motion transitions, route-aware shutter animations |
+| **Interview Mode** | Problem panel with difficulty, hints system, complexity display, solution reveal, post-session analysis |
+| **Audio & Video** | Built-in audio & video calls so interviewers and candidates share one room — no Zoom, no context switch |
+| **Premium UI/UX** | Deep Carbon & Neon Pulse design system, glassmorphism, JetBrains Mono, Framer Motion transitions, route-aware shutter animations |
 | **Presence** | Avatar stack, live cursors, sync status badge, connection loss toasts |
-| **Coming Soon** | WebRTC audio calls, Excalidraw whiteboard, follow-me cursor, execution queue |
+| **Coming Soon** | Excalidraw whiteboard, follow-me cursor, execution queue |
 
 ---
 
@@ -94,7 +95,9 @@ session/
 │       │   │                     # LiveCursors, AvatarStack, ConnectionToast,
 │       │   │                     # BroadcastProvider, NotificationsPanel...
 │       │   ├── landing/          # Hero, SessionInput, SessionLoadingScreen,
-│       │   │                     # Header, Footer, Marquee...
+│       │   │                     # Header, Marquee, EditorShowcase,
+│       │   │                     # GeneratorSection, TypographyBreak,
+│       │   │                     # FeatureGallery, CinematicFooter...
 │       │   ├── ui/               # hero-shutter-text, weave-spinner, link-preview
 │       │   ├── Editor.tsx        # RoomProvider + CollaborativeEditorInner
 │       │   └── RouteTransition.tsx

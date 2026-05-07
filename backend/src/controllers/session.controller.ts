@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { seedLiveblocksRoom } from "../services/liveblocks.service";
-import { generateAIContent } from "../services/session.service";
+// import { generateAIContent } from "../services/session.service";
+import { generateAIContentGemini } from "../services/gemini.service";
 import { normalizeLanguage } from "../utils/languageMapper";
 import { AppError } from "../middleware/errorHandler";
 
@@ -14,8 +15,12 @@ export const createAiSession = async (
     throw new AppError(400, "Prompt is required");
   }
 
-  // Generate content from AI
-  const aiResponse = await generateAIContent(prompt);
+  // Generate content from AI (Kimi)
+    // const aiResponse = await generateAIContent(prompt);
+
+  // Generate content (Gemini)
+  const aiResponse = await generateAIContentGemini(prompt)
+
 
   const normalizedLanguage = normalizeLanguage(aiResponse.language);
 

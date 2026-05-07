@@ -126,7 +126,6 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
     if (nicknameOnly && roomId) {
       onEnter(nickname.trim());
     }
-    // Otherwise, wait for AI to finish (handled by the useEffect above)
   };
 
   return createPortal(
@@ -135,21 +134,33 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      className='fixed inset-0 z-[9999] flex items-center justify-center p-4'
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-[#050505]/90 backdrop-blur-xl" onClick={onCancel} />
+      <div
+        className='absolute inset-0 bg-[#050505]/90 backdrop-blur-xl'
+        onClick={onCancel}
+      />
 
       {/* Close Button */}
       {onCancel && (
-        <button 
+        <button
           onClick={onCancel}
-          className="absolute top-6 right-6 z-20 p-2 text-white/50 hover:text-white transition-colors"
-          aria-label="Cancel and close"
+          className='absolute top-6 right-6 z-20 p-2 text-white/50 hover:text-white transition-colors'
+          aria-label='Cancel and close'
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+          <svg
+            width='24'
+            height='24'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          >
+            <line x1='18' y1='6' x2='6' y2='18'></line>
+            <line x1='6' y1='6' x2='18' y2='18'></line>
           </svg>
         </button>
       )}
@@ -159,7 +170,7 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
-        className="relative z-10 flex flex-col items-center gap-8 max-w-md w-full px-6"
+        className='relative z-10 flex flex-col items-center gap-8 max-w-md w-full px-6'
       >
         {/* Spinner — always visible during AI loading */}
         {!nicknameOnly && isLoadingAI && (
@@ -174,14 +185,14 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
 
         {/* Status messages (before nickname input) */}
         {!nicknameOnly && !showNicknameInput && (
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode='wait'>
             <motion.p
               key={statusIndex}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="text-white/70 text-sm font-mono tracking-wide text-center"
+              className='text-white/70 text-sm font-mono tracking-wide text-center'
             >
               {STATUS_MESSAGES[statusIndex]}
             </motion.p>
@@ -196,58 +207,58 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="flex flex-col items-center gap-5 w-full"
+              className='flex flex-col items-center gap-5 w-full'
             >
               {/* Question */}
-              <div className="text-center">
+              <div className='text-center'>
                 {!nicknameOnly && (
-                  <p className="text-white/40 text-xs font-mono mb-2">
+                  <p className='text-white/40 text-xs font-mono mb-2'>
                     but before that…
                   </p>
                 )}
-                <h2 className="text-white text-lg sm:text-xl font-semibold">
+                <h2 className='text-white text-lg sm:text-xl font-semibold'>
                   What should others call you?
                 </h2>
-                <p className="text-white/40 text-xs mt-1.5">
+                <p className='text-white/40 text-xs mt-1.5'>
                   Your nickname will be visible to collaborators
                 </p>
               </div>
 
               {/* Input */}
-              <div className="relative group w-full max-w-xs">
+              <div className='relative group w-full max-w-xs'>
                 {/* Glow border */}
-                <div className="absolute -inset-[1px] bg-gradient-to-r from-transparent via-[#00FF41]/50 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm" />
+                <div className='absolute -inset-[1px] bg-gradient-to-r from-transparent via-[#00FF41]/50 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm' />
 
-                <div className="relative flex items-center bg-[#1a1a1a] rounded-2xl border border-white/10 p-1 pl-4 focus-within:border-[#00FF41]/30 transition-colors">
+                <div className='relative flex items-center bg-[#1a1a1a] rounded-2xl border border-white/10 p-1 pl-4 focus-within:border-[#00FF41]/30 transition-colors'>
                   <input
                     ref={inputRef}
-                    type="text"
+                    type='text'
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleNicknameSubmit();
                     }}
-                    placeholder="Enter your nickname…"
+                    placeholder='Enter your nickname…'
                     maxLength={20}
-                    className="flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-sm"
+                    className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-sm'
                   />
                   <button
                     onClick={handleNicknameSubmit}
                     disabled={!nickname.trim()}
-                    className="p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                    className='p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0'
                   >
                     <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="black"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      width='16'
+                      height='16'
+                      viewBox='0 0 24 24'
+                      fill='none'
+                      stroke='black'
+                      strokeWidth='2.5'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
                     >
-                      <path d="M5 12h14" />
-                      <path d="M12 5l7 7-7 7" />
+                      <path d='M5 12h14' />
+                      <path d='M12 5l7 7-7 7' />
                     </svg>
                   </button>
                 </div>
@@ -261,38 +272,38 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center gap-4"
+            className='flex flex-col items-center gap-4'
           >
-            <p className="text-[#00FF41] text-sm font-mono">
-              Welcome, <span className="font-bold">{nickname}</span>
+            <p className='text-[#00FF41] text-sm font-mono'>
+              Welcome, <span className='font-bold'>{nickname}</span>
             </p>
 
             {/* Fun fact card */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode='wait'>
               <motion.div
                 key={factIndex}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.4 }}
-                className="bg-white/5 border border-white/10 rounded-xl px-5 py-3 max-w-sm"
+                className='bg-white/5 border border-white/10 rounded-xl px-5 py-3 max-w-sm'
               >
-                <p className="text-white/30 text-[10px] font-mono uppercase tracking-widest mb-1">
+                <p className='text-white/30 text-[10px] font-mono uppercase tracking-widest mb-1'>
                   Did you know?
                 </p>
-                <p className="text-white/60 text-xs leading-relaxed">
+                <p className='text-white/60 text-xs leading-relaxed'>
                   {CODING_FACTS[factIndex]}
                 </p>
               </motion.div>
             </AnimatePresence>
 
-            <p className="text-white/30 text-xs font-mono animate-pulse">
+            <p className='text-white/30 text-xs font-mono animate-pulse'>
               Waiting for AI to finish…
             </p>
           </motion.div>
         )}
       </motion.div>
     </motion.div>,
-    document.body
+    document.body,
   );
 };
