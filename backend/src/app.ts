@@ -19,7 +19,9 @@ app.use(express.json());
 
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
-
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", message: "Server is running" });
+});
 app.use(errorHandler);
 
 export default app;
