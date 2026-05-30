@@ -6,6 +6,11 @@ import {
   Undo2,
   Redo2,
   Zap,
+  Flame,
+  ThumbsUp,
+  PartyPopper,
+  Lightbulb,
+  Eye,
 } from "lucide-react";
 import { useStatus, useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react/suspense";
 import { ClientSideSuspense } from "@liveblocks/react/suspense";
@@ -37,7 +42,13 @@ const LANGUAGES = [
   "json",
 ];
 
-const REACTION_EMOJIS = ["🔥", "👍", "🎉", "💡", "👀"];
+const REACTION_ICONS = [
+  { id: "flame", Icon: Flame },
+  { id: "thumbsUp", Icon: ThumbsUp },
+  { id: "party", Icon: PartyPopper },
+  { id: "bulb", Icon: Lightbulb },
+  { id: "eye", Icon: Eye },
+];
 
 /**
  * Top bar with room info, connection status (useStatus), avatar stack,
@@ -242,16 +253,16 @@ function ReactionButtons() {
   return (
     <div className="flex items-center gap-0.5">
       <Zap className="w-3 h-3 text-muted-foreground mr-1" />
-      {REACTION_EMOJIS.map((emoji) => (
+      {REACTION_ICONS.map(({ id, Icon }) => (
         <motion.button
-          key={emoji}
-          onClick={() => sendReaction(emoji)}
+          key={id}
+          onClick={() => sendReaction(id)}
           whileHover={{ scale: 1.3 }}
           whileTap={{ scale: 0.8 }}
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary/50 
-                     transition-colors cursor-pointer text-sm"
+                     transition-colors cursor-pointer text-primary/80 hover:text-primary"
         >
-          {emoji}
+          <Icon className="w-3.5 h-3.5" />
         </motion.button>
       ))}
     </div>
