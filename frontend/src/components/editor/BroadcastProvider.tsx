@@ -5,6 +5,16 @@ import {
   useSelf,
 } from "@liveblocks/react/suspense";
 import { motion, AnimatePresence } from "framer-motion";
+import React from "react";
+import { Flame, ThumbsUp, PartyPopper, Lightbulb, Eye, MapPin } from "lucide-react";
+
+const ICON_MAP: Record<string, React.ElementType> = {
+  flame: Flame,
+  thumbsUp: ThumbsUp,
+  party: PartyPopper,
+  bulb: Lightbulb,
+  eye: Eye,
+};
 
 type PingAnimation = {
   id: string;
@@ -86,7 +96,7 @@ export function BroadcastProvider({
             className="fixed top-4 left-1/2 -translate-x-1/2 z-[9998] pointer-events-none"
           >
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/15 border border-primary/30 backdrop-blur-xl shadow-xl">
-              <span className="text-primary text-sm animate-pulse">📍</span>
+              <MapPin className="w-4 h-4 text-primary animate-pulse" />
               <span className="text-sm text-foreground">
                 <strong className="text-primary">{ping.fromUser}</strong> pinged
                 line {ping.lineNumber}
@@ -105,9 +115,13 @@ export function BroadcastProvider({
             animate={{ opacity: 1, y: -20, scale: 1.5 }}
             exit={{ opacity: 0, y: -80, scale: 0.3 }}
             transition={{ duration: 2, ease: "easeOut" }}
-            className="fixed bottom-20 right-10 z-[9998] pointer-events-none text-4xl"
+            className="fixed bottom-20 right-10 z-[9998] pointer-events-none"
           >
-            {reaction.emoji}
+            {reaction.emoji && ICON_MAP[reaction.emoji] ? (
+              React.createElement(ICON_MAP[reaction.emoji], { className: "w-8 h-8 text-primary drop-shadow-[0_0_8px_hsl(var(--color-primary)/0.5)]" })
+            ) : (
+              <span className="text-4xl">{reaction.emoji}</span>
+            )}
           </motion.div>
         ))}
       </AnimatePresence>

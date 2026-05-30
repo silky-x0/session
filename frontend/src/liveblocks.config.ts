@@ -9,6 +9,7 @@ declare global {
       info?: {
         name: string;
         color: string;
+        avatarSeed?: string;
       };
     };
 
@@ -20,6 +21,7 @@ declare global {
         name: string;
         color: string;
         avatar?: string;
+        avatarSeed?: string;
       };
     };
 

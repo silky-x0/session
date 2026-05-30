@@ -420,6 +420,8 @@ export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () 
   // Provide the nickname in initial presence so other Liveblocks hooks (AvatarStack, LiveCursors) can access it
   const nickname = getNickname();
   const color = randomColor();
+  // Include a random integer 1-100 in the seed for variety as requested
+  const avatarSeed = `${nickname}-${Math.floor(Math.random() * 100) + 1}`;
 
   return (
     <ErrorBoundary FallbackComponent={RoomErrorFallback}>
@@ -432,6 +434,7 @@ export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () 
           info: {
             name: nickname,
             color: color,
+            avatarSeed: avatarSeed,
           },
         }}
       >

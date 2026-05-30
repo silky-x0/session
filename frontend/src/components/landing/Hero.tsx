@@ -18,10 +18,6 @@ export const Hero: React.FC = () => {
   return (
     <section className='flex flex-col items-center justify-center min-h-[75vh] sm:min-h-[55vh] lg:min-h-[60vh] pt-12 sm:pt-16 lg:pt-20 px-4 relative z-10 gap-10 sm:gap-12'>
       <div className='flex flex-col items-center gap-5 sm:gap-6 max-w-4xl text-center'>
-        {/* Eyebrow — orients the visitor instantly */}
-        <p className='font-mono text-[10px] sm:text-[11px] text-white/30 border border-white/10 px-3 py-1 rounded-full'>
-          the coding room that thinks with you
-        </p>
 
         {/* Main Heading */}
         <h1 className='flex flex-col items-center gap-0 font-display text-4xl sm:text-5xl md:text-[56px] font-bold leading-[1.1] sm:leading-[0.95] tracking-tight lowercase'>
