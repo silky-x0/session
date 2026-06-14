@@ -4,7 +4,7 @@ import { config } from "./config/env";
 import { errorHandler } from "./middleware/errorHandler";
 import aiRoutes from "./routes/ai.routes";
 import codeRoutes from "./routes/code.routes";
-
+import webhookRoutes from "./routes/webhook.routes";
 const app = express();
 
 app.use(
@@ -15,10 +15,15 @@ app.use(
     credentials: config.cors.credentials,
   }),
 );
+
+app.use("/webhook",express.raw({type: "application/json"}), webhookRoutes);
+
 app.use(express.json());
 
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
+
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok", message: "Server is running" });
 });
