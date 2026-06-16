@@ -203,3 +203,59 @@ User clicks "Run"
 ```
 
 > **Planned**: Execution queue to throttle concurrent container requests and prevent host resource exhaustion.
+
+---
+
+## Room Lifecycle & Ephemeral Cleanup
+
+Rooms are created by the AI session service and are considered **ephemeral** — they should be automatically deleted when all users leave and nobody returns within 15 minutes.
+
+### Overview
+
+![Room Cleanup Architecture](room-cleanup-arch.png)
+
+### Components
+
+| File | Role |
+|---|---|
+| `middleware/verifyLiveblocksWebhook.ts` | Verifies Liveblocks HMAC webhook signature using raw request body |
+| `controllers/webhook.controller.ts` | Dispatcher — routes `userLeft` / `userEntered` events to their handlers |
+| `controllers/userleft.controller.ts` | Schedules room deletion when `numActiveUsers === 0` |
+| `controllers/userentered.controller.ts` | Cancels pending deletion when a user re-enters |
+| `queues/roomDeletion.queue.ts` | BullMQ queue — `scheduleRoomDeletion()` + `cancelRoomDeletion()` helpers |
+| `workers/roomDeletion.worker.ts` | Processes fired jobs — safety re-check + `liveblocks.deleteRoom()` |
+| `config/redis.ts` | Shared IORedis connection (`maxRetriesPerRequest: null` required by BullMQ) |
+
+### Deletion Flow
+
+```
+Liveblocks → POST /webhook
+  → verifyLiveblocksWebhook (HMAC check)
+    → handleWebhook (event type dispatcher)
+
+[userLeft, numActiveUsers === 0]
+  → scheduleRoomDeletion(roomId, 15min)
+    → BullMQ: queue.add(roomId, { roomId }, { jobId: roomId, delay: 15min, attempts: 3 })
+      → Job persisted in Redis (survives server restarts)
+
+[userEntered]
+  → cancelRoomDeletion(roomId)
+    → BullMQ: queue.remove(roomId)  ← no-op if job already fired/gone
+
+[Job fires after 15min delay]
+  → roomDeletion.worker.ts processor
+    → liveblocks.getActiveUsers(roomId)
+      → if users present → abort (log DELETION_ABORTED)
+      → if empty → liveblocks.deleteRoom(roomId)
+        → success: log DELETION_SUCCESS
+        → failure: re-throw → BullMQ retries (3x, exponential backoff: 5s base)
+```
+
+### Key Design Decisions
+
+- **Idempotency via `jobId: roomId`** — BullMQ silently rejects a second `queue.add()` with the same `jobId` if the job is still pending. Safe to call `scheduleRoomDeletion` multiple times for the same room.
+- **Redis persistence** — delayed jobs survive backend restarts. A `setTimeout` alternative would lose all pending timers on every deploy.
+- **Safety re-check in the worker** — the 15-minute window is a race condition surface. A user could re-enter after the job fires but before `cancelRoomDeletion` ran. The `getActiveUsers` check guards against deleting an occupied room.
+- **Exponential backoff** — on Liveblocks API failure, BullMQ waits 5s → 10s → 20s before retrying (up to 3 attempts total).
+- **Worker started as side-effect import** — `index.ts` uses `import "./workers/roomDeletion.worker"` — the `Worker` constructor starts listening on import, no explicit `.run()` call needed. Same pattern as `initializeWebSocketServer`.
+

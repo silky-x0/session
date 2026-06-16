@@ -25,6 +25,8 @@ PORT
 FRONTEND_URL       ← your Vercel URL
 OPEN_ROUTER_KEY
 LIVEBLOCKS_SECRET_KEY
+LIVEBLOCKS_WEBHOOK_SECRET   ← from Liveblocks Dashboard → Webhooks
+REDIS_URL                    ← from Redis Cloud (rediss://... with TLS)
 ```
 
 See [ENV_VARS.md](./ENV_VARS.md) for full reference.
@@ -58,6 +60,24 @@ Add a `vercel.json` in the `frontend/` directory to handle React Router client-s
   ]
 }
 ```
+
+---
+
+## Redis Cloud
+
+The BullMQ room-deletion queue requires a Redis instance. The free **30 MB** tier on [Redis Cloud](https://redis.io/cloud/) is sufficient.
+
+| Setting | Value |
+|---|---|
+| **Provider** | Redis Cloud (redis.io) |
+| **Tier** | Free 30 MB |
+| **Eviction Policy** | `noeviction` (change in database settings — free tier defaults to `volatile-lru`) |
+
+Construct the connection URL from the Redis Cloud dashboard's connection snippet:
+```
+rediss://default:<password>@<host>:<port>
+```
+> Use `rediss://` (with double `s`) for TLS — required on Redis Cloud production databases.
 
 ---
 
