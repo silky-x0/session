@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { WebhookEvent } from "@liveblocks/node";
+import { handleUserLeft } from "./userleft.controller";
+import { handleUserEntered } from "./userentered.controller";
 
 export const handleWebhook = async (
   req: Request,
@@ -8,15 +10,9 @@ export const handleWebhook = async (
   const event = (req as any).liveblocks as WebhookEvent;
 
   if (event.type === "userLeft") {
-    const { roomId, numActiveUsers } = event.data;
-    // Phase 3: if numActiveUsers === 0 → scheduleRoomDeletion(roomId)
-    console.log(`[USER_LEFT] roomId=${roomId} activeUsers=${numActiveUsers}`);
-  }
-
-  if (event.type === "userEntered") {
-    const { roomId } = event.data;
-    // Phase 3: cancelRoomDeletion(roomId) + broadcastDeletionPending if job exists
-    console.log(`[USER_ENTERED] roomId=${roomId}`);
+    await handleUserLeft(event);
+  } else if (event.type === "userEntered") {
+    await handleUserEntered(event);
   }
 
   res.status(200).send("OK");

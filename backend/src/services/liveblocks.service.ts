@@ -1,10 +1,5 @@
-import { config } from "../config/env";
 import * as Y from "yjs";
-import { Liveblocks } from "@liveblocks/node";
-
-const liveblocks = new Liveblocks({
-  secret: config.liveBlockSecretKey,
-});
+import { liveblocks } from "../config/liveblock";
 
 type AIResponse = {
   content: string;
