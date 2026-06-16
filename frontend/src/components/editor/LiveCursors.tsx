@@ -67,7 +67,7 @@ export default function LiveCursors({ cursorPanel }: Props) {
           <Cursor
             key={id}
             name={other.info?.name ?? "Anonymous"}
-            color={other.info?.color ?? "#00FF41"}
+            color={other.info?.color ?? "var(--color-neon-pulse)"}
             x={other.cursor.x}
             y={other.cursor.y}
           />

@@ -5,6 +5,7 @@ import {
   useSelf,
 } from "@liveblocks/react/suspense";
 import { motion, AnimatePresence } from "framer-motion";
+import { DiceBearAvatar } from "./DiceBearAvatar";
 
 /**
  * Renders a single avatar for a specific user by connectionId.
@@ -17,8 +18,9 @@ const UserAvatar = React.memo(function UserAvatar({
 }) {
   const data = useOther(connectionId, (other) => ({
     name: other.presence.info?.name ?? other.info?.name ?? "Anonymous",
-    color: other.presence.info?.color ?? other.info?.color ?? "#888",
+    color: other.presence.info?.color ?? other.info?.color ?? "var(--color-muted-foreground)",
     avatar: other.info?.avatar,
+    avatarSeed: other.presence.info?.avatarSeed ?? other.info?.avatarSeed,
   }));
 
   if (!data) return null;
@@ -34,7 +36,7 @@ const UserAvatar = React.memo(function UserAvatar({
       <div
         className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[1.5px] border-background flex items-center justify-center 
                    text-[9px] font-bold text-white shadow-md cursor-default
-                   transition-transform duration-200 group-hover:scale-110"
+                   transition-transform duration-200 group-hover:scale-110 overflow-hidden"
         style={{
           backgroundColor: data.color,
           boxShadow: `0 0 8px ${data.color}40`,
@@ -47,7 +49,7 @@ const UserAvatar = React.memo(function UserAvatar({
             className="w-full h-full rounded-full object-cover"
           />
         ) : (
-          data.name.charAt(0).toUpperCase()
+          <DiceBearAvatar seed={data.avatarSeed ?? data.name} size={24} className="w-full h-full" />
         )}
       </div>
 
@@ -72,8 +74,9 @@ const UserAvatar = React.memo(function UserAvatar({
 export function AvatarStack() {
   const currentUser = useSelf((me) => ({
     name: me.presence.info?.name ?? me.info?.name ?? "You",
-    color: me.presence.info?.color ?? me.info?.color ?? "#00FF41",
+    color: me.presence.info?.color ?? me.info?.color ?? "var(--color-neon-pulse)",
     avatar: me.info?.avatar,
+    avatarSeed: me.presence.info?.avatarSeed ?? me.info?.avatarSeed,
     canWrite: me.canWrite,
   }));
 
@@ -85,7 +88,7 @@ export function AvatarStack() {
       <div className="relative group">
         <div
           className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-[1.5px] border-primary/50 flex items-center justify-center 
-                     text-[9px] font-bold text-white shadow-md cursor-default"
+                     text-[9px] font-bold text-white shadow-md cursor-default overflow-hidden"
           style={{
             backgroundColor: currentUser.color,
             boxShadow: `0 0 10px ${currentUser.color}50`,
@@ -98,7 +101,7 @@ export function AvatarStack() {
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            currentUser.name.charAt(0).toUpperCase()
+            <DiceBearAvatar seed={currentUser.avatarSeed ?? currentUser.name} size={24} className="w-full h-full" />
           )}
         </div>
         <div

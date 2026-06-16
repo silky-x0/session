@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { WeaveSpinner } from "../ui/weave-spinner";
+import { DiceBearAvatar } from "../editor/DiceBearAvatar";
 
 // Rotating status messages shown while AI generates content
 const STATUS_MESSAGES = [
@@ -53,6 +54,8 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
   const [factIndex, setFactIndex] = useState(
     Math.floor(Math.random() * CODING_FACTS.length),
   );
+  // Stable random suffix for this session to match room logic if needed
+  const seedSuffix = useRef(Math.floor(Math.random() * 100) + 1);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Cycle through status messages
@@ -225,42 +228,48 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
               </div>
 
               {/* Input */}
-              <div className='relative group w-full max-w-xs'>
-                {/* Glow border */}
-                <div className='absolute -inset-[1px] bg-gradient-to-r from-transparent via-[#00FF41]/50 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm' />
+              <div className="flex items-center gap-4 w-full max-w-sm">
+                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-[#1a1a1a] border border-white/10 flex items-center justify-center overflow-hidden shadow-lg">
+                  <DiceBearAvatar seed={`${nickname || "anonymous"}-${seedSuffix.current}`} size={48} className="w-full h-full" />
+                </div>
+                
+                <div className='relative group flex-1'>
+                  {/* Glow border */}
+                  <div className='absolute -inset-[1px] bg-gradient-to-r from-transparent via-[#00FF41]/50 to-transparent rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 blur-sm' />
 
-                <div className='relative flex items-center bg-[#1a1a1a] rounded-2xl border border-white/10 p-1 pl-4 focus-within:border-[#00FF41]/30 transition-colors'>
-                  <input
-                    ref={inputRef}
-                    type='text'
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleNicknameSubmit();
-                    }}
-                    placeholder='Enter your nickname…'
-                    maxLength={20}
-                    className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-sm'
-                  />
-                  <button
-                    onClick={handleNicknameSubmit}
-                    disabled={!nickname.trim()}
-                    className='p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0'
-                  >
-                    <svg
-                      width='16'
-                      height='16'
-                      viewBox='0 0 24 24'
-                      fill='none'
-                      stroke='black'
-                      strokeWidth='2.5'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
+                  <div className='relative flex items-center bg-[#1a1a1a] rounded-2xl border border-white/10 p-1 pl-4 focus-within:border-[#00FF41]/30 transition-colors'>
+                    <input
+                      ref={inputRef}
+                      type='text'
+                      value={nickname}
+                      onChange={(e) => setNickname(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleNicknameSubmit();
+                      }}
+                      placeholder='Enter your nickname…'
+                      maxLength={20}
+                      className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-sm'
+                    />
+                    <button
+                      onClick={handleNicknameSubmit}
+                      disabled={!nickname.trim()}
+                      className='p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0'
                     >
-                      <path d='M5 12h14' />
-                      <path d='M12 5l7 7-7 7' />
-                    </svg>
-                  </button>
+                      <svg
+                        width='16'
+                        height='16'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='black'
+                        strokeWidth='2.5'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      >
+                        <path d='M5 12h14' />
+                        <path d='M12 5l7 7-7 7' />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

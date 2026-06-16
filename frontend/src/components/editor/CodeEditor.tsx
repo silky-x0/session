@@ -6,7 +6,7 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 function EditorLoader() {
   return (
-    <div className='h-full w-full flex items-center justify-center bg-[#050505]'>
+    <div className='h-full w-full flex items-center justify-center bg-background'>
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ repeat: Infinity, duration: 1, ease: "linear" }}

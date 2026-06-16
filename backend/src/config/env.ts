@@ -21,4 +21,7 @@ export const config = {
     origin: getCorsOrigin(),
     credentials: process.env.NODE_ENV === 'production',
   },
+  liveBlocksWebhookSecret: process.env.LIVEBLOCKS_WEBHOOK_SECRET!,
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+
 };

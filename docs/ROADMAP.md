@@ -7,8 +7,13 @@ Items here are tracked loosely. For structured feature planning per mode, see `f
 - [ ] Fix AI chat output sync with collaborators
 - [ ] Add execution queue to throttle concurrent Docker requests (prevent host resource exhaustion)
 
+## Completed
+
+- [x] Ephemeral room deletion — BullMQ + Redis delayed jobs, Liveblocks webhook integration, idempotent scheduling, safety re-check in worker
+
 ## Planned
 
+- [ ] Orphaned room cron job — delete rooms that were created but never joined
 - [ ] WebRTC audio/video calls (WebRTC peer-to-peer)
 - [ ] Excalidraw whiteboard integration
 - [ ] "Follow me" cursor mode (click avatar → viewport tracks them)
@@ -29,4 +34,5 @@ Items here are tracked loosely. For structured feature planning per mode, see `f
 
 ---
 
-_Last updated: April 2026_
+_Last updated: June 2026_
+

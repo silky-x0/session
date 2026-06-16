@@ -96,6 +96,9 @@ npm run dev
 - **`BroadcastProvider`** must wrap any component that uses Liveblocks broadcast events
 - **`Y.Map("meta")`** is the source of truth for problem metadata in the editor
 - **Docker execution** requires the images to be pre-pulled on the host — the backend does not auto-pull
+- **Liveblocks webhook route** uses `express.raw({ type: "application/json" })` — `req.body` is a raw `Buffer`, not parsed JSON. Always pass `req.body.toString()` to `webhookHandler.verifyRequest()`
+- **BullMQ requires `maxRetriesPerRequest: null`** on the IORedis connection — omitting it causes BullMQ to throw on startup
+- **Worker is started via side-effect import** in `index.ts` — never call `.run()` manually; the `Worker` constructor begins polling Redis automatically
 
 ---
 

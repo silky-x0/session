@@ -15,14 +15,18 @@ PORT="1234"
 FRONTEND_URL="http://localhost:5173"
 OPEN_ROUTER_KEY="sk-or-v1-..."
 LIVEBLOCKS_SECRET_KEY="sk_..."
+LIVEBLOCKS_WEBHOOK_SECRET="wh_..."
+REDIS_URL="redis://default:<password>@<host>:<port>"
 ```
 
-| Variable               | Required | Description                                            | Example                    |
-|------------------------|----------|--------------------------------------------------------|----------------------------|
-| `PORT`                 | ✅        | HTTP server port                                       | `1234`                     |
-| `FRONTEND_URL`         | ✅        | Frontend origin — used in CORS allow-list              | `http://localhost:5173`    |
-| `OPEN_ROUTER_KEY`      | ✅        | OpenRouter API key for AI problem generation & chat    | `sk-or-v1-...`             |
-| `LIVEBLOCKS_SECRET_KEY`| ✅        | Liveblocks secret key for server-side room seeding     | `sk_prod_...`              |
+| Variable                       | Required | Description                                                          | Example                                      |
+|--------------------------------|----------|----------------------------------------------------------------------|----------------------------------------------|
+| `PORT`                         | ✅        | HTTP server port                                                     | `1234`                                       |
+| `FRONTEND_URL`                 | ✅        | Frontend origin — used in CORS allow-list                            | `http://localhost:5173`                      |
+| `OPEN_ROUTER_KEY`              | ✅        | OpenRouter API key for AI problem generation & chat                  | `sk-or-v1-...`                               |
+| `LIVEBLOCKS_SECRET_KEY`        | ✅        | Liveblocks secret key for server-side room seeding & active users    | `sk_prod_...`                                |
+| `LIVEBLOCKS_WEBHOOK_SECRET`    | ✅        | Liveblocks webhook signing secret — used to verify incoming webhooks | `wh_...`                                     |
+| `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue               | `redis://default:pass@host:port`             |
 
 ---
 
