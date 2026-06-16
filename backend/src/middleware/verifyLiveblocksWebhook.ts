@@ -8,7 +8,7 @@ export const verifyLiveblocksWebhook = (req: Request,res: Response,next: NextFun
     try {
         const event = webhookHandler.verifyRequest({
             headers: req.headers,
-            rawBody: req.body,
+            rawBody: req.body.toString(),
         });
 
         (req as any).liveblocks = event;

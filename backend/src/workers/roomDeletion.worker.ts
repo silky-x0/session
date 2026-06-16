@@ -8,18 +8,19 @@ const roomDeletionWorker = new Worker(
   async (job) => {
     const { roomId } = job.data;
 
+    console.log(`[Worker] Picked up job to delete room: ${roomId}`);
     const activeUsers = await liveblocks.getActiveUsers(roomId);
 
     if (activeUsers.data.length > 0) {
-        //log deletion aborted
+        console.log(`[Worker] Deletion aborted for ${roomId} — active users found!`);
         return;
     }
 
     try {
       await liveblocks.deleteRoom(roomId);
-      //log deletion successfull
-    } catch(err) {
-      //log error
+      console.log(`[Worker] Successfully deleted room: ${roomId}`);
+    } catch(err: any) {
+      console.error(`[Worker] Error deleting room ${roomId}:`, err.message);
       throw err // re-throw so bullmq retries
     }
 
