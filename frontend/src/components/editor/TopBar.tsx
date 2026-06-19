@@ -11,6 +11,7 @@ import {
   PartyPopper,
   Lightbulb,
   Eye,
+  Settings,
 } from "lucide-react";
 import { useStatus, useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react/suspense";
 import { ClientSideSuspense } from "@liveblocks/react/suspense";
@@ -27,6 +28,7 @@ interface TopBarProps {
   onJoinAudio: () => void;
   onCreateRoom: () => void;
   onLanguageChange: (lang: string) => void;
+  onOpenSettings?: () => void;
 }
 
 const LANGUAGES = [
@@ -61,6 +63,7 @@ export function TopBar({
   onJoinAudio,
   onCreateRoom,
   onLanguageChange,
+  onOpenSettings,
 }: TopBarProps) {
   return (
     <motion.div
@@ -77,7 +80,7 @@ export function TopBar({
           <span className="hidden sm:inline text-xs font-medium text-muted-foreground mr-0.5">
             Room
           </span>
-          <code className="font-mono text-primary text-[10px] sm:text-[11px] bg-primary/10 px-1.5 py-0.5 rounded max-w-none truncate">
+          <code className="font-mono text-cyber-cyan text-[10px] sm:text-[11px] bg-cyber-cyan/10 px-1.5 py-0.5 rounded max-w-none truncate border border-cyber-cyan/20">
             {roomId}
           </code>
         </motion.div>
@@ -135,7 +138,7 @@ export function TopBar({
             onClick={onJoinAudio}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 hover:bg-cyber-cyan/20 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer"
           >
             <Phone className="w-3 h-3" />
             <span className="hidden sm:inline">Join Audio</span>
@@ -144,7 +147,7 @@ export function TopBar({
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex items-center gap-1.5 px-2 py-1 text-primary text-[10px] sm:text-[11px]"
+            className="flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]"
           >
             <PhoneCall className="w-3 h-3" />
             <span className="hidden sm:inline">Audio Active</span>
@@ -160,6 +163,18 @@ export function TopBar({
           <Plus className="w-3 h-3" />
           <span className="hidden sm:inline">New Room</span>
         </motion.button>
+
+        {onOpenSettings && (
+          <motion.button
+            onClick={onOpenSettings}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center justify-center p-1.5 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors border border-border cursor-pointer h-[26px] w-[26px]"
+            title="Editor & Theme Settings"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </motion.button>
+        )}
 
         <motion.select
           value={language}
@@ -177,6 +192,7 @@ export function TopBar({
     </motion.div>
   );
 }
+
 
 /**
  * Real-time connection status using useStatus hook.
@@ -260,7 +276,7 @@ function ReactionButtons() {
           whileHover={{ scale: 1.3 }}
           whileTap={{ scale: 0.8 }}
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary/50 
-                     transition-colors cursor-pointer text-primary/80 hover:text-primary"
+                     transition-colors cursor-pointer text-cyber-cyan/80 hover:text-cyber-cyan"
         >
           <Icon className="w-3.5 h-3.5" />
         </motion.button>

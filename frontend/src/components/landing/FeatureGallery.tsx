@@ -24,7 +24,7 @@ export const FeatureGallery: React.FC = () => {
         <h2 className='font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-widest flex flex-wrap justify-center items-center gap-3'>
           <span className='text-white/80'>One room.</span>
           <span className='text-white/40 mx-2'>/</span>
-          <span className='text-voltage-violet rounded-lg px-3 py-1 drop-shadow-[0_0_15px_rgba(188,0,255,0.4)] bg-voltage-violet/10 border border-voltage-violet/20'>
+          <span className='text-cyber-cyan rounded-lg px-3 py-1 drop-shadow-[0_0_15px_rgba(0,240,255,0.4)] bg-cyber-cyan/10 border border-cyber-cyan/20'>
             every workflow.
           </span>
         </h2>

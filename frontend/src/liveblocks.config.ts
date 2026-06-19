@@ -34,7 +34,18 @@ declare global {
           type: "SYSTEM";
           message: string;
           severity: "info" | "warning" | "error";
-        };
+        }
+      | {
+          type: "WHITEBOARD_DRAW";
+          x0: number;
+          y0: number;
+          x1: number;
+          y1: number;
+          color: string;
+          lineWidth: number;
+        }
+      | { type: "WHITEBOARD_CLEAR" };
+
 
     // ─── Thread Metadata ────────────────────────────────────────
     ThreadMetadata: {
