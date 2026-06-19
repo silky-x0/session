@@ -42,7 +42,9 @@ declare global {
           color: string;
           lineWidth: number;
         }
-      | { type: "WHITEBOARD_CLEAR" };
+      | { type: "WHITEBOARD_CLEAR" }
+      | { type: "EXCALIDRAW_SYNC"; elements: string }
+      | { type: "EXCALIDRAW_REQUEST_STATE" };
 
 
     // ─── Thread Metadata ────────────────────────────────────────

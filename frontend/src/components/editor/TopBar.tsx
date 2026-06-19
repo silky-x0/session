@@ -1,25 +1,17 @@
 import { motion } from "framer-motion";
+import { Phone, PhoneCall, Plus, Undo2, Redo2, Settings } from "lucide-react";
 import {
-  Phone,
-  PhoneCall,
-  Plus,
-  Undo2,
-  Redo2,
-  Zap,
-  Flame,
-  ThumbsUp,
-  PartyPopper,
-  Lightbulb,
-  Eye,
-  Settings,
-} from "lucide-react";
-import { useStatus, useUndo, useRedo, useCanUndo, useCanRedo } from "@liveblocks/react/suspense";
+  useStatus,
+  useUndo,
+  useRedo,
+  useCanUndo,
+  useCanRedo,
+} from "@liveblocks/react/suspense";
 import { ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { AvatarStack } from "./AvatarStack";
 import { SyncStatusBadge } from "./SyncStatusBadge";
 import { NotificationBell } from "./NotificationsPanel";
-import { useSendReaction } from "./BroadcastProvider";
 
 interface TopBarProps {
   roomId: string;
@@ -29,6 +21,10 @@ interface TopBarProps {
   onCreateRoom: () => void;
   onLanguageChange: (lang: string) => void;
   onOpenSettings?: () => void;
+  activeMainView?: "code" | "whiteboard";
+  onActiveMainViewChange?: (view: "code" | "whiteboard") => void;
+  collaboratorsInEditor?: any[];
+  collaboratorsInWhiteboard?: any[];
 }
 
 const LANGUAGES = [
@@ -44,14 +40,6 @@ const LANGUAGES = [
   "json",
 ];
 
-const REACTION_ICONS = [
-  { id: "flame", Icon: Flame },
-  { id: "thumbsUp", Icon: ThumbsUp },
-  { id: "party", Icon: PartyPopper },
-  { id: "bulb", Icon: Lightbulb },
-  { id: "eye", Icon: Eye },
-];
-
 /**
  * Top bar with room info, connection status (useStatus), avatar stack,
  * sync status badge, undo/redo, broadcast reactions, and notifications.
@@ -64,24 +52,28 @@ export function TopBar({
   onCreateRoom,
   onLanguageChange,
   onOpenSettings,
+  activeMainView,
+  onActiveMainViewChange,
+  collaboratorsInEditor,
+  collaboratorsInWhiteboard,
 }: TopBarProps) {
   return (
     <motion.div
-      id="topbar-panel"
+      id='topbar-panel'
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="min-h-[2.5rem] sm:min-h-[2.75rem] glass-panel border-b border-border flex flex-wrap items-center justify-between px-2 sm:px-3 py-1 sm:py-0 z-10 rounded-lg gap-2"
+      className='mt-0.5 sm:mt-1 lg:mt-1.5 min-h-[2.5rem] sm:min-h-[2.75rem] glass-panel border-b border-border flex flex-wrap items-center justify-between px-2 sm:px-3 py-1 sm:py-0 z-10 rounded-lg gap-2'
     >
       {/* Left section - Room Info */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className='flex items-center gap-2 sm:gap-3'>
         <motion.div
-          className="flex items-center gap-1.5"
+          className='flex items-center gap-1.5'
           whileHover={{ scale: 1.02 }}
         >
-          <span className="hidden sm:inline text-xs font-medium text-muted-foreground mr-0.5">
+          <span className='hidden sm:inline text-xs font-medium text-muted-foreground mr-0.5'>
             Room
           </span>
-          <code className="font-mono text-cyber-cyan text-[10px] sm:text-[11px] bg-cyber-cyan/10 px-1.5 py-0.5 rounded max-w-none truncate border border-cyber-cyan/20">
+          <code className='font-mono text-muted-foreground text-[10px] sm:text-[11px] bg-secondary px-1.5 py-0.5 rounded max-w-none truncate border border-border'>
             {roomId}
           </code>
         </motion.div>
@@ -102,14 +94,14 @@ export function TopBar({
       </div>
 
       {/* Center section — Sync + Undo/Redo */}
-      <div className="hidden md:flex items-center gap-1.5">
+      <div className='hidden md:flex items-center gap-1.5'>
         <ErrorBoundary fallback={null}>
           <ClientSideSuspense fallback={null}>
             <SyncStatusBadge />
           </ClientSideSuspense>
         </ErrorBoundary>
 
-        <div className="w-px h-4 bg-border mx-1" />
+        <div className='w-px h-4 bg-border mx-1' />
 
         <ErrorBoundary fallback={null}>
           <ClientSideSuspense fallback={null}>
@@ -117,20 +109,63 @@ export function TopBar({
           </ClientSideSuspense>
         </ErrorBoundary>
 
-        <div className="w-px h-4 bg-border mx-1" />
+        <div className='w-px h-4 bg-border mx-1' />
 
-        {/* Quick reactions (broadcast) */}
-        <ErrorBoundary fallback={null}>
-          <ClientSideSuspense fallback={null}>
-            <ReactionButtons />
-          </ClientSideSuspense>
-        </ErrorBoundary>
+        {/* Workspace Code/Board Toggle */}
+        {activeMainView && onActiveMainViewChange && (
+          <div className='flex items-center gap-1 p-0.5 bg-secondary/50 border border-glass-border/40 rounded-full select-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] backdrop-blur-md'>
+            <button
+              onClick={() => onActiveMainViewChange("code")}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
+                activeMainView === "code"
+                  ? "bg-primary/20 text-primary border border-primary/30 shadow-md shadow-primary/5"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Code
+              {collaboratorsInEditor &&
+                collaboratorsInEditor.length > 0 &&
+                activeMainView !== "code" && (
+                  <span
+                    style={{
+                      backgroundColor:
+                        collaboratorsInEditor[0].presence?.info?.color ||
+                        "var(--color-primary)",
+                    }}
+                    className='absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full animate-pulse border border-background shadow-md'
+                  />
+                )}
+            </button>
+            <button
+              onClick={() => onActiveMainViewChange("whiteboard")}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
+                activeMainView === "whiteboard"
+                  ? "bg-primary/20 text-primary border border-primary/30 shadow-md shadow-primary/5"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Board
+              {collaboratorsInWhiteboard &&
+                collaboratorsInWhiteboard.length > 0 &&
+                activeMainView !== "whiteboard" && (
+                  <span
+                    style={{
+                      backgroundColor:
+                        collaboratorsInWhiteboard[0].presence?.info?.color ||
+                        "var(--color-primary)",
+                    }}
+                    className='absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full animate-pulse border border-background shadow-md'
+                  />
+                )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Right section - Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className='flex items-center gap-1.5 sm:gap-2'>
         {/* Notifications */}
-        <div className="scale-90 transform origin-right">
+        <div className='scale-90 transform origin-right'>
           <NotificationBell />
         </div>
 
@@ -139,19 +174,19 @@ export function TopBar({
             onClick={onJoinAudio}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 hover:bg-cyber-cyan/20 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer"
+            className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-foreground border border-glass-border/30 hover:bg-muted/20 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer'
           >
-            <Phone className="w-3 h-3" />
-            <span className="hidden sm:inline">Join Audio</span>
+            <Phone className='w-3 h-3' />
+            <span className='hidden sm:inline'>Join Audio</span>
           </motion.button>
         ) : (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]"
+            className='flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]'
           >
-            <PhoneCall className="w-3 h-3" />
-            <span className="hidden sm:inline">Audio Active</span>
+            <PhoneCall className='w-3 h-3' />
+            <span className='hidden sm:inline'>Audio Active</span>
           </motion.div>
         )}
 
@@ -159,10 +194,10 @@ export function TopBar({
           onClick={onCreateRoom}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors text-[10px] sm:text-[11px] font-medium border border-border cursor-pointer"
+          className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors text-[10px] sm:text-[11px] font-medium border border-border cursor-pointer'
         >
-          <Plus className="w-3 h-3" />
-          <span className="hidden sm:inline">New Room</span>
+          <Plus className='w-3 h-3' />
+          <span className='hidden sm:inline'>New Room</span>
         </motion.button>
 
         {onOpenSettings && (
@@ -170,10 +205,10 @@ export function TopBar({
             onClick={onOpenSettings}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center justify-center p-1.5 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors border border-border cursor-pointer h-[26px] w-[26px]"
-            title="Editor & Theme Settings"
+            className='flex items-center justify-center p-1.5 rounded-md bg-secondary text-foreground hover:bg-secondary/80 transition-colors border border-border cursor-pointer h-[26px] w-[26px]'
+            title='Editor & Theme Settings'
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className='w-3.5 h-3.5' />
           </motion.button>
         )}
 
@@ -181,10 +216,10 @@ export function TopBar({
           value={language}
           onChange={(e) => onLanguageChange(e.target.value)}
           whileHover={{ scale: 1.02 }}
-          className="px-1.5 py-1 rounded-md bg-secondary text-foreground border border-border text-[10px] sm:text-[11px] font-mono cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
+          className='px-1.5 py-1 rounded-md bg-secondary text-foreground border border-border text-[10px] sm:text-[11px] font-mono cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary h-[26px]'
         >
           {LANGUAGES.map((lang) => (
-            <option key={lang} value={lang} className="bg-card">
+            <option key={lang} value={lang} className='bg-card'>
               {lang}
             </option>
           ))}
@@ -194,22 +229,41 @@ export function TopBar({
   );
 }
 
-
 /**
  * Real-time connection status using useStatus hook.
  * Replaces the manual isConnected boolean prop.
- * 
+ *
  * Statuses: initial → connecting → connected → reconnecting → disconnected
  */
 function ConnectionStatusIndicator() {
   const status = useStatus();
 
   const statusConfig = {
-    initial: { color: "text-muted-foreground", label: "Initializing…", dot: "bg-gray-400" },
-    connecting: { color: "text-amber-400", label: "Connecting…", dot: "bg-amber-400 animate-pulse" },
-    connected: { color: "text-primary", label: "Connected", dot: "bg-green-500" },
-    reconnecting: { color: "text-amber-400", label: "Reconnecting…", dot: "bg-amber-400 animate-pulse" },
-    disconnected: { color: "text-red-400", label: "Disconnected", dot: "bg-red-500" },
+    initial: {
+      color: "text-muted-foreground",
+      label: "Initializing…",
+      dot: "bg-gray-400",
+    },
+    connecting: {
+      color: "text-amber-400",
+      label: "Connecting…",
+      dot: "bg-amber-400 animate-pulse",
+    },
+    connected: {
+      color: "text-primary",
+      label: "Connected",
+      dot: "bg-green-500",
+    },
+    reconnecting: {
+      color: "text-amber-400",
+      label: "Reconnecting…",
+      dot: "bg-amber-400 animate-pulse",
+    },
+    disconnected: {
+      color: "text-red-400",
+      label: "Disconnected",
+      dot: "bg-red-500",
+    },
   };
 
   const config = statusConfig[status];
@@ -221,7 +275,7 @@ function ConnectionStatusIndicator() {
       className={`flex items-center gap-1.5 text-xs ${config.color}`}
     >
       <div className={`w-2 h-2 rounded-full ${config.dot}`} />
-      <span className="hidden sm:inline">{config.label}</span>
+      <span className='hidden sm:inline'>{config.label}</span>
     </motion.div>
   );
 }
@@ -236,52 +290,27 @@ function UndoRedoButtons() {
   const canRedo = useCanRedo();
 
   return (
-    <div className="flex items-center gap-1">
+    <div className='flex items-center gap-1'>
       <button
         onClick={undo}
         disabled={!canUndo}
-        title="Undo (Ctrl+Z)"
-        className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground 
+        title='Undo (Ctrl+Z)'
+        className='p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground 
                    hover:text-foreground transition-colors disabled:opacity-30 
-                   disabled:cursor-not-allowed cursor-pointer"
+                   disabled:cursor-not-allowed cursor-pointer'
       >
-        <Undo2 className="w-3.5 h-3.5" />
+        <Undo2 className='w-3.5 h-3.5' />
       </button>
       <button
         onClick={redo}
         disabled={!canRedo}
-        title="Redo (Ctrl+Shift+Z)"
-        className="p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground 
+        title='Redo (Ctrl+Shift+Z)'
+        className='p-1.5 rounded-md hover:bg-secondary/50 text-muted-foreground 
                    hover:text-foreground transition-colors disabled:opacity-30 
-                   disabled:cursor-not-allowed cursor-pointer"
+                   disabled:cursor-not-allowed cursor-pointer'
       >
-        <Redo2 className="w-3.5 h-3.5" />
+        <Redo2 className='w-3.5 h-3.5' />
       </button>
-    </div>
-  );
-}
-
-/**
- * Quick reaction emoji buttons using useBroadcastEvent.
- */
-function ReactionButtons() {
-  const sendReaction = useSendReaction();
-
-  return (
-    <div className="flex items-center gap-0.5">
-      <Zap className="w-3 h-3 text-muted-foreground mr-1" />
-      {REACTION_ICONS.map(({ id, Icon }) => (
-        <motion.button
-          key={id}
-          onClick={() => sendReaction(id)}
-          whileHover={{ scale: 1.3 }}
-          whileTap={{ scale: 0.8 }}
-          className="w-6 h-6 flex items-center justify-center rounded hover:bg-secondary/50 
-                     transition-colors cursor-pointer text-cyber-cyan/80 hover:text-cyber-cyan"
-        >
-          <Icon className="w-3.5 h-3.5" />
-        </motion.button>
-      ))}
     </div>
   );
 }

@@ -81,6 +81,9 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const [metadata, setMetadata] = useState<Metadata>({});
   const [activePanel, setActivePanel] = useState<MobilePanel>("editor");
 
+  const yDocRef = useRef<Y.Doc | null>(null);
+  const [yWhiteboard, setYWhiteboard] = useState<Y.Text | null>(null);
+
 
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
@@ -93,92 +96,34 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
     }
   }, [status, onRoomReady]);
 
-  function handleEditorDidMount(editorInstance: any, monaco: any) {
-    console.log("Editor mounted!");
-    editorRef.current = editorInstance;
-    monacoRef.current = monaco;
-
-    monaco.editor.defineTheme("neon-dark", {
-      base: "vs-dark",
-      inherit: true,
-      rules: [
-        { token: "comment", foreground: "6A9955", fontStyle: "italic" },
-        { token: "keyword", foreground: "4EC9B0" },
-        { token: "string", foreground: "CE9178" },
-        { token: "number", foreground: "B5CEA8" },
-        { token: "type", foreground: "4EC9B0" },
-        { token: "function", foreground: "DCDCAA" },
-        { token: "variable", foreground: "9CDCFE" },
-      ],
-      colors: {
-        "editor.background": "#05050500", // Transparent to show through glass
-        "editor.foreground": "#E0E0E0",
-        "editor.lineHighlightBackground": "#111111",
-        "editor.selectionBackground": "#26735533",
-        "editorCursor.foreground": "#26A65B",
-        "editorLineNumber.foreground": "#3A3A3A",
-        "editorLineNumber.activeForeground": "#26A65B",
-      },
-    });
-    const monacoTheme = theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark";
-    monaco.editor.setTheme(monacoTheme);
+  // Shared Y.js document and Liveblocks synchronization provider setup
+  useEffect(() => {
+    if (status !== "connected") return;
 
     // Create the Liveblocks Yjs provider
     const yDoc = new Y.Doc();
     const yProvider = new LiveblocksYjsProvider(room as any, yDoc);
     providerRef.current = yProvider;
+    yDocRef.current = yDoc;
 
     // Shared output and execution lock for all collaborators
     yOutputRef.current = yDoc.getArray("output");
     yExecRef.current = yDoc.getMap("execution");
 
-    const yText = yDoc.getText("monaco");
-    const awareness = yProvider.awareness;
-
-    // Set local user state for awareness
-    awareness.setLocalStateField("user", {
-      name: getNickname(),
-      color: randomColor(),
-    });
-
-    const model = editorInstance.getModel();
-    if (model) {
-      const existingYjsContent = yText.toString();
-      if (existingYjsContent.length > 0) {
-        // Existing room — clear defaultValue so MonacoBinding
-        // populates the editor from yText (source of truth)
-        model.setValue("");
-      }
-      bindingRef.current = new MonacoBinding(
-        yText,
-        model,
-        new Set([editorInstance]),
-        awareness as any,
-      );
-
-      // For a NEW room, yText is empty after binding.
-      // Populate it with starter code (from API metadata) or a default.
-      if (yText.toString().length === 0) {
-        const yMeta = yDoc.getMap("meta");
-        const starterCode = yMeta.get("starterCode") as string | undefined;
-        if (starterCode) {
-          yText.insert(0, starterCode);
-        } else {
-          yText.insert(0, ``);
-        }
-      }
-    }
+    const yWhiteboardText = yDoc.getText("whiteboard");
+    setYWhiteboard(yWhiteboardText);
 
     // Metadata Sync via Y.Map
     const yMeta = yDoc.getMap("meta");
-
     const updateMetadata = () => {
       const lang = yMeta.get("language") as string;
       if (lang) {
         setLanguage(lang);
-        const model = editorInstance.getModel();
-        if (model) {
-          monaco.editor.setModelLanguage(model, lang);
+        if (editorRef.current && monacoRef.current) {
+          const model = editorRef.current.getModel();
+          if (model) {
+            monacoRef.current.editor.setModelLanguage(model, lang);
+          }
         }
       }
 
@@ -221,6 +166,88 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
         updateMetadata();
       }
     }
+
+    return () => {
+      yMetaObserverRef.current?.();
+      yProvider.destroy();
+      yDoc.destroy();
+      providerRef.current = null;
+      yDocRef.current = null;
+      yOutputRef.current = null;
+      yExecRef.current = null;
+    };
+  }, [room, status]);
+
+  function handleEditorDidMount(editorInstance: any, monaco: any) {
+    console.log("Editor mounted!");
+    editorRef.current = editorInstance;
+    monacoRef.current = monaco;
+
+    monaco.editor.defineTheme("neon-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [
+        { token: "comment", foreground: "6A9955", fontStyle: "italic" },
+        { token: "keyword", foreground: "4EC9B0" },
+        { token: "string", foreground: "CE9178" },
+        { token: "number", foreground: "B5CEA8" },
+        { token: "type", foreground: "4EC9B0" },
+        { token: "function", foreground: "DCDCAA" },
+        { token: "variable", foreground: "9CDCFE" },
+      ],
+      colors: {
+        "editor.background": "#05050500", // Transparent to show through glass
+        "editor.foreground": "#E0E0E0",
+        "editor.lineHighlightBackground": "#111111",
+        "editor.selectionBackground": "#26735533",
+        "editorCursor.foreground": "#26A65B",
+        "editorLineNumber.foreground": "#3A3A3A",
+        "editorLineNumber.activeForeground": "#26A65B",
+      },
+    });
+    const monacoTheme = theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark";
+    monaco.editor.setTheme(monacoTheme);
+
+    const yDoc = yDocRef.current;
+    const yProvider = providerRef.current;
+    if (!yDoc || !yProvider) return;
+
+    const yText = yDoc.getText("monaco");
+    const awareness = yProvider.awareness;
+
+    // Set local user state for awareness
+    awareness.setLocalStateField("user", {
+      name: getNickname(),
+      color: randomColor(),
+    });
+
+    const model = editorInstance.getModel();
+    if (model) {
+      const existingYjsContent = yText.toString();
+      if (existingYjsContent.length > 0) {
+        // Existing room — clear defaultValue so MonacoBinding
+        // populates the editor from yText (source of truth)
+        model.setValue("");
+      }
+      bindingRef.current = new MonacoBinding(
+        yText,
+        model,
+        new Set([editorInstance]),
+        awareness as any,
+      );
+
+      // For a NEW room, yText is empty after binding.
+      // Populate it with starter code (from API metadata) or a default.
+      if (yText.toString().length === 0) {
+        const yMeta = yDoc.getMap("meta");
+        const starterCode = yMeta.get("starterCode") as string | undefined;
+        if (starterCode) {
+          yText.insert(0, starterCode);
+        } else {
+          yText.insert(0, ``);
+        }
+      }
+    }
   }
 
   const handleLanguageChange = (lang: string) => {
@@ -249,9 +276,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
   useEffect(() => {
     return () => {
-      yMetaObserverRef.current?.(); // Unobserve yMeta to prevent memory leak
       bindingRef.current?.destroy();
-      providerRef.current?.destroy();
     };
   }, []);
 
@@ -272,7 +297,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
 
   return (
-    <div ref={mainContainerRef} className='h-screen flex flex-col bg-background overflow-hidden p-1.5 sm:p-2 lg:p-3 gap-1.5 sm:gap-2 lg:gap-3 relative'>
+    <div ref={mainContainerRef} className='h-screen flex flex-col bg-background overflow-hidden p-0 gap-1.5 sm:gap-2 lg:gap-3 relative'>
       {/* Connection Toast — global position: fixed overlay */}
       <ConnectionToast />
 
@@ -288,6 +313,10 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           onCreateRoom={handleCreateRoom}
           onLanguageChange={handleLanguageChange}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          activeMainView={activeMainView}
+          onActiveMainViewChange={setActiveMainView}
+          collaboratorsInEditor={inEditor}
+          collaboratorsInWhiteboard={inWhiteboard}
         />
 
         {/* Problem Panel */}
@@ -337,50 +366,32 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
             id="workspace-panel"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className='hidden lg:flex flex-col flex-1 min-w-0 gap-2'
+            className='hidden lg:flex flex-col flex-1 min-w-0'
           >
-            {/* View Selector Tabs */}
-            <div className="flex items-center gap-1.5 p-1 glass-panel rounded-lg w-fit select-none">
-              <button
-                onClick={() => setActiveMainView("code")}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer relative ${
-                  activeMainView === "code"
-                    ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Code
-                {inEditor.length > 0 && activeMainView !== "code" && (
-                  <span
-                    style={{ backgroundColor: inEditor[0].presence?.info?.color || "var(--color-primary)" }}
-                    className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse border border-background shadow-md"
-                  />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveMainView("whiteboard")}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer relative ${
-                  activeMainView === "whiteboard"
-                    ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Board
-                {inWhiteboard.length > 0 && activeMainView !== "whiteboard" && (
-                  <span
-                    style={{ backgroundColor: inWhiteboard[0].presence?.info?.color || "var(--color-primary)" }}
-                    className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse border border-background shadow-md"
-                  />
-                )}
-              </button>
-            </div>
 
-            <div className='w-full h-full min-h-0 flex-1'>
-              {activeMainView === "code" ? (
-                <CodeEditor onMount={handleEditorDidMount} />
-              ) : (
-                <Whiteboard />
-              )}
+            {/* Double-Bezel Workspace Shell */}
+            <div className="flex-1 w-full h-full min-h-0 relative p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm">
+              <div className="w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] relative">
+                
+                {/* Monaco Code Editor Wrapper */}
+                <div className={`absolute inset-0 transition-opacity duration-200 ${
+                  activeMainView === "code"
+                    ? "opacity-100 pointer-events-auto z-10"
+                    : "opacity-0 pointer-events-none z-0"
+                }`}>
+                  <CodeEditor onMount={handleEditorDidMount} />
+                </div>
+
+                {/* Excalidraw Whiteboard Wrapper */}
+                <div className={`absolute inset-0 transition-opacity duration-200 ${
+                  activeMainView === "whiteboard"
+                    ? "opacity-100 pointer-events-auto z-10"
+                    : "opacity-0 pointer-events-none z-0"
+                }`}>
+                  <Whiteboard yWhiteboard={yWhiteboard} />
+                </div>
+
+              </div>
             </div>
           </motion.div>
 
@@ -426,7 +437,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <Whiteboard />
+                  <Whiteboard yWhiteboard={yWhiteboard} />
                 </motion.div>
               )}
               {activePanel === "chat" && (

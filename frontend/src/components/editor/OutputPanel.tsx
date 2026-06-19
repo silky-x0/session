@@ -262,103 +262,104 @@ export function OutputPanel({
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 }}
-      className='h-full flex flex-col glass-panel rounded-lg overflow-hidden'
+      className="h-full p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm flex flex-col"
       onMouseEnter={() => updateMyPresence({ hoveredPanel: "output" })}
       onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
-      {/* Header */}
-      <div className='flex items-center justify-between px-3 py-2 border-b border-border bg-card/50'>
-        <div className='flex items-center gap-1.5'>
-          <Terminal className='w-3.5 h-3.5 text-cyber-cyan' />
-          <span className='text-[11px] font-semibold text-foreground uppercase tracking-wider'>Output</span>
-        </div>
+      <div className="w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-glass-border/15 bg-card/60">
+          <div className="flex items-center gap-2">
+            <Terminal strokeWidth={1.2} className="w-3.5 h-3.5 text-cyber-cyan" />
+            <span className="text-[10px] font-bold text-foreground uppercase tracking-widest font-condensed">Console Output</span>
+          </div>
 
-        <div className='flex items-center gap-1.5'>
-          <motion.button
-            onClick={handleRun}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={isRunning || !isSupported}
-            title={
-              isRunning
-                ? "Code is running..."
-                : !isSupported
-                  ? `"${language}" is not supported for execution`
-                  : "Run code"
-            }
-            className='flex items-center gap-1 px-2 py-0.5 rounded pl-1.5 bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-[10px] font-medium transition-colors border border-primary/30 uppercase tracking-wider'
-          >
-            {isRunning ? (
-              <Clock className='w-3 h-3 animate-spin' />
-            ) : (
-              <Play className='w-3 h-3' />
-            )}
-            {isRunning ? "Running..." : "Run"}
-          </motion.button>
-
-          <motion.button
-            onClick={handleClear}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className='p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors'
-          >
-            <Trash2 className='w-3.5 h-3.5' />
-          </motion.button>
-        </div>
-      </div>
-
-      {/* Output content */}
-      <div
-        className='flex-1 overflow-y-auto p-3 font-mono text-xs scrollbar-thin bg-transparent'
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        <AnimatePresence>
-
-          {outputs.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className='flex items-center justify-center h-full text-muted-foreground'
+          <div className="flex items-center gap-2">
+            <motion.button
+              onClick={handleRun}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={isRunning || !isSupported}
+              title={
+                isRunning
+                  ? "Code is running..."
+                  : !isSupported
+                    ? `"${language}" is not supported for execution`
+                    : "Run code"
+              }
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg pl-2 bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-[9px] font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] border border-primary/30 uppercase tracking-widest cursor-pointer"
             >
-              <span>No output yet. Click Run to execute code.</span>
-            </motion.div>
-          ) : (
-            outputs.map((output, index) => (
-              <motion.div
-                key={output.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.02 }}
-                className='flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0'
-              >
-                <span className='text-muted-foreground/60 select-none w-16 flex-shrink-0'>
-                  {output.timestamp}
-                </span>
-                {getIcon(output.type)}
-                <span className={`${getTextColor(output.type)} break-all`}>
-                  {output.content}
-                </span>
-              </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-        <div ref={outputEndRef} />
-      </div>
+              {isRunning ? (
+                <Clock strokeWidth={1.5} className="w-3 h-3 animate-spin" />
+              ) : (
+                <Play strokeWidth={1.5} className="w-3 h-3" />
+              )}
+              <span>{isRunning ? "Running" : "Run"}</span>
+            </motion.button>
 
-      {/* Status bar */}
-      <div className='px-4 py-2 border-t border-border bg-card/30 flex items-center justify-between'>
-        <span className='text-[10px] text-muted-foreground font-mono'>
-          {outputs.length} line{outputs.length !== 1 ? "s" : ""}
-        </span>
-        <span className='flex items-center gap-1 text-[10px] text-muted-foreground'>
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isSupported ? "bg-primary" : "bg-yellow-500"
-            }`}
-          />
-          {isSupported ? `${language} • Ready` : `${language} • Not supported`}
-        </span>
+            <motion.button
+              onClick={handleClear}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary border border-transparent hover:border-glass-border/40 transition-colors cursor-pointer"
+            >
+              <Trash2 strokeWidth={1.5} className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Output content */}
+        <div
+          className="flex-1 overflow-y-auto p-4 font-mono text-[11px] scrollbar-thin bg-transparent"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <AnimatePresence>
+            {outputs.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center justify-center h-full text-muted-foreground/60 font-sans"
+              >
+                <span>Console empty. Click Run to execute script.</span>
+              </motion.div>
+            ) : (
+              outputs.map((output, index) => (
+                <motion.div
+                  key={output.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.02 }}
+                  className="flex items-start gap-3 py-1 border-b border-glass-border/10 last:border-0"
+                >
+                  <span className="text-muted-foreground/40 select-none w-14 flex-shrink-0 text-[10px] font-sans">
+                    {output.timestamp}
+                  </span>
+                  <div className="flex-shrink-0 mt-0.5">{getIcon(output.type)}</div>
+                  <span className={`${getTextColor(output.type)} break-all leading-normal font-mono`}>
+                    {output.content}
+                  </span>
+                </motion.div>
+              ))
+            )}
+          </AnimatePresence>
+          <div ref={outputEndRef} />
+        </div>
+
+        {/* Status bar */}
+        <div className="px-4 py-2 border-t border-glass-border/10 bg-secondary/20 flex items-center justify-between">
+          <span className="text-[9px] text-muted-foreground font-mono">
+            {outputs.length} line{outputs.length !== 1 ? "s" : ""}
+          </span>
+          <span className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-mono">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isSupported ? "bg-primary subtle-glow" : "bg-yellow-500"
+              }`}
+            />
+            {isSupported ? `${language.toUpperCase()} • READY` : `${language.toUpperCase()} • NOT SUPPORTED`}
+          </span>
+        </div>
       </div>
     </motion.div>
   );

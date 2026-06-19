@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Send, Sparkles, User } from "lucide-react";
+import { Bot, Send, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -157,134 +157,136 @@ export function AIChat({ editorRef }: AIChatProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
-      className="h-full flex flex-col glass-panel rounded-lg overflow-hidden"
+      className="h-full p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm flex flex-col"
       onMouseEnter={() => updateMyPresence({ hoveredPanel: "chat" })}
       onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
-      {/* Header */}
-      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-card/50">
-        <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
-        <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Ask Kernel</span>
-      </div>
+      <div className="w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-glass-border/15 bg-card/60">
+          <Bot strokeWidth={1.2} className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-bold text-foreground uppercase tracking-widest font-condensed">Kernel AI</span>
+        </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
-        <AnimatePresence>
-          {messages.map((message) => (
-            <motion.div
-              key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className={`flex gap-1.5 ${
-                message.role === "user" ? "flex-row-reverse" : ""
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "assistant"
-                    ? "bg-cyber-cyan/20 text-cyber-cyan"
-                    : "bg-secondary text-muted-foreground"
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin bg-transparent">
+          <AnimatePresence>
+            {messages.map((message) => (
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className={`flex gap-2.5 ${
+                  message.role === "user" ? "flex-row-reverse" : ""
                 }`}
               >
-                {message.role === "assistant" ? (
-                  <Bot className="w-3 h-3" />
-                ) : (
-                  <User className="w-3 h-3" />
-                )}
-              </div>
-              <div
-                className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs leading-relaxed ${
-                  message.role === "assistant"
-                    ? "bg-card text-foreground border border-border"
-                    : "bg-cyber-cyan/10 text-foreground border border-cyber-cyan/20"
-                }`}
-              >
-                <div className={`prose ${theme === "light" ? "" : "prose-invert"} prose-xs max-w-none text-xs leading-relaxed`}>
-                  <ReactMarkdown
-                    components={{
-                      code({ className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        const isBlock = !props.inline && match;
-                        return isBlock ? (
-                          <SyntaxHighlighter
-                            style={vscDarkPlus}
-                            language={match[1]}
-                            PreTag="div"
-                            className="rounded-md text-[11px] my-1"
-                          >
-                            {String(children).replace(/\n$/, "")}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code className="bg-black/30 px-1 py-0.5 rounded text-cyber-cyan text-[11px]" {...props}>
-                            {children}
-                          </code>
-                        );
-                      },
-                      p({ children }) { return <p className="mb-1 last:mb-0">{children}</p>; },
-                      ul({ children }) { return <ul className="list-disc list-inside mb-1 space-y-0.5">{children}</ul>; },
-                      ol({ children }) { return <ol className="list-decimal list-inside mb-1 space-y-0.5">{children}</ol>; },
-                      li({ children }) { return <li className="text-xs">{children}</li>; },
-                      strong({ children }) { return <strong className="font-semibold text-foreground">{children}</strong>; },
-                    }}
-                  >
-                    {message.content}
-                  </ReactMarkdown>
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    message.role === "assistant"
+                      ? "bg-foreground/10 text-foreground border border-glass-border/30"
+                      : "bg-secondary text-muted-foreground border border-glass-border/40"
+                  }`}
+                >
+                  {message.role === "assistant" ? (
+                    <Bot strokeWidth={1.5} className="w-3.5 h-3.5" />
+                  ) : (
+                    <User strokeWidth={1.5} className="w-3.5 h-3.5" />
+                  )}
                 </div>
+                <div
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                    message.role === "assistant"
+                      ? "bg-secondary/40 text-foreground border border-glass-border/30 rounded-tl-sm"
+                      : "bg-foreground/5 text-foreground border border-glass-border/30 rounded-tr-sm"
+                  }`}
+                >
+                  <div className={`prose ${theme === "light" ? "" : "prose-invert"} prose-xs max-w-none text-xs leading-relaxed`}>
+                    <ReactMarkdown
+                      components={{
+                        code({ className, children, ...props }: any) {
+                          const match = /language-(\w+)/.exec(className || "");
+                          const isBlock = !props.inline && match;
+                          return isBlock ? (
+                            <SyntaxHighlighter
+                              style={vscDarkPlus}
+                              language={match[1]}
+                              PreTag="div"
+                              className="rounded-lg text-[10px] my-1.5 border border-glass-border/20 shadow-sm"
+                            >
+                              {String(children).replace(/\n$/, "")}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code className="bg-black/35 px-1 py-0.5 rounded text-foreground text-[10px] font-mono border border-glass-border/20" {...props}>
+                              {children}
+                            </code>
+                          );
+                        },
+                        p({ children }) { return <p className="mb-1.5 last:mb-0">{children}</p>; },
+                        ul({ children }) { return <ul className="list-disc list-inside mb-1.5 space-y-0.5">{children}</ul>; },
+                        ol({ children }) { return <ol className="list-decimal list-inside mb-1.5 space-y-0.5">{children}</ol>; },
+                        li({ children }) { return <li className="text-xs">{children}</li>; },
+                        strong({ children }) { return <strong className="font-semibold text-foreground">{children}</strong>; },
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {isTyping && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex gap-2.5 items-center"
+            >
+              <div className="w-6 h-6 rounded-full bg-foreground/10 text-foreground flex items-center justify-center border border-glass-border/30">
+                <Bot strokeWidth={1.5} className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex gap-1 px-3 py-2 bg-secondary/40 rounded-2xl border border-glass-border/30">
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-foreground/60"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1,
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
               </div>
             </motion.div>
-          ))}
-        </AnimatePresence>
+          )}
+          {/* Scroll anchor */}
+          <div ref={messagesEndRef} />
+        </div>
 
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex gap-1.5 items-center"
-          >
-            <div className="w-5 h-5 rounded-full bg-cyber-cyan/20 text-cyber-cyan flex items-center justify-center">
-              <Bot className="w-3 h-3" />
-            </div>
-            <div className="flex gap-1 px-2.5 py-1.5 bg-card rounded-lg border border-border">
-              {[0, 1, 2].map((i) => (
-                <motion.span
-                  key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-cyber-cyan"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{
-                    repeat: Infinity,
-                    duration: 1,
-                    delay: i * 0.2,
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )}
-        {/* Scroll anchor */}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input */}
-      <div className="p-1 border-t border-border bg-card/30">
-        <div className="flex gap-1.5">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Ask Kernel anything..."
-            className="flex-1 px-2.5 py-1.5 rounded-md bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-cyber-cyan focus:border-cyber-cyan transition-all"
-          />
-          <motion.button
-            onClick={handleSend}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={!input.trim()}
-            className="p-1.5 rounded-md bg-cyber-cyan text-primary-foreground hover:bg-cyber-cyan/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </motion.button>
+        {/* Input */}
+        <div className="p-2 border-t border-glass-border/10 bg-secondary/20">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Message Kernel..."
+              className="flex-1 px-3 py-2 rounded-xl bg-card border border-glass-border/50 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/30 focus:border-foreground/30 transition-all"
+            />
+            <motion.button
+              onClick={handleSend}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              disabled={!input.trim()}
+              className="p-2 rounded-xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer"
+            >
+              <Send strokeWidth={1.5} className="w-3.5 h-3.5" />
+            </motion.button>
+          </div>
         </div>
       </div>
     </motion.div>
