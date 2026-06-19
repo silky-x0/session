@@ -67,6 +67,7 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <motion.div
+      id="topbar-panel"
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       className="min-h-[2.5rem] sm:min-h-[2.75rem] glass-panel border-b border-border flex flex-wrap items-center justify-between px-2 sm:px-3 py-1 sm:py-0 z-10 rounded-lg gap-2"

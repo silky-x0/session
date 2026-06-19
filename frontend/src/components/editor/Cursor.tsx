@@ -23,7 +23,7 @@ export default function Cursor({ x, y, color, name }: CursorProps) {
         left: 0,
         pointerEvents: "none",
         userSelect: "none",
-        zIndex: 50,
+        zIndex: 9999,
       }}
       initial={{ x, y }}
       animate={{ x, y }}

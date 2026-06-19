@@ -17,6 +17,7 @@ import {
 } from "react";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
+import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 
 const SUPPORTED_LANGUAGES = ["python", "javascript", "c", "cpp"];
 
@@ -54,6 +55,7 @@ export function OutputPanel({
   const [outputs, setOutputs] = useState<OutputLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const outputEndRef = useRef<HTMLDivElement>(null);
+  const updateMyPresence = useUpdateMyPresence();
 
   const isSupported = SUPPORTED_LANGUAGES.includes(language.toLowerCase());
 
@@ -256,10 +258,13 @@ export function OutputPanel({
 
   return (
     <motion.div
+      id="output-panel"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 }}
       className='h-full flex flex-col glass-panel rounded-lg overflow-hidden'
+      onMouseEnter={() => updateMyPresence({ hoveredPanel: "output" })}
+      onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
       {/* Header */}
       <div className='flex items-center justify-between px-3 py-2 border-b border-border bg-card/50'>

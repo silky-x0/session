@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { useBroadcastEvent, useEventListener } from "@liveblocks/react/suspense";
+import { useBroadcastEvent, useEventListener, useUpdateMyPresence } from "@liveblocks/react/suspense";
 import { Trash2, Eraser, Edit2, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "../ThemeContext";
@@ -24,6 +24,7 @@ interface ClearData {
 
 export function Whiteboard() {
   const { theme } = useTheme();
+  const updateMyPresence = useUpdateMyPresence();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -217,6 +218,8 @@ export function Whiteboard() {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       className="flex-1 flex flex-col glass-panel rounded-lg overflow-hidden relative select-none border border-glass-border h-full"
+      onMouseEnter={() => updateMyPresence({ hoveredPanel: "whiteboard" })}
+      onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
       {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between px-3 py-2 border-b border-glass-border bg-card/50 gap-2">

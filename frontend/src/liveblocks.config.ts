@@ -1,20 +1,18 @@
 declare global {
   interface Liveblocks {
-    // ─── Presence ───────────────────────────────────────────────
-    // Temporary per-user data, resets on disconnect
+
     Presence: {
-      cursor: { x: number; y: number } | null;
+      cursor: { elementId: string; anchorX: "left" | "right"; x: number; y: number } | null;
       isTyping: boolean;
       selectedLineNumber: number | null;
+      hoveredPanel: "editor" | "whiteboard" | "chat" | "output" | "problem" | null;
       info?: {
         name: string;
         color: string;
         avatarSeed?: string;
       };
     };
-
-    // ─── User Metadata ──────────────────────────────────────────
-    // Set via authentication endpoint
+    
     UserMeta: {
       id: string;
       info: {

@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "../ThemeContext";
+import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 
 
 interface Message {
@@ -64,6 +65,7 @@ const DEFAULT_MESSAGE: Message = {
 
 export function AIChat({ editorRef }: AIChatProps) {
   const { theme } = useTheme();
+  const updateMyPresence = useUpdateMyPresence();
   const roomId = new URLSearchParams(window.location.search).get("room") || "default";
   const storageKey = `ai-chat-messages-${roomId}`;
 
@@ -151,10 +153,13 @@ export function AIChat({ editorRef }: AIChatProps) {
 
   return (
     <motion.div
+      id="chat-panel"
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.2 }}
       className="h-full flex flex-col glass-panel rounded-lg overflow-hidden"
+      onMouseEnter={() => updateMyPresence({ hoveredPanel: "chat" })}
+      onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
       {/* Header */}
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-card/50">

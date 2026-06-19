@@ -36,12 +36,42 @@ export default function LiveCursors({ cursorPanel }: Props) {
     const updateCursor = (event: PointerEvent) => {
       if (!cursorPanel?.current) return;
 
-      const rect = cursorPanel.current.getBoundingClientRect();
-      const x = event.clientX - rect.x + cursorPanel.current.scrollLeft;
-      const y = event.clientY - rect.y + cursorPanel.current.scrollTop;
+      let target = event.target as HTMLElement | null;
+      let elementId: string = "global";
+      let targetRect: DOMRect | null = null;
+
+      const PANEL_IDS = [
+        "workspace-panel",
+        "chat-panel",
+        "output-panel",
+        "problem-panel",
+        "topbar-panel",
+        "problem-tab"
+      ];
+
+      while (target && target !== document.documentElement) {
+        if (target.id && PANEL_IDS.includes(target.id)) {
+          elementId = target.id;
+          targetRect = target.getBoundingClientRect();
+          break;
+        }
+        target = target.parentElement;
+      }
+
+      if (!targetRect) {
+        elementId = "global";
+        targetRect = cursorPanel.current.getBoundingClientRect();
+      }
+
+      const width = targetRect.width;
+      const isRightHalf = (event.clientX - targetRect.left) > (width / 2);
+      const anchorX: "left" | "right" = isRightHalf ? "right" : "left";
+
+      const x = isRightHalf ? (targetRect.right - event.clientX) : (event.clientX - targetRect.left);
+      const y = event.clientY - targetRect.top;
 
       updateMyPresence({
-        cursor: { x: Math.round(x), y: Math.round(y) },
+        cursor: { elementId, anchorX, x: Math.round(x), y: Math.round(y) },
       });
     };
 
@@ -63,13 +93,49 @@ export default function LiveCursors({ cursorPanel }: Props) {
       {others.map(([id, other]) => {
         if (other.cursor == null) return null;
 
+        const { elementId, anchorX, x, y } = other.cursor;
+        let renderX = x;
+        let renderY = y;
+
+        if (elementId && elementId !== "global") {
+          const panelElement = document.getElementById(elementId);
+          if (panelElement && cursorPanel.current) {
+            const panelRect = panelElement.getBoundingClientRect();
+            const containerRect = cursorPanel.current.getBoundingClientRect();
+
+            let absX = 0;
+            if (anchorX === "right") {
+              absX = panelRect.right - containerRect.left - x;
+            } else {
+              absX = panelRect.left - containerRect.left + x;
+            }
+
+            renderX = absX;
+            renderY = panelRect.top - containerRect.top + y;
+          } else {
+            // Element is collapsed/hidden locally, do not render cursor
+            return null;
+          }
+        } else {
+          if (cursorPanel.current) {
+            const containerRect = cursorPanel.current.getBoundingClientRect();
+            let absX = 0;
+            if (anchorX === "right") {
+              absX = containerRect.right - containerRect.left - x;
+            } else {
+              absX = x;
+            }
+            renderX = absX;
+          }
+        }
+
         return (
           <Cursor
             key={id}
             name={other.info?.name ?? "Anonymous"}
             color={other.info?.color ?? "var(--color-neon-pulse)"}
-            x={other.cursor.x}
-            y={other.cursor.y}
+            x={renderX}
+            y={renderY}
           />
         );
       })}

@@ -3,7 +3,7 @@ import { editor } from "monaco-editor";
 import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
-import { useRoom, useStatus } from "@liveblocks/react/suspense";
+import { useRoom, useStatus, useOthers } from "@liveblocks/react/suspense";
 import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
@@ -57,6 +57,13 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const room = useRoom();
   const status = useStatus();
   const { zenMode, theme } = useTheme();
+  const others = useOthers();
+
+  const inWhiteboard = others.filter(o => o.presence?.hoveredPanel === "whiteboard");
+  const inEditor = others.filter(o => o.presence?.hoveredPanel === "editor");
+  const getCollaboratorsInPanel = (panelId: string) => {
+    return others.filter(o => o.presence?.hoveredPanel === panelId);
+  };
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeMainView, setActiveMainView] = useState<"code" | "whiteboard">("code");
 
@@ -69,6 +76,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const yOutputRef = useRef<Y.Array<any> | null>(null);
   const yExecRef = useRef<Y.Map<any> | null>(null);
   const cursorPanelRef = useRef<HTMLDivElement>(null);
+  const mainContainerRef = useRef<HTMLDivElement>(null);
   const [language, setLanguage] = useState("javascript");
   const [metadata, setMetadata] = useState<Metadata>({});
   const [activePanel, setActivePanel] = useState<MobilePanel>("editor");
@@ -264,12 +272,13 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
 
   return (
-    <div className='h-screen flex flex-col bg-background overflow-hidden p-1.5 sm:p-2 lg:p-3 gap-1.5 sm:gap-2 lg:gap-3'>
+    <div ref={mainContainerRef} className='h-screen flex flex-col bg-background overflow-hidden p-1.5 sm:p-2 lg:p-3 gap-1.5 sm:gap-2 lg:gap-3 relative'>
       {/* Connection Toast — global position: fixed overlay */}
       <ConnectionToast />
 
       {/* BroadcastProvider wraps everything to enable event listening */}
       <BroadcastProvider>
+        <LiveCursors cursorPanel={mainContainerRef} />
         {/* Top Bar — now uses useStatus internally instead of isConnected prop */}
         <TopBar
           roomId={roomId}
@@ -288,20 +297,32 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
         {/* Mobile/Tablet Tab Bar — visible below lg */}
         <div className='lg:hidden flex items-center gap-1 glass-panel rounded-lg p-1'>
-          {mobileTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActivePanel(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-                activePanel === tab.id
-                  ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
-              }`}
-            >
-              {tab.icon}
-              <span className='hidden sm:inline'>{tab.label}</span>
-            </button>
-          ))}
+          {mobileTabs.map((tab) => {
+            const panelCollaborators = getCollaboratorsInPanel(tab.id);
+            const showBadge = panelCollaborators.length > 0 && activePanel !== tab.id;
+            const badgeColor = panelCollaborators[0]?.presence?.info?.color || "var(--color-primary)";
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActivePanel(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 relative ${
+                  activePanel === tab.id
+                    ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                }`}
+              >
+                {showBadge && (
+                  <span
+                    style={{ backgroundColor: badgeColor }}
+                    className="absolute top-1 right-2 w-2 h-2 rounded-full animate-pulse border border-background shadow-sm"
+                  />
+                )}
+                {tab.icon}
+                <span className='hidden sm:inline'>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Main Content — Desktop: side-by-side, Mobile/Tablet: tabbed panels */}
@@ -309,12 +330,11 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           ref={cursorPanelRef}
           className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
         >
-          {/* Live Cursors */}
-          <LiveCursors cursorPanel={cursorPanelRef} />
 
           {/* ─── Desktop Layout (lg+) ─── */}
           {/* Left - Code Editor / Whiteboard (desktop only) */}
           <motion.div
+            id="workspace-panel"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className='hidden lg:flex flex-col flex-1 min-w-0 gap-2'
@@ -323,23 +343,35 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
             <div className="flex items-center gap-1.5 p-1 glass-panel rounded-lg w-fit select-none">
               <button
                 onClick={() => setActiveMainView("code")}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer relative ${
                   activeMainView === "code"
                     ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Code
+                {inEditor.length > 0 && activeMainView !== "code" && (
+                  <span
+                    style={{ backgroundColor: inEditor[0].presence?.info?.color || "var(--color-primary)" }}
+                    className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse border border-background shadow-md"
+                  />
+                )}
               </button>
               <button
                 onClick={() => setActiveMainView("whiteboard")}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer relative ${
                   activeMainView === "whiteboard"
                     ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                Whiteboard
+                Board
+                {inWhiteboard.length > 0 && activeMainView !== "whiteboard" && (
+                  <span
+                    style={{ backgroundColor: inWhiteboard[0].presence?.info?.color || "var(--color-primary)" }}
+                    className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse border border-background shadow-md"
+                  />
+                )}
               </button>
             </div>
 
@@ -499,6 +531,7 @@ export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () 
             cursor: null,
             isTyping: false,
             selectedLineNumber: null,
+            hoveredPanel: null,
             info: {
               name: nickname,
               color: color,

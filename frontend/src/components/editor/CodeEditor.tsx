@@ -3,6 +3,7 @@ import { Suspense, lazy, useEffect, useRef } from "react";
 
 import { Loader2 } from "lucide-react";
 import { useTheme } from "../ThemeContext";
+import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -25,6 +26,7 @@ interface CodeEditorProps {
 
 export function CodeEditor({ onMount }: CodeEditorProps) {
   const { settings, theme } = useTheme();
+  const updateMyPresence = useUpdateMyPresence();
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
 
@@ -67,6 +69,8 @@ export function CodeEditor({ onMount }: CodeEditorProps) {
       animate={{ opacity: 1 }}
       transition={{ delay: 0.1 }}
       className='h-full w-full glass-panel rounded-lg overflow-hidden'
+      onMouseEnter={() => updateMyPresence({ hoveredPanel: "editor" })}
+      onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
     >
       <Suspense fallback={<EditorLoader />}>
         <Editor

@@ -2,7 +2,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Code2, Clock, Lightbulb, Unlock, X, BookOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, prism } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useTheme } from "../ThemeContext";
+import { useUpdateMyPresence, useOthers } from "@liveblocks/react/suspense";
 
 interface ProblemMetadata {
   title?: string;
@@ -24,6 +26,15 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [showHints, setShowHints] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  const { theme } = useTheme();
+  const updateMyPresence = useUpdateMyPresence();
+  const others = useOthers();
+
+  const collaboratorsInProblem = others.filter(
+    (other) => other.presence?.hoveredPanel === "problem"
+  );
+  const isSomeoneInProblem = collaboratorsInProblem.length > 0;
+  const partnerColor = collaboratorsInProblem[0]?.presence?.info?.color || "var(--color-primary)";
 
   // Close sidebar on Escape key
   useEffect(() => {
@@ -59,6 +70,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
       <AnimatePresence>
         {!isOpen && (
           <motion.button
+            id="problem-tab"
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -20, opacity: 0 }}
@@ -68,6 +80,12 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
             className="fixed left-0 top-1/2 -translate-y-1/2 z-40 pl-2 pr-4 py-6 rounded-r-xl bg-background/80 backdrop-blur-md border border-l-0 border-primary/30 text-primary shadow-md hover:bg-primary/10 hover:border-primary/60 transition-all duration-300 group flex flex-col items-center gap-4 cursor-pointer min-h-[48px] min-w-[48px]"
             title="Open Problem Description"
           >
+            {isSomeoneInProblem && (
+              <span
+                style={{ backgroundColor: partnerColor }}
+                className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full animate-pulse border border-background shadow-md"
+              />
+            )}
             <BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
             <span className="[writing-mode:vertical-lr] text-[10px] font-display font-black uppercase tracking-[0.3em] opacity-80 group-hover:opacity-100 transition-opacity">Problem</span>
           </motion.button>
@@ -93,13 +111,16 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="problem-panel"
             initial={{ x: "-100%", opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 30, stiffness: 250, mass: 0.8 }}
-            className="fixed left-0 top-0 h-full w-[90%] sm:w-[450px] z-50 bg-background/95 backdrop-blur-xl border-r border-border/50 shadow-2xl flex flex-col text-foreground"
+            className="fixed left-0 top-0 h-full w-[90%] sm:w-[450px] z-50 bg-background/75 backdrop-blur-xl border-r border-border/50 shadow-2xl flex flex-col text-foreground"
             role="dialog"
             aria-label="Problem Description Panel"
+            onMouseEnter={() => updateMyPresence({ hoveredPanel: "problem" })}
+            onMouseLeave={() => updateMyPresence({ hoveredPanel: null })}
           >
             {/* Sidebar Header */}
             <div className="p-6 border-b border-border/50 flex items-center justify-between bg-secondary/40">
@@ -183,22 +204,22 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                   {metadata.hints && metadata.hints.length > 0 && (
                     <button
                       onClick={() => setShowHints(true)}
-                      className="flex items-center justify-between w-full px-6 py-4 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-100 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+                      className="flex items-center justify-between w-full px-6 py-4 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-100 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-3">
-                        <Lightbulb className="w-4 h-4 text-blue-400 group-hover:text-blue-300" />
+                        <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300" />
                         <span className="tracking-[0.15em] font-display uppercase text-xs font-bold">View Hints</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-full">{metadata.hints.length}</span>
+                      <span className="text-[11px] font-mono font-bold bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full">{metadata.hints.length}</span>
                     </button>
                   )}
                   
                   {metadata.fullSolution && (
                     <button
                       onClick={() => setShowSolution(true)}
-                      className="flex items-center justify-center gap-4 w-full px-6 py-4 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-100 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+                      className="flex items-center justify-center gap-4 w-full px-6 py-4 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-100 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
                     >
-                      <Unlock className="w-4 h-4 text-purple-400 group-hover:text-purple-300" />
+                      <Unlock className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300" />
                       <span className="tracking-[0.15em] font-display uppercase text-xs font-bold">Reveal Solution</span>
                     </button>
                   )}
@@ -268,7 +289,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                       key={index} 
                       className="flex gap-6 p-6 rounded-xl bg-secondary/30 border border-border/50 hover:border-blue-500/30 transition-colors group"
                     >
-                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 text-blue-300 text-sm font-bold flex items-center justify-center border border-blue-500/30">{index + 1}</span>
+                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 text-blue-600 dark:text-blue-300 text-sm font-bold flex items-center justify-center border border-blue-500/30">{index + 1}</span>
                       <span className="text-[14px] font-mono text-foreground/80 leading-relaxed pt-1">{hint}</span>
                     </motion.div>
                   ))}
@@ -327,7 +348,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-background">
                   <SyntaxHighlighter
                     language={language.toLowerCase()}
-                    style={vscDarkPlus}
+                    style={theme === "light" ? prism : vscDarkPlus}
                     customStyle={{
                       margin: 0,
                       padding: '32px 24px',
