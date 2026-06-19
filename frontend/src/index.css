@@ -97,9 +97,10 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: hsl(0 0% 2%);
-  color: hsl(0 0% 100%);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
@@ -110,9 +111,9 @@ body {
 /* Custom Utilities */
 @layer utilities {
   .glass-panel {
-    background: hsl(0 0% 6% / 0.9);
+    background: var(--color-glass-bg);
     backdrop-filter: blur(24px);
-    border: 1px solid hsl(0 0% 15%);
+    border: 1px solid var(--color-glass-border);
   }
 
   .subtle-glow {
@@ -186,4 +187,47 @@ div[id="liveblocks-badge"] {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+}
+
+/* Custom Theme Color Variable Overrides */
+.theme-light {
+  color-scheme: light;
+  --color-background: hsl(0 0% 98%);
+  --color-foreground: hsl(0 0% 10%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(0 0% 10%);
+  --color-border: hsl(0 0% 88%);
+  --color-input: hsl(0 0% 93%);
+  --color-primary: hsl(135 80% 35%);
+  --color-muted: hsl(0 0% 90%);
+  --color-muted-foreground: hsl(0 0% 45%);
+  --color-panel-bg: hsl(0 0% 95%);
+  --color-deep-carbon: hsl(0 0% 98%);
+  --color-glass-bg: hsl(0 0% 100% / 0.9);
+  --color-glass-border: hsl(0 0% 85%);
+  --color-secondary: hsl(0 0% 90%);
+  --color-secondary-foreground: hsl(0 0% 10%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(0 0% 10%);
+}
+
+.theme-high-contrast {
+  color-scheme: dark;
+  --color-background: hsl(0 0% 0%);
+  --color-foreground: hsl(0 0% 100%);
+  --color-card: hsl(0 0% 0%);
+  --color-card-foreground: hsl(0 0% 100%);
+  --color-border: hsl(0 0% 100%);
+  --color-input: hsl(0 0% 0%);
+  --color-primary: hsl(135 100% 50%);
+  --color-muted: hsl(0 0% 10%);
+  --color-muted-foreground: hsl(0 0% 90%);
+  --color-panel-bg: hsl(0 0% 0%);
+  --color-deep-carbon: hsl(0 0% 0%);
+  --color-glass-bg: hsl(0 0% 0% / 0.9);
+  --color-glass-border: hsl(0 0% 100%);
+  --color-secondary: hsl(0 0% 0%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-popover: hsl(0 0% 0%);
+  --color-popover-foreground: hsl(0 0% 100%);
 }

@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useTheme } from "../ThemeContext";
+
 
 interface Message {
   id: string;
@@ -61,6 +63,7 @@ const DEFAULT_MESSAGE: Message = {
 };
 
 export function AIChat({ editorRef }: AIChatProps) {
+  const { theme } = useTheme();
   const roomId = new URLSearchParams(window.location.search).get("room") || "default";
   const storageKey = `ai-chat-messages-${roomId}`;
 
@@ -155,7 +158,7 @@ export function AIChat({ editorRef }: AIChatProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border bg-card/50">
-        <Sparkles className="w-3.5 h-3.5 text-primary" />
+        <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" />
         <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider">Ask Kernel</span>
       </div>
 
@@ -175,7 +178,7 @@ export function AIChat({ editorRef }: AIChatProps) {
               <div
                 className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === "assistant"
-                    ? "bg-primary/20 text-primary"
+                    ? "bg-cyber-cyan/20 text-cyber-cyan"
                     : "bg-secondary text-muted-foreground"
                 }`}
               >
@@ -189,10 +192,10 @@ export function AIChat({ editorRef }: AIChatProps) {
                 className={`max-w-[85%] px-2.5 py-1.5 rounded-lg text-xs leading-relaxed ${
                   message.role === "assistant"
                     ? "bg-card text-foreground border border-border"
-                    : "bg-primary/20 text-foreground border border-primary/30"
+                    : "bg-cyber-cyan/10 text-foreground border border-cyber-cyan/20"
                 }`}
               >
-                <div className="prose prose-invert prose-xs max-w-none text-xs leading-relaxed">
+                <div className={`prose ${theme === "light" ? "" : "prose-invert"} prose-xs max-w-none text-xs leading-relaxed`}>
                   <ReactMarkdown
                     components={{
                       code({ className, children, ...props }: any) {
@@ -208,7 +211,7 @@ export function AIChat({ editorRef }: AIChatProps) {
                             {String(children).replace(/\n$/, "")}
                           </SyntaxHighlighter>
                         ) : (
-                          <code className="bg-black/30 px-1 py-0.5 rounded text-primary text-[11px]" {...props}>
+                          <code className="bg-black/30 px-1 py-0.5 rounded text-cyber-cyan text-[11px]" {...props}>
                             {children}
                           </code>
                         );
@@ -234,14 +237,14 @@ export function AIChat({ editorRef }: AIChatProps) {
             animate={{ opacity: 1 }}
             className="flex gap-1.5 items-center"
           >
-            <div className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-cyber-cyan/20 text-cyber-cyan flex items-center justify-center">
               <Bot className="w-3 h-3" />
             </div>
             <div className="flex gap-1 px-2.5 py-1.5 bg-card rounded-lg border border-border">
               {[0, 1, 2].map((i) => (
                 <motion.span
                   key={i}
-                  className="w-1.5 h-1.5 rounded-full bg-primary"
+                  className="w-1.5 h-1.5 rounded-full bg-cyber-cyan"
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{
                     repeat: Infinity,
@@ -266,14 +269,14 @@ export function AIChat({ editorRef }: AIChatProps) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Ask Kernel anything..."
-            className="flex-1 px-2.5 py-1.5 rounded-md bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+            className="flex-1 px-2.5 py-1.5 rounded-md bg-secondary border border-border text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-cyber-cyan focus:border-cyber-cyan transition-all"
           />
           <motion.button
             onClick={handleSend}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             disabled={!input.trim()}
-            className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-md bg-cyber-cyan text-primary-foreground hover:bg-cyber-cyan/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Send className="w-3.5 h-3.5" />
           </motion.button>

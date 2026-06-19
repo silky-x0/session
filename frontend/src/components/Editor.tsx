@@ -16,7 +16,12 @@ import LiveCursors from "./editor/LiveCursors";
 import { ConnectionToast } from "./editor/ConnectionToast";
 import { BroadcastProvider } from "./editor/BroadcastProvider";
 import { motion, AnimatePresence } from "framer-motion";
-import { Code2, MessageSquare, Terminal } from "lucide-react";
+import { Code2, MessageSquare, Terminal, Edit3 } from "lucide-react";
+import { ThemeProvider, useTheme } from "./ThemeContext";
+import { SettingsPanel } from "./editor/SettingsPanel";
+import { Whiteboard } from "./editor/Whiteboard";
+
+
 
 const randomColor = () =>
   "#" +
@@ -40,7 +45,8 @@ interface Metadata {
   starterCode?: string;
 }
 
-type MobilePanel = "editor" | "chat" | "output";
+type MobilePanel = "editor" | "chat" | "output" | "whiteboard";
+
 
 /**
  * Inner component that uses the Liveblocks room.
@@ -50,6 +56,10 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const navigate = useNavigate();
   const room = useRoom();
   const status = useStatus();
+  const { zenMode, theme } = useTheme();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeMainView, setActiveMainView] = useState<"code" | "whiteboard">("code");
+
   const hasCalledReadyRef = useRef(false);
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -62,6 +72,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const [language, setLanguage] = useState("javascript");
   const [metadata, setMetadata] = useState<Metadata>({});
   const [activePanel, setActivePanel] = useState<MobilePanel>("editor");
+
 
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
@@ -101,7 +112,8 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
         "editorLineNumber.activeForeground": "#26A65B",
       },
     });
-    monaco.editor.setTheme("neon-dark");
+    const monacoTheme = theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark";
+    monaco.editor.setTheme(monacoTheme);
 
     // Create the Liveblocks Yjs provider
     const yDoc = new Y.Doc();
@@ -241,6 +253,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
     icon: React.ReactNode;
   }[] = [
     { id: "editor", label: "Code", icon: <Code2 className='w-4 h-4' /> },
+    { id: "whiteboard", label: "Board", icon: <Edit3 className='w-4 h-4' /> },
     {
       id: "chat",
       label: "AI Chat",
@@ -248,6 +261,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
     },
     { id: "output", label: "Output", icon: <Terminal className='w-4 h-4' /> },
   ];
+
 
   return (
     <div className='h-screen flex flex-col bg-background overflow-hidden p-1.5 sm:p-2 lg:p-3 gap-1.5 sm:gap-2 lg:gap-3'>
@@ -264,10 +278,11 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           onJoinAudio={() => {}}
           onCreateRoom={handleCreateRoom}
           onLanguageChange={handleLanguageChange}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
 
         {/* Problem Panel */}
-        {metadata.title && (
+        {metadata.title && !zenMode && (
           <ProblemPanel metadata={metadata} language={language} />
         )}
 
@@ -279,7 +294,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
               onClick={() => setActivePanel(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                 activePanel === tab.id
-                  ? "bg-primary/20 text-primary border border-primary/30 shadow-[0_0_10px_rgba(0,255,65,0.15)]"
+                  ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               }`}
             >
@@ -298,19 +313,47 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           <LiveCursors cursorPanel={cursorPanelRef} />
 
           {/* ─── Desktop Layout (lg+) ─── */}
-          {/* Left - Code Editor (desktop only, always visible) */}
+          {/* Left - Code Editor / Whiteboard (desktop only) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className='hidden lg:flex flex-1 min-w-0'
+            className='hidden lg:flex flex-col flex-1 min-w-0 gap-2'
           >
-            <div className='w-full h-full'>
-              <CodeEditor onMount={handleEditorDidMount} />
+            {/* View Selector Tabs */}
+            <div className="flex items-center gap-1.5 p-1 glass-panel rounded-lg w-fit select-none">
+              <button
+                onClick={() => setActiveMainView("code")}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeMainView === "code"
+                    ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                }`}
+              >
+                Code
+              </button>
+              <button
+                onClick={() => setActiveMainView("whiteboard")}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeMainView === "whiteboard"
+                    ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                }`}
+              >
+                Whiteboard
+              </button>
+            </div>
+
+            <div className='w-full h-full min-h-0 flex-1'>
+              {activeMainView === "code" ? (
+                <CodeEditor onMount={handleEditorDidMount} />
+              ) : (
+                <Whiteboard />
+              )}
             </div>
           </motion.div>
 
           {/* Right - AI Chat & Output (desktop only) */}
-          <div className='hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0'>
+          <div className={`hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300 ${zenMode ? "lg:hidden" : ""}`}>
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
               <AIChat editorRef={editorRef} />
@@ -340,6 +383,18 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                   className='h-full'
                 >
                   <CodeEditor onMount={handleEditorDidMount} />
+                </motion.div>
+              )}
+              {activePanel === "whiteboard" && (
+                <motion.div
+                  key='whiteboard-panel'
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.15 }}
+                  className='h-full'
+                >
+                  <Whiteboard />
                 </motion.div>
               )}
               {activePanel === "chat" && (
@@ -373,7 +428,19 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
               )}
             </AnimatePresence>
           </div>
+
         </div>
+
+        {/* Floating Settings Panel */}
+        <SettingsPanel
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          onFormat={() => {
+            if (editorRef.current) {
+              editorRef.current.getAction("editor.action.formatDocument")?.run();
+            }
+          }}
+        />
       </BroadcastProvider>
     </div>
   );
@@ -424,35 +491,38 @@ export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () 
   const avatarSeed = `${nickname}-${Math.floor(Math.random() * 100) + 1}`;
 
   return (
-    <ErrorBoundary FallbackComponent={RoomErrorFallback}>
-      <RoomProvider
-        id={roomId}
-        initialPresence={{
-          cursor: null,
-          isTyping: false,
-          selectedLineNumber: null,
-          info: {
-            name: nickname,
-            color: color,
-            avatarSeed: avatarSeed,
-          },
-        }}
-      >
-        <ClientSideSuspense
-          fallback={
-            <div className='h-screen w-screen flex items-center justify-center bg-background'>
-              <div className='flex flex-col items-center gap-4'>
-                <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
-                <span className='text-muted-foreground text-sm'>
-                  Connecting to room...
-                </span>
-              </div>
-            </div>
-          }
+    <ThemeProvider>
+      <ErrorBoundary FallbackComponent={RoomErrorFallback}>
+        <RoomProvider
+          id={roomId}
+          initialPresence={{
+            cursor: null,
+            isTyping: false,
+            selectedLineNumber: null,
+            info: {
+              name: nickname,
+              color: color,
+              avatarSeed: avatarSeed,
+            },
+          }}
         >
-          <CollaborativeEditorInner onRoomReady={onRoomReady} />
-        </ClientSideSuspense>
-      </RoomProvider>
-    </ErrorBoundary>
+          <ClientSideSuspense
+            fallback={
+              <div className='h-screen w-screen flex items-center justify-center bg-background'>
+                <div className='flex flex-col items-center gap-4'>
+                  <div className='w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin' />
+                  <span className='text-muted-foreground text-sm'>
+                    Connecting to room...
+                  </span>
+                </div>
+              </div>
+            }
+          >
+            <CollaborativeEditorInner onRoomReady={onRoomReady} />
+          </ClientSideSuspense>
+        </RoomProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
+
 }

@@ -88,11 +88,25 @@ export const SessionInput: React.FC = () => {
   const handleEnter = useCallback(
     (nickname: string) => {
       if (!pendingRoomId) return;
+
+      try {
+        const stored = localStorage.getItem("session-history");
+        const history = stored ? JSON.parse(stored) : [];
+        const updated = [
+          { roomId: pendingRoomId, timestamp: Date.now() },
+          ...history.filter((h: any) => h.roomId !== pendingRoomId),
+        ].slice(0, 5);
+        localStorage.setItem("session-history", JSON.stringify(updated));
+      } catch (e) {
+        console.error("Failed to save session to history", e);
+      }
+
       const encoded = encodeURIComponent(nickname);
       navigate(`/editor?room=${pendingRoomId}&nickname=${encoded}`);
     },
     [pendingRoomId, navigate],
   );
+
 
   return (
     <>

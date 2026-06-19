@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
-import { Suspense, lazy, useState, useEffect, useCallback } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
+
 import { Loader2 } from "lucide-react";
+import { useTheme } from "../ThemeContext";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -17,45 +19,47 @@ function EditorLoader() {
   );
 }
 
-function useIsMobile(breakpoint = 1024) {
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < breakpoint : false,
-  );
-
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handler);
-    setIsMobile(mq.matches);
-    return () => mq.removeEventListener("change", handler);
-  }, [breakpoint]);
-
-  return isMobile;
-}
-
 interface CodeEditorProps {
   onMount?: (editor: any, monaco: any) => void;
 }
 
 export function CodeEditor({ onMount }: CodeEditorProps) {
-  const isMobile = useIsMobile();
-  const editorInstanceRef = useCallback(
-    (editorInstance: any, monaco: any) => {
-      // Update options based on viewport
-      if (editorInstance) {
-        editorInstance.updateOptions({
-          minimap: { enabled: !isMobile },
-          fontSize: isMobile ? 12 : 14,
-          lineNumbersMinChars: isMobile ? 3 : 4,
-          lineDecorationsWidth: isMobile ? 4 : 10,
-          padding: { top: isMobile ? 8 : 16, bottom: isMobile ? 8 : 16 },
-        });
-      }
-      onMount?.(editorInstance, monaco);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+  const { settings, theme } = useTheme();
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+
+  // Update Monaco options dynamically when settings change
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.updateOptions({
+        fontSize: settings.fontSize,
+        lineHeight: settings.fontSize * settings.lineHeight,
+        minimap: { enabled: settings.minimap },
+      });
+    }
+  }, [settings.fontSize, settings.lineHeight, settings.minimap]);
+
+  // Update Monaco theme dynamically when theme state changes
+  useEffect(() => {
+    if (monacoRef.current) {
+      const monacoTheme = theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark";
+      monacoRef.current.editor.setTheme(monacoTheme);
+    }
+  }, [theme]);
+
+  const handleEditorDidMount = (editorInstance: any, monaco: any) => {
+    editorRef.current = editorInstance;
+    monacoRef.current = monaco;
+    
+    // Configure Monaco options on initial mount
+    editorInstance.updateOptions({
+      fontSize: settings.fontSize,
+      lineHeight: settings.fontSize * settings.lineHeight,
+      minimap: { enabled: settings.minimap },
+    });
+
+    onMount?.(editorInstance, monaco);
+  };
 
   return (
     <motion.div
@@ -69,23 +73,19 @@ export function CodeEditor({ onMount }: CodeEditorProps) {
           height='100%'
           defaultLanguage='javascript'
           defaultValue=""
-          theme='vs-dark'
-          onMount={editorInstanceRef}
+          theme={theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark"}
+          onMount={handleEditorDidMount}
           loading={<EditorLoader />}
+
           options={{
-            fontSize: isMobile ? 12 : 14,
             fontFamily: "'JetBrains Mono', monospace",
-            minimap: { enabled: !isMobile, scale: 1 },
             scrollBeyondLastLine: false,
             automaticLayout: true,
-            padding: { top: isMobile ? 8 : 16, bottom: isMobile ? 8 : 16 },
-            lineHeight: 1.6,
+            padding: { top: 16, bottom: 16 },
             cursorBlinking: "smooth",
             cursorSmoothCaretAnimation: "on",
             smoothScrolling: true,
             renderLineHighlight: "all",
-            lineDecorationsWidth: isMobile ? 4 : 10,
-            lineNumbersMinChars: isMobile ? 3 : 4,
             bracketPairColorization: { enabled: true },
             guides: {
               bracketPairs: true,

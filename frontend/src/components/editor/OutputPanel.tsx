@@ -264,7 +264,7 @@ export function OutputPanel({
       {/* Header */}
       <div className='flex items-center justify-between px-3 py-2 border-b border-border bg-card/50'>
         <div className='flex items-center gap-1.5'>
-          <Terminal className='w-3.5 h-3.5 text-primary' />
+          <Terminal className='w-3.5 h-3.5 text-cyber-cyan' />
           <span className='text-[11px] font-semibold text-foreground uppercase tracking-wider'>Output</span>
         </div>
 
@@ -303,8 +303,13 @@ export function OutputPanel({
       </div>
 
       {/* Output content */}
-      <div className='flex-1 overflow-y-auto p-3 font-mono text-xs scrollbar-thin bg-black/50'>
+      <div
+        className='flex-1 overflow-y-auto p-3 font-mono text-xs scrollbar-thin bg-transparent'
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <AnimatePresence>
+
           {outputs.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
