@@ -234,7 +234,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
                               </code>
                             );
                           },
-                          p({ children }) { return <p className="mb-1 last:mb-0 text-[11px]">{children}</p>; },
+                          p({ children }) { return <div className="mb-1 last:mb-0 text-[11px]">{children}</div>; },
                           ul({ children }) { return <ul className="list-disc list-inside mb-1 space-y-0.5 text-[11px]">{children}</ul>; },
                           ol({ children }) { return <ol className="list-decimal list-inside mb-1 space-y-0.5 text-[11px]">{children}</ol>; },
                           li({ children }) { return <li className="text-[11px]">{children}</li>; },

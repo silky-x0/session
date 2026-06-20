@@ -16,12 +16,12 @@ import LiveCursors from "./editor/LiveCursors";
 import { ConnectionToast } from "./editor/ConnectionToast";
 import { BroadcastProvider } from "./editor/BroadcastProvider";
 import { motion, AnimatePresence } from "framer-motion";
-import { Code2, MessageSquare, Terminal, Edit3 } from "lucide-react";
+import { Code2, MessageSquare, Terminal, Edit3, X } from "lucide-react";
 import { ThemeProvider, useTheme } from "./ThemeContext";
 import { SettingsPanel } from "./editor/SettingsPanel";
 import { Whiteboard } from "./editor/Whiteboard";
-
-
+import { PerformanceMetricsCard } from "./editor/metrics/PerformanceMetricsCard";
+import type { ExecutionMetric, PerformanceData } from "./editor/metrics/types";
 
 const randomColor = () =>
   "#" +
@@ -47,27 +47,21 @@ interface Metadata {
 
 type MobilePanel = "editor" | "chat" | "output" | "whiteboard";
 
-
 /**
  * Inner component that uses the Liveblocks room.
  * Must be rendered inside a RoomProvider.
  */
-function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void }) {
+function CollaborativeEditorInner({
+  onRoomReady,
+}: {
+  onRoomReady?: () => void;
+}) {
   const navigate = useNavigate();
   const room = useRoom();
   const status = useStatus();
   const { zenMode, theme } = useTheme();
   const others = useOthers();
 
-  const inWhiteboard = others.filter(o => o.presence?.hoveredPanel === "whiteboard");
-  const inEditor = others.filter(o => o.presence?.hoveredPanel === "editor");
-  const getCollaboratorsInPanel = (panelId: string) => {
-    return others.filter(o => o.presence?.hoveredPanel === panelId);
-  };
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeMainView, setActiveMainView] = useState<"code" | "whiteboard">("code");
-
-  const hasCalledReadyRef = useRef(false);
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
   const yMetaObserverRef = useRef<(() => void) | null>(null);
@@ -75,6 +69,42 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const monacoRef = useRef<any>(null);
   const yOutputRef = useRef<Y.Array<any> | null>(null);
   const yExecRef = useRef<Y.Map<any> | null>(null);
+
+  const inWhiteboard = others.filter(
+    (o) => o.presence?.hoveredPanel === "whiteboard",
+  );
+  const inEditor = others.filter((o) => o.presence?.hoveredPanel === "editor");
+  const getCollaboratorsInPanel = (panelId: string) => {
+    return others.filter((o) => o.presence?.hoveredPanel === panelId);
+  };
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeMainView, setActiveMainView] = useState<"code" | "whiteboard">(
+    "code",
+  );
+  const [isMetricsOpen, setIsMetricsOpen] = useState(false);
+  const [metricsHistory, setMetricsHistory] = useState<ExecutionMetric[]>([]);
+  const [perfData, setPerfData] = useState<PerformanceData>({
+    metrics: [],
+    successRate: 0,
+    comparison: { current: 0, previous: 0, improvementPercent: 0 },
+    status: "stable",
+  });
+  const [isRunning, setIsRunning] = useState(false);
+
+  useEffect(() => {
+    if (!yExecRef.current) return;
+    const handleExecChange = () => {
+      setIsRunning(!!yExecRef.current?.get("isRunning"));
+    };
+    yExecRef.current.observe(handleExecChange);
+    handleExecChange();
+
+    return () => {
+      yExecRef.current?.unobserve(handleExecChange);
+    };
+  }, [yExecRef.current]);
+
+  const hasCalledReadyRef = useRef(false);
   const cursorPanelRef = useRef<HTMLDivElement>(null);
   const mainContainerRef = useRef<HTMLDivElement>(null);
   const [language, setLanguage] = useState("javascript");
@@ -84,7 +114,6 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
   const yDocRef = useRef<Y.Doc | null>(null);
   const [yWhiteboard, setYWhiteboard] = useState<Y.Text | null>(null);
   const [yChat, setYChat] = useState<Y.Array<any> | null>(null);
-
 
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
@@ -207,7 +236,12 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
         "editorLineNumber.activeForeground": "#26A65B",
       },
     });
-    const monacoTheme = theme === "light" ? "vs" : theme === "contrast" ? "hc-black" : "neon-dark";
+    const monacoTheme =
+      theme === "light"
+        ? "vs"
+        : theme === "contrast"
+          ? "hc-black"
+          : "neon-dark";
     monaco.editor.setTheme(monacoTheme);
 
     const yDoc = yDocRef.current;
@@ -297,9 +331,11 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
     { id: "output", label: "Output", icon: <Terminal className='w-4 h-4' /> },
   ];
 
-
   return (
-    <div ref={mainContainerRef} className='h-screen flex flex-col bg-background overflow-hidden p-0 gap-1.5 sm:gap-2 lg:gap-3 relative'>
+    <div
+      ref={mainContainerRef}
+      className='h-screen flex flex-col bg-background overflow-hidden p-0 gap-1.5 sm:gap-2 lg:gap-3 relative'
+    >
       {/* Connection Toast — global position: fixed overlay */}
       <ConnectionToast />
 
@@ -330,8 +366,11 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
         <div className='lg:hidden flex items-center gap-1 glass-panel rounded-lg p-1'>
           {mobileTabs.map((tab) => {
             const panelCollaborators = getCollaboratorsInPanel(tab.id);
-            const showBadge = panelCollaborators.length > 0 && activePanel !== tab.id;
-            const badgeColor = panelCollaborators[0]?.presence?.info?.color || "var(--color-primary)";
+            const showBadge =
+              panelCollaborators.length > 0 && activePanel !== tab.id;
+            const badgeColor =
+              panelCollaborators[0]?.presence?.info?.color ||
+              "var(--color-primary)";
 
             return (
               <button
@@ -346,7 +385,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                 {showBadge && (
                   <span
                     style={{ backgroundColor: badgeColor }}
-                    className="absolute top-1 right-2 w-2 h-2 rounded-full animate-pulse border border-background shadow-sm"
+                    className='absolute top-1 right-2 w-2 h-2 rounded-full animate-pulse border border-background shadow-sm'
                   />
                 )}
                 {tab.icon}
@@ -361,44 +400,46 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           ref={cursorPanelRef}
           className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
         >
-
           {/* ─── Desktop Layout (lg+) ─── */}
           {/* Left - Code Editor / Whiteboard (desktop only) */}
           <motion.div
-            id="workspace-panel"
+            id='workspace-panel'
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             className='hidden lg:flex flex-col flex-1 min-w-0'
           >
-
             {/* Double-Bezel Workspace Shell */}
-            <div className="flex-1 w-full h-full min-h-0 relative p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm">
-              <div className="w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] relative">
-                
+            <div className='flex-1 w-full h-full min-h-0 relative p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm'>
+              <div className='w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/20 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] relative'>
                 {/* Monaco Code Editor Wrapper */}
-                <div className={`absolute inset-0 transition-opacity duration-200 ${
-                  activeMainView === "code"
-                    ? "opacity-100 pointer-events-auto z-10"
-                    : "opacity-0 pointer-events-none z-0"
-                }`}>
+                <div
+                  className={`absolute inset-0 transition-opacity duration-200 ${
+                    activeMainView === "code"
+                      ? "opacity-100 pointer-events-auto z-10"
+                      : "opacity-0 pointer-events-none z-0"
+                  }`}
+                >
                   <CodeEditor onMount={handleEditorDidMount} />
                 </div>
 
                 {/* Excalidraw Whiteboard Wrapper */}
-                <div className={`absolute inset-0 transition-opacity duration-200 ${
-                  activeMainView === "whiteboard"
-                    ? "opacity-100 pointer-events-auto z-10"
-                    : "opacity-0 pointer-events-none z-0"
-                }`}>
+                <div
+                  className={`absolute inset-0 transition-opacity duration-200 ${
+                    activeMainView === "whiteboard"
+                      ? "opacity-100 pointer-events-auto z-10"
+                      : "opacity-0 pointer-events-none z-0"
+                  }`}
+                >
                   <Whiteboard yWhiteboard={yWhiteboard} />
                 </div>
-
               </div>
             </div>
           </motion.div>
 
           {/* Right - AI Chat & Output (desktop only) */}
-          <div className={`hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300 ${zenMode ? "lg:hidden" : ""}`}>
+          <div
+            className={`hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300 ${zenMode ? "lg:hidden" : ""}`}
+          >
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
               <AIChat editorRef={editorRef} yChat={yChat} />
@@ -411,6 +452,9 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                 language={language}
                 yOutput={yOutputRef.current}
                 yExec={yExecRef.current}
+                onOpenMetrics={() => setIsMetricsOpen(true)}
+                setMetricsHistory={setMetricsHistory}
+                setPerfData={setPerfData}
               />
             </div>
           </div>
@@ -468,12 +512,14 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                     language={language}
                     yOutput={yOutputRef.current}
                     yExec={yExecRef.current}
+                    onOpenMetrics={() => setIsMetricsOpen(true)}
+                    setMetricsHistory={setMetricsHistory}
+                    setPerfData={setPerfData}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-
         </div>
 
         {/* Floating Settings Panel */}
@@ -482,10 +528,49 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           onClose={() => setIsSettingsOpen(false)}
           onFormat={() => {
             if (editorRef.current) {
-              editorRef.current.getAction("editor.action.formatDocument")?.run();
+              editorRef.current
+                .getAction("editor.action.formatDocument")
+                ?.run();
             }
           }}
         />
+
+        {/* Performance Metrics Modal Overlay */}
+        <AnimatePresence>
+          {isMetricsOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMetricsOpen(false)}
+                className='fixed inset-0 bg-black/40 backdrop-blur-sm z-[99]'
+              />
+
+              {/* Modal Container */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ duration: 0.2 }}
+                className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-0 z-[100]'
+              >
+                <div className='relative'>
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setIsMetricsOpen(false)}
+                    className='absolute -top-3 -right-3 z-10 p-1.5 bg-secondary text-muted-foreground hover:text-foreground rounded-full border border-border shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer'
+                    aria-label='Close metrics'
+                  >
+                    <X className='w-4 h-4' />
+                  </button>
+                  <PerformanceMetricsCard data={perfData} loading={isRunning} />
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </BroadcastProvider>
     </div>
   );
@@ -502,17 +587,19 @@ function RoomErrorFallback({
   resetErrorBoundary: () => void;
 }) {
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4 max-w-md text-center p-6">
-        <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
-          <span className="text-red-400 text-xl">⚠</span>
+    <div className='h-screen w-screen flex items-center justify-center bg-background'>
+      <div className='flex flex-col items-center gap-4 max-w-md text-center p-6'>
+        <div className='w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center'>
+          <span className='text-red-400 text-xl'>⚠</span>
         </div>
-        <h2 className="text-foreground text-lg font-semibold">Room Error</h2>
-        <p className="text-muted-foreground text-sm">{error instanceof Error ? error.message : String(error)}</p>
+        <h2 className='text-foreground text-lg font-semibold'>Room Error</h2>
+        <p className='text-muted-foreground text-sm'>
+          {error instanceof Error ? error.message : String(error)}
+        </p>
         <button
           onClick={resetErrorBoundary}
-          className="px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30 
-                     hover:bg-primary/30 transition-colors text-sm font-medium cursor-pointer"
+          className='px-4 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30 
+                     hover:bg-primary/30 transition-colors text-sm font-medium cursor-pointer'
         >
           Reconnect
         </button>
@@ -525,7 +612,11 @@ function RoomErrorFallback({
  * Outer wrapper that extracts roomId from URL and provides the RoomProvider.
  * This is the default export used by App.tsx.
  */
-export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () => void }) {
+export default function CollaborativeEditor({
+  onRoomReady,
+}: {
+  onRoomReady?: () => void;
+}) {
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
 
@@ -570,5 +661,4 @@ export default function CollaborativeEditor({ onRoomReady }: { onRoomReady?: () 
       </ErrorBoundary>
     </ThemeProvider>
   );
-
 }
