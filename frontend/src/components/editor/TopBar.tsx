@@ -33,17 +33,14 @@ const LANGUAGES = [
   "python",
   "java",
   "cpp",
+  "c",
   "go",
   "rust",
-  "html",
-  "css",
-  "json",
+  "swift",
+  "zig",
 ];
 
-/**
- * Top bar with room info, connection status (useStatus), avatar stack,
- * sync status badge, undo/redo, broadcast reactions, and notifications.
- */
+
 export function TopBar({
   roomId,
   inCall,

@@ -15,12 +15,13 @@ export const createAiSession = async (
     throw new AppError(400, "Prompt is required");
   }
 
-  // Generate content from AI (Kimi)
-    // const aiResponse = await generateAIContent(prompt);
 
-  // Generate content (Gemini)
-  const aiResponse = await generateAIContentGemini(prompt)
-
+  let aiResponse;
+  try {
+    aiResponse = await generateAIContentGemini(prompt);
+  } catch (error: any) {
+    throw new AppError(500, "Failed to create AI session");
+  }
 
   const normalizedLanguage = normalizeLanguage(aiResponse.language);
 

@@ -19,7 +19,18 @@ import type { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { useUpdateMyPresence } from "@liveblocks/react/suspense";
 
-const SUPPORTED_LANGUAGES = ["python", "javascript", "c", "cpp"];
+const SUPPORTED_LANGUAGES = [
+  "python",
+  "javascript",
+  "typescript",
+  "c",
+  "cpp",
+  "java",
+  "go",
+  "rust",
+  "swift",
+  "zig"
+];
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:1234";
 
@@ -54,6 +65,7 @@ export function OutputPanel({
 }: OutputPanelProps) {
   const [outputs, setOutputs] = useState<OutputLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [execStats, setExecStats] = useState<{ memory?: string | number; cpuTime?: string | number } | null>(null);
   const outputEndRef = useRef<HTMLDivElement>(null);
   const updateMyPresence = useUpdateMyPresence();
 
@@ -120,6 +132,7 @@ export function OutputPanel({
 
     // Acquire lock
     yExec.set("isRunning", true);
+    setExecStats(null);
 
     // Add a "running" indicator
     pushOutputLines([
@@ -150,6 +163,11 @@ export function OutputPanel({
           },
         ]);
         return;
+      }
+
+      // Store stats if available
+      if (data.memory !== undefined || data.cpuTime !== undefined) {
+        setExecStats({ memory: data.memory, cpuTime: data.cpuTime });
       }
 
       const newOutputs: OutputLine[] = [];
@@ -228,6 +246,7 @@ export function OutputPanel({
   const handleClear = () => {
     if (!yOutput) return;
     yOutput.delete(0, yOutput.length);
+    setExecStats(null);
   };
 
   const getIcon = (type: OutputLine["type"]) => {
@@ -348,9 +367,23 @@ export function OutputPanel({
 
         {/* Status bar */}
         <div className="px-4 py-2 border-t border-glass-border/10 bg-secondary/20 flex items-center justify-between">
-          <span className="text-[9px] text-muted-foreground font-mono">
-            {outputs.length} line{outputs.length !== 1 ? "s" : ""}
-          </span>
+          <div className="flex items-center gap-3 text-[9px] text-muted-foreground font-mono">
+            <span>
+              {outputs.length} line{outputs.length !== 1 ? "s" : ""}
+            </span>
+            {execStats && (
+              <>
+                <span className="text-glass-border/40 font-sans">•</span>
+                <span className="text-foreground font-bold">
+                  CPU: {execStats.cpuTime !== undefined && execStats.cpuTime !== null ? `${execStats.cpuTime}s` : "N/A"}
+                </span>
+                <span className="text-glass-border/40 font-sans">•</span>
+                <span className="text-foreground font-bold">
+                  Memory: {execStats.memory !== undefined && execStats.memory !== null ? `${execStats.memory} KB` : "N/A"}
+                </span>
+              </>
+            )}
+          </div>
           <span className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-mono">
             <span
               className={`w-1.5 h-1.5 rounded-full ${
