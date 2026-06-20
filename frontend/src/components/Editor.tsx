@@ -83,6 +83,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
   const yDocRef = useRef<Y.Doc | null>(null);
   const [yWhiteboard, setYWhiteboard] = useState<Y.Text | null>(null);
+  const [yChat, setYChat] = useState<Y.Array<any> | null>(null);
 
 
   const roomId =
@@ -112,6 +113,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
 
     const yWhiteboardText = yDoc.getText("whiteboard");
     setYWhiteboard(yWhiteboardText);
+    setYChat(yDoc.getArray("chat"));
 
     // Metadata Sync via Y.Map
     const yMeta = yDoc.getMap("meta");
@@ -399,7 +401,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
           <div className={`hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300 ${zenMode ? "lg:hidden" : ""}`}>
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
-              <AIChat editorRef={editorRef} />
+              <AIChat editorRef={editorRef} yChat={yChat} />
             </div>
 
             {/* Output - Bottom */}
@@ -449,7 +451,7 @@ function CollaborativeEditorInner({ onRoomReady }: { onRoomReady?: () => void })
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <AIChat editorRef={editorRef} />
+                  <AIChat editorRef={editorRef} yChat={yChat} />
                 </motion.div>
               )}
               {activePanel === "output" && (

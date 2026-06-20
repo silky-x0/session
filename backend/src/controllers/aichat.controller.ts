@@ -6,13 +6,13 @@ export const chatWithAI = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { prompt, codeContext, cursorLine } = req.body;
+  const { prompt, codeContext, cursorLine, history } = req.body;
 
   if (!prompt) {
     throw new AppError(400, "Prompt is required");
   }
 
-  const response = await handleAiChat({ prompt, codeContext, cursorLine });
+  const response = await handleAiChat({ prompt, codeContext, cursorLine, history });
 
   res.json({ response });
 };

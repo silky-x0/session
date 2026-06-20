@@ -40,7 +40,6 @@ const LANGUAGES = [
   "zig",
 ];
 
-
 export function TopBar({
   roomId,
   inCall,
@@ -187,7 +186,7 @@ export function TopBar({
           </motion.div>
         )}
 
-        <motion.button
+        {/* <motion.button
           onClick={onCreateRoom}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -195,7 +194,7 @@ export function TopBar({
         >
           <Plus className='w-3 h-3' />
           <span className='hidden sm:inline'>New Room</span>
-        </motion.button>
+        </motion.button> */}
 
         {onOpenSettings && (
           <motion.button

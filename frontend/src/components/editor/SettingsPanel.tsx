@@ -1,6 +1,6 @@
 import React from "react";
 import { useTheme, type Theme } from "../ThemeContext";
-import { Settings, X, Sun, Moon, Eye, ZoomIn, AlignLeft, Sparkles } from "lucide-react";
+import { Settings, X, Sun, Moon, Eye, ZoomIn, AlignLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -36,7 +36,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
           >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-glass-border pb-3 mb-4">
-              <div className="flex items-center gap-2 text-cyber-cyan font-bold">
+              <div className="flex items-center gap-2 text-neon-pulse font-bold">
                 <Settings className="w-5 h-5 animate-spin-slow" />
                 <span className="tracking-wider uppercase text-xs">Editor Settings</span>
               </div>
@@ -62,7 +62,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                       onClick={() => setTheme(t)}
                       className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border transition-all ${
                         theme === t
-                          ? "bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan shadow-[0_0_12px_rgba(0,240,255,0.15)]"
+                          ? "bg-neon-pulse/20 border-neon-pulse text-neon-pulse shadow-[0_0_12px_rgba(0,255,65,0.15)]"
                           : "border-glass-border bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10"
                       }`}
                     >
@@ -84,7 +84,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                 <button
                   onClick={() => setZenMode(!zenMode)}
                   className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    zenMode ? "bg-cyber-cyan" : "bg-neutral-800"
+                    zenMode ? "bg-neon-pulse" : "bg-neutral-800"
                   }`}
                 >
                   <span
@@ -101,7 +101,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="font-semibold text-muted-foreground uppercase tracking-wider">Font Size</span>
-                    <span className="font-mono text-cyber-cyan font-bold">{settings.fontSize}px</span>
+                    <span className="font-mono text-neon-pulse font-bold">{settings.fontSize}px</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <ZoomIn className="w-4 h-4 text-muted-foreground" />
@@ -111,7 +111,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                       max="24"
                       value={settings.fontSize}
                       onChange={(e) => updateSettings({ fontSize: parseInt(e.target.value) })}
-                      className="flex-1 accent-cyber-cyan h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 accent-neon-pulse h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="font-semibold text-muted-foreground uppercase tracking-wider">Line Height</span>
-                    <span className="font-mono text-cyber-cyan font-bold">{settings.lineHeight}</span>
+                    <span className="font-mono text-neon-pulse font-bold">{settings.lineHeight}</span>
                   </div>
                   <div className="flex items-center gap-2.5">
                     <AlignLeft className="w-4 h-4 text-muted-foreground" />
@@ -131,7 +131,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                       step="0.1"
                       value={settings.lineHeight}
                       onChange={(e) => updateSettings({ lineHeight: parseFloat(e.target.value) })}
-                      className="flex-1 accent-cyber-cyan h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer"
+                      className="flex-1 accent-neon-pulse h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
                 </div>
@@ -143,7 +143,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                 <button
                   onClick={() => updateSettings({ minimap: !settings.minimap })}
                   className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    settings.minimap ? "bg-cyber-cyan" : "bg-neutral-800"
+                    settings.minimap ? "bg-neon-pulse" : "bg-neutral-800"
                   }`}
                 >
                   <span
@@ -161,9 +161,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                     onFormat();
                     onClose();
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/30 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-cyber-cyan/30 transition-all shadow-[0_0_15px_rgba(0,240,255,0.05)] cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-neon-pulse/20 text-neon-pulse border border-neon-pulse/30 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-neon-pulse/30 transition-all shadow-[0_0_15px_rgba(0,255,65,0.05)] cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4" />
                   Format Code (Prettier)
                 </button>
               )}

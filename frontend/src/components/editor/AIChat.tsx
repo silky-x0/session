@@ -3,19 +3,22 @@ import { Bot, Send, User } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "../ThemeContext";
-import { useUpdateMyPresence } from "@liveblocks/react/suspense";
+import { useUpdateMyPresence, useSelf } from "@liveblocks/react/suspense";
+import * as Y from "yjs";
 
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+  senderName?: string;
 }
 
 interface AIChatProps {
   editorRef: React.MutableRefObject<any>;
+  yChat: Y.Array<any> | null;
 }
 
 function getCodeContext(editor: any, linesAbove: number = 10, linesBelow: number = 10): { code: string; cursorLine: number } | null {
@@ -63,32 +66,31 @@ const DEFAULT_MESSAGE: Message = {
   content: "Hi! I'm Kernel, your AI coding assistant. Ask me anything about your code or programming concepts. I can see the code around your cursor!",
 };
 
-export function AIChat({ editorRef }: AIChatProps) {
+export function AIChat({ editorRef, yChat }: AIChatProps) {
   const { theme } = useTheme();
   const updateMyPresence = useUpdateMyPresence();
-  const roomId = new URLSearchParams(window.location.search).get("room") || "default";
-  const storageKey = `ai-chat-messages-${roomId}`;
+  const self = useSelf();
 
-  const [messages, setMessages] = useState<Message[]>(() => {
-    // Load messages from localStorage on initial render
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return [DEFAULT_MESSAGE];
-      }
-    }
-    return [DEFAULT_MESSAGE];
-  });
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Persist messages to localStorage whenever they change
+  // Sync messages with Yjs yChat
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(messages));
-  }, [messages, storageKey]);
+    if (!yChat) return;
+
+    const handleSync = () => {
+      setMessages(yChat.toArray());
+    };
+
+    yChat.observe(handleSync);
+    handleSync();
+
+    return () => {
+      yChat.unobserve(handleSync);
+    };
+  }, [yChat]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -102,9 +104,10 @@ export function AIChat({ editorRef }: AIChatProps) {
       id: Date.now().toString(),
       role: "user",
       content: input,
+      senderName: self.presence?.info?.name || "Anonymous",
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    yChat?.push([userMessage]);
     setInput("");
     setIsTyping(true);
 
@@ -123,6 +126,7 @@ export function AIChat({ editorRef }: AIChatProps) {
           prompt: input,
           codeContext: codeContext?.code,
           cursorLine: codeContext?.cursorLine,
+          history: messages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -136,20 +140,24 @@ export function AIChat({ editorRef }: AIChatProps) {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.response || "I couldn't generate a response. Please try again.",
+        senderName: "Kernel AI",
       };
-      setMessages((prev) => [...prev, aiMessage]);
+      yChat?.push([aiMessage]);
     } catch (error) {
       console.error("AI Chat Error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
+        senderName: "Kernel AI",
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      yChat?.push([errorMessage]);
     } finally {
       setIsTyping(false);
     }
   };
+
+  const displayedMessages = messages.length > 0 ? messages : [DEFAULT_MESSAGE];
 
   return (
     <motion.div
@@ -171,7 +179,7 @@ export function AIChat({ editorRef }: AIChatProps) {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3.5 space-y-4 scrollbar-thin bg-transparent">
           <AnimatePresence>
-            {messages.map((message) => (
+            {displayedMessages.map((message) => (
               <motion.div
                 key={message.id}
                 initial={{ opacity: 0, y: 10 }}
@@ -194,43 +202,48 @@ export function AIChat({ editorRef }: AIChatProps) {
                     <User strokeWidth={1.5} className="w-3.5 h-3.5" />
                   )}
                 </div>
-                <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                    message.role === "assistant"
-                      ? "bg-secondary/40 text-foreground border border-glass-border/30 rounded-tl-sm"
-                      : "bg-foreground/5 text-foreground border border-glass-border/30 rounded-tr-sm"
-                  }`}
-                >
-                  <div className={`prose ${theme === "light" ? "" : "prose-invert"} prose-xs max-w-none text-xs leading-relaxed`}>
-                    <ReactMarkdown
-                      components={{
-                        code({ className, children, ...props }: any) {
-                          const match = /language-(\w+)/.exec(className || "");
-                          const isBlock = !props.inline && match;
-                          return isBlock ? (
-                            <SyntaxHighlighter
-                              style={vscDarkPlus}
-                              language={match[1]}
-                              PreTag="div"
-                              className="rounded-lg text-[10px] my-1.5 border border-glass-border/20 shadow-sm"
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
-                          ) : (
-                            <code className="bg-black/35 px-1 py-0.5 rounded text-foreground text-[10px] font-mono border border-glass-border/20" {...props}>
-                              {children}
-                            </code>
-                          );
-                        },
-                        p({ children }) { return <p className="mb-1.5 last:mb-0">{children}</p>; },
-                        ul({ children }) { return <ul className="list-disc list-inside mb-1.5 space-y-0.5">{children}</ul>; },
-                        ol({ children }) { return <ol className="list-decimal list-inside mb-1.5 space-y-0.5">{children}</ol>; },
-                        li({ children }) { return <li className="text-xs">{children}</li>; },
-                        strong({ children }) { return <strong className="font-semibold text-foreground">{children}</strong>; },
-                      }}
-                    >
-                      {message.content}
-                    </ReactMarkdown>
+                <div className={`flex flex-col gap-0.5 max-w-[85%] ${message.role === "user" ? "items-end" : "items-start"}`}>
+                  <span className="text-[9px] text-muted-foreground/60 px-1 font-mono font-medium">
+                    {message.role === "assistant" ? "Kernel AI" : (message.senderName || "Anonymous")}
+                  </span>
+                  <div
+                    className={`w-full px-1.5 py-0.5 rounded-2xl text-[11px] leading-normal shadow-sm ${
+                      message.role === "assistant"
+                        ? "bg-secondary/40 text-foreground border border-glass-border/30 rounded-tl-sm"
+                        : "bg-foreground/5 text-foreground border border-glass-border/30 rounded-tr-sm"
+                    }`}
+                  >
+                    <div className={`max-w-none text-[11px] leading-normal`}>
+                      <ReactMarkdown
+                        components={{
+                          code({ className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || "");
+                            const isBlock = !props.inline && match;
+                            return isBlock ? (
+                              <SyntaxHighlighter
+                                style={theme === "light" ? prism : vscDarkPlus}
+                                language={match[1]}
+                                PreTag="div"
+                                className="rounded-lg text-[9px] my-1.5 border border-glass-border/20 shadow-sm"
+                              >
+                                {String(children).replace(/\n$/, "")}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className="bg-black/35 px-1 py-0.5 rounded text-foreground text-[10px] font-mono border border-glass-border/20" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                          p({ children }) { return <p className="mb-1 last:mb-0 text-[11px]">{children}</p>; },
+                          ul({ children }) { return <ul className="list-disc list-inside mb-1 space-y-0.5 text-[11px]">{children}</ul>; },
+                          ol({ children }) { return <ol className="list-decimal list-inside mb-1 space-y-0.5 text-[11px]">{children}</ol>; },
+                          li({ children }) { return <li className="text-[11px]">{children}</li>; },
+                          strong({ children }) { return <strong className="font-semibold text-foreground">{children}</strong>; },
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -279,10 +292,10 @@ export function AIChat({ editorRef }: AIChatProps) {
             />
             <motion.button
               onClick={handleSend}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={input.trim() ? { scale: 1.05 } : {}}
+              whileTap={input.trim() ? { scale: 0.95 } : {}}
               disabled={!input.trim()}
-              className="p-2 rounded-xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer"
+              className="p-2 rounded-xl bg-neon-pulse text-black hover:bg-neon-pulse/90 hover:shadow-[0_0_8px_rgba(0,255,65,0.3)] disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
             >
               <Send strokeWidth={1.5} className="w-3.5 h-3.5" />
             </motion.button>
