@@ -7,6 +7,7 @@ import {
   XCircle,
   AlertTriangle,
   Clock,
+  Plus,
 } from "lucide-react";
 import {
   useState,
@@ -39,6 +40,7 @@ interface OutputLine {
   type: "log" | "error" | "warning" | "success";
   content: string;
   timestamp: string;
+  caseIndex?: number;
 }
 
 interface OutputPanelProps {
@@ -57,6 +59,35 @@ function getTimestamp() {
   });
 }
 
+function detectLineType(line: string): "log" | "error" | "warning" | "success" {
+  const lower = line.toLowerCase();
+  
+  if (
+    lower.includes("traceback (most recent call last)") ||
+    lower.includes("exception in thread") ||
+    lower.includes("panicked at") ||
+    lower.includes("compile error") ||
+    lower.includes("compilation error") ||
+    lower.includes("ld returned 1 exit status") ||
+    /\b[a-zA-Z]*Error:/i.test(line) ||
+    /\b[a-zA-Z]*Exception\b/i.test(line) ||
+    /error\s*\[e\d+\]/i.test(line) ||
+    /error\s*ts\d+/i.test(line) ||
+    (lower.includes("error:") && !lower.includes("process exited with code"))
+  ) {
+    return "error";
+  }
+  
+  if (
+    lower.includes("warning:") ||
+    /warning\s*\[/i.test(line)
+  ) {
+    return "warning";
+  }
+  
+  return "log";
+}
+
 export function OutputPanel({
   editorRef,
   language,
@@ -65,19 +96,24 @@ export function OutputPanel({
 }: OutputPanelProps) {
   const [outputs, setOutputs] = useState<OutputLine[]>([]);
   const [isRunning, setIsRunning] = useState(false);
-  const [execStats, setExecStats] = useState<{ memory?: string | number; cpuTime?: string | number } | null>(null);
+  const [execStats, setExecStats] = useState<Record<number, { memory?: string | number; cpuTime?: string | number }>>({});
+  const [activeTab, setActiveTab] = useState<"console" | "testcase">("console");
+  
+  // Custom multi-testcase states
+  const [testcases, setTestcases] = useState<string[]>([""]);
+  const [activeTestCaseIndex, setActiveTestCaseIndex] = useState<number>(0);
+  const [activeResultCaseIndex, setActiveResultCaseIndex] = useState<number>(0);
+  
   const outputEndRef = useRef<HTMLDivElement>(null);
   const updateMyPresence = useUpdateMyPresence();
 
   const isSupported = SUPPORTED_LANGUAGES.includes(language.toLowerCase());
 
-  
   const syncFromYjs = useCallback(() => {
     if (!yOutput) return;
     setOutputs(yOutput.toArray() as OutputLine[]);
   }, [yOutput]);
 
-  
   const syncExecState = useCallback(() => {
     if (!yExec) return;
     setIsRunning(!!yExec.get("isRunning"));
@@ -86,11 +122,9 @@ export function OutputPanel({
   useEffect(() => {
     if (!yOutput || !yExec) return;
 
-    
     syncFromYjs();
     syncExecState();
 
-    
     yOutput.observe(syncFromYjs);
     yExec.observe(syncExecState);
 
@@ -100,11 +134,9 @@ export function OutputPanel({
     };
   }, [yOutput, yExec, syncFromYjs, syncExecState]);
 
-  
   useEffect(() => {
     outputEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [outputs]);
-
 
   const pushOutputLines = (lines: OutputLine[]) => {
     if (!yOutput) return;
@@ -113,8 +145,6 @@ export function OutputPanel({
 
   const handleRun = async () => {
     if (!yExec || !yOutput) return;
-
-    
     if (yExec.get("isRunning")) return;
 
     const code = editorRef.current?.getValue();
@@ -130,113 +160,148 @@ export function OutputPanel({
       return;
     }
 
-    // Acquire lock
+    // Acquire lock and reset execution status
     yExec.set("isRunning", true);
-    setExecStats(null);
+    setExecStats({});
+    setActiveTab("console");
+    setActiveResultCaseIndex(0);
 
-    // Add a "running" indicator
-    pushOutputLines([
-      {
-        id: `run-${Date.now()}`,
-        type: "log",
-        content: `Executing ${language} code...`,
-        timestamp: getTimestamp(),
-      },
-    ]);
+    // Clear old outputs
+    yOutput.delete(0, yOutput.length);
 
     try {
-      const response = await fetch(`${API_URL}/api/code/execute`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: language.toLowerCase(), code }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
+      // Execute all test cases in parallel
+      const runPromises = testcases.map(async (tcStdin, index) => {
         pushOutputLines([
           {
-            id: Date.now().toString(),
-            type: "error",
-            content: data.error || "Execution failed",
+            id: `run-${Date.now()}-${index}`,
+            type: "log",
+            content: `Executing ${language} code for Case ${index + 1}...`,
             timestamp: getTimestamp(),
+            caseIndex: index,
           },
         ]);
-        return;
-      }
 
-      // Store stats if available
-      if (data.memory !== undefined || data.cpuTime !== undefined) {
-        setExecStats({ memory: data.memory, cpuTime: data.cpuTime });
-      }
-
-      const newOutputs: OutputLine[] = [];
-      const now = Date.now();
-
-      // stdout lines
-      if (data.stdout) {
-        const lines = data.stdout
-          .split("\n")
-          .filter((l: string) => l.length > 0);
-        lines.forEach((line: string, i: number) => {
-          newOutputs.push({
-            id: `${now}-stdout-${i}`,
-            type: "log",
-            content: line,
-            timestamp: getTimestamp(),
+        try {
+          const response = await fetch(`${API_URL}/api/code/execute`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              language: language.toLowerCase(),
+              code,
+              stdin: tcStdin,
+            }),
           });
-        });
-      }
 
-      // stderr lines
-      if (data.stderr) {
-        const lines = data.stderr
-          .split("\n")
-          .filter((l: string) => l.length > 0);
-        lines.forEach((line: string, i: number) => {
-          newOutputs.push({
-            id: `${now}-stderr-${i}`,
-            type: "error",
-            content: line,
-            timestamp: getTimestamp(),
-          });
-        });
-      }
+          const data = await response.json();
 
-      // Summary line
-      if (data.timedOut) {
-        newOutputs.push({
-          id: `${now}-timeout`,
-          type: "warning",
-          content: "Execution timed out (10s limit)",
-          timestamp: getTimestamp(),
-        });
-      } else if (data.exitCode === 0) {
-        newOutputs.push({
-          id: `${now}-exit`,
-          type: "success",
-          content: "Process exited with code 0",
-          timestamp: getTimestamp(),
-        });
-      } else {
-        newOutputs.push({
-          id: `${now}-exit`,
-          type: "error",
-          content: `Process exited with code ${data.exitCode}`,
-          timestamp: getTimestamp(),
-        });
-      }
+          if (!response.ok) {
+            pushOutputLines([
+              {
+                id: `${Date.now()}-error-${index}`,
+                type: "error",
+                content: `Case ${index + 1} failed: ${data.error || "Execution failed"}`,
+                timestamp: getTimestamp(),
+                caseIndex: index,
+              },
+            ]);
+            return { index, stats: null };
+          }
 
-      pushOutputLines(newOutputs);
-    } catch (err: any) {
-      pushOutputLines([
-        {
-          id: Date.now().toString(),
-          type: "error",
-          content: `Network error: ${err.message}`,
-          timestamp: getTimestamp(),
-        },
-      ]);
+          const newOutputs: OutputLine[] = [];
+          const now = Date.now();
+
+          // stdout lines
+          if (data.stdout) {
+            const lines = data.stdout.split("\n");
+            // Remove trailing newline empty line to keep logs clean
+            if (lines.length > 1 && lines[lines.length - 1] === "") {
+              lines.pop();
+            }
+            lines.forEach((line: string, i: number) => {
+              newOutputs.push({
+                id: `${now}-stdout-${index}-${i}`,
+                type: detectLineType(line),
+                content: line,
+                timestamp: getTimestamp(),
+                caseIndex: index,
+              });
+            });
+          }
+
+          // stderr lines
+          if (data.stderr) {
+            const lines = data.stderr.split("\n");
+            if (lines.length > 1 && lines[lines.length - 1] === "") {
+              lines.pop();
+            }
+            lines.forEach((line: string, i: number) => {
+              newOutputs.push({
+                id: `${now}-stderr-${index}-${i}`,
+                type: "error",
+                content: line,
+                timestamp: getTimestamp(),
+                caseIndex: index,
+              });
+            });
+          }
+
+          // Summary line
+          if (data.timedOut) {
+            newOutputs.push({
+              id: `${now}-timeout-${index}`,
+              type: "warning",
+              content: "Execution timed out (10s limit)",
+              timestamp: getTimestamp(),
+              caseIndex: index,
+            });
+          } else if (data.exitCode === 0) {
+            newOutputs.push({
+              id: `${now}-exit-${index}`,
+              type: "success",
+              content: `Process exited with code 0`,
+              timestamp: getTimestamp(),
+              caseIndex: index,
+            });
+          } else {
+            newOutputs.push({
+              id: `${now}-exit-${index}`,
+              type: "error",
+              content: `Process exited with code ${data.exitCode}`,
+              timestamp: getTimestamp(),
+              caseIndex: index,
+            });
+          }
+
+          pushOutputLines(newOutputs);
+          return {
+            index,
+            stats: { memory: data.memory, cpuTime: data.cpuTime },
+          };
+        } catch (err: any) {
+          pushOutputLines([
+            {
+              id: `${Date.now()}-neterr-${index}`,
+              type: "error",
+              content: `Network error: ${err.message}`,
+              timestamp: getTimestamp(),
+              caseIndex: index,
+            },
+          ]);
+          return { index, stats: null };
+        }
+      });
+
+      const completed = await Promise.all(runPromises);
+
+      // Collect all stats
+      const statsMap: Record<number, { memory?: string | number; cpuTime?: string | number }> = {};
+      completed.forEach((res) => {
+        if (res.stats) {
+          statsMap[res.index] = res.stats;
+        }
+      });
+      setExecStats(statsMap);
     } finally {
       // Release lock
       yExec.set("isRunning", false);
@@ -246,19 +311,36 @@ export function OutputPanel({
   const handleClear = () => {
     if (!yOutput) return;
     yOutput.delete(0, yOutput.length);
-    setExecStats(null);
+    setExecStats({});
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      if (typeof text === "string") {
+        const newCases = [...testcases];
+        newCases[activeTestCaseIndex] = text;
+        setTestcases(newCases);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const getIcon = (type: OutputLine["type"]) => {
     switch (type) {
       case "error":
-        return <XCircle className='w-3.5 h-3.5 text-destructive' />;
+        return <XCircle className="w-3.5 h-3.5 text-destructive" />;
       case "warning":
-        return <AlertTriangle className='w-3.5 h-3.5 text-yellow-500' />;
+        return <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" />;
       case "success":
-        return <CheckCircle className='w-3.5 h-3.5 text-primary' />;
+        return <CheckCircle className="w-3.5 h-3.5 text-primary" />;
       default:
-        return <Terminal className='w-3.5 h-3.5 text-muted-foreground' />;
+        return <Terminal className="w-3.5 h-3.5 text-muted-foreground" />;
     }
   };
 
@@ -288,9 +370,27 @@ export function OutputPanel({
       <div className="w-full h-full bg-card rounded-[calc(1.5rem-6px)] overflow-hidden border border-glass-border/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-glass-border/15 bg-card/60">
-          <div className="flex items-center gap-2">
-            <Terminal strokeWidth={1.2} className="w-3.5 h-3.5 text-cyber-cyan" />
-            <span className="text-[10px] font-bold text-foreground uppercase tracking-widest font-condensed">Console Output</span>
+          <div className="flex items-center gap-1.5 p-0.5 bg-secondary/50 border border-glass-border/40 rounded-lg shadow-sm">
+            <button
+              onClick={() => setActiveTab("console")}
+              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                activeTab === "console"
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "text-muted-foreground hover:text-foreground border border-transparent"
+              }`}
+            >
+              Console
+            </button>
+            <button
+              onClick={() => setActiveTab("testcase")}
+              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                activeTab === "testcase"
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "text-muted-foreground hover:text-foreground border border-transparent"
+              }`}
+            >
+              Testcase
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -328,58 +428,204 @@ export function OutputPanel({
         </div>
 
         {/* Output content */}
-        <div
-          className="flex-1 overflow-y-auto p-4 font-mono text-[11px] scrollbar-thin bg-transparent"
-          aria-live="polite"
-          aria-atomic="true"
-        >
-          <AnimatePresence>
-            {outputs.length === 0 ? (
+        <div className="flex-1 min-h-0 flex flex-col bg-transparent">
+          <AnimatePresence mode="wait">
+            {activeTab === "testcase" ? (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center justify-center h-full text-muted-foreground/60 font-sans"
+                key="testcase-tab"
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                transition={{ duration: 0.15 }}
+                className="flex-1 flex flex-col gap-3 p-4 bg-transparent font-sans text-xs overflow-y-auto"
               >
-                <span>Console empty. Click Run to execute script.</span>
+                <div className="flex items-center justify-between border-b border-glass-border/10 pb-2 flex-wrap gap-2">
+                  {/* Case tabs switcher */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {testcases.map((_, idx) => {
+                      const hasCaseError = outputs.some(line => line.caseIndex === idx && line.type === "error");
+                      const hasCaseRun = outputs.some(line => line.caseIndex === idx);
+                      const isActive = activeTestCaseIndex === idx;
+                      
+                      let btnClass = "";
+                      if (hasCaseRun && hasCaseError) {
+                        btnClass = isActive
+                          ? "bg-destructive/20 text-destructive border-destructive/40"
+                          : "bg-destructive/10 text-destructive/80 border-destructive/25 hover:bg-destructive/20 hover:text-destructive";
+                      } else if (hasCaseRun && !hasCaseError) {
+                        btnClass = isActive
+                          ? "bg-primary/20 text-primary border-primary/30"
+                          : "bg-primary/10 text-primary/80 border-primary/25 hover:bg-primary/20 hover:text-primary";
+                      } else {
+                        btnClass = isActive
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-secondary/20 text-muted-foreground border-glass-border/20 hover:text-foreground";
+                      }
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 transition-all duration-200 ${btnClass}`}
+                        >
+                          <button
+                            onClick={() => setActiveTestCaseIndex(idx)}
+                            className="text-[9px] font-bold uppercase tracking-wider cursor-pointer"
+                          >
+                            Case {idx + 1}
+                          </button>
+                          {testcases.length > 1 && (
+                            <button
+                              onClick={() => {
+                                const newCases = testcases.filter((_, i) => i !== idx);
+                                setTestcases(newCases);
+                                setActiveTestCaseIndex(Math.max(0, idx - 1));
+                              }}
+                              className="text-[10px] leading-none text-muted-foreground hover:text-destructive font-bold ml-1 cursor-pointer"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <button
+                      onClick={() => {
+                        setTestcases([...testcases, ""]);
+                        setActiveTestCaseIndex(testcases.length);
+                      }}
+                      className="flex items-center justify-center w-5 h-5 rounded-lg bg-secondary border border-glass-border/40 text-muted-foreground hover:text-foreground text-[10px] font-bold cursor-pointer"
+                      title="Add Testcase"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-muted-foreground hover:text-foreground border border-glass-border/40 hover:bg-secondary/80 transition-colors text-[9px] font-bold uppercase tracking-wider cursor-pointer">
+                      <span>Upload File</span>
+                      <input
+                        type="file"
+                        accept=".txt,.json,.data,.csv,*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {testcases[activeTestCaseIndex]?.trim() && (
+                      <button
+                        onClick={() => {
+                          const newCases = [...testcases];
+                          newCases[activeTestCaseIndex] = "";
+                          setTestcases(newCases);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-colors text-[9px] font-bold uppercase tracking-wider cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <textarea
+                  value={testcases[activeTestCaseIndex] || ""}
+                  onChange={(e) => {
+                    const newCases = [...testcases];
+                    newCases[activeTestCaseIndex] = e.target.value;
+                    setTestcases(newCases);
+                  }}
+                  placeholder={`Enter custom input (STDIN) to pass to Case ${activeTestCaseIndex + 1}...`}
+                  className="flex-1 min-h-[110px] w-full p-3 rounded-xl bg-secondary/30 border border-glass-border/30 text-foreground font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/50 resize-none backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
+                />
               </motion.div>
             ) : (
-              outputs.map((output, index) => (
-                <motion.div
-                  key={output.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                  className="flex items-start gap-3 py-1 border-b border-glass-border/10 last:border-0"
+              <motion.div
+                key="console-tab"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col min-h-0 bg-transparent"
+              >
+                {/* Result case switcher (if multiple testcases exist) */}
+                {testcases.length > 1 && (
+                  <div className="flex items-center gap-1.5 px-4 py-2 border-b border-glass-border/10 bg-secondary/10 flex-wrap">
+                    {testcases.map((_, idx) => {
+                      const hasCaseError = outputs.some(line => line.caseIndex === idx && line.type === "error");
+                      const isActive = activeResultCaseIndex === idx;
+                      
+                      let btnClass = "";
+                      if (hasCaseError) {
+                        btnClass = isActive
+                          ? "bg-destructive/20 text-destructive border-destructive/40 shadow-md shadow-destructive/5"
+                          : "bg-destructive/10 text-destructive/80 border-destructive/20 hover:bg-destructive/20 hover:text-destructive";
+                      } else {
+                        btnClass = isActive
+                          ? "bg-primary/20 text-primary border-primary/30 shadow-md shadow-primary/5"
+                          : "bg-secondary/20 text-muted-foreground border-glass-border/20 hover:text-foreground";
+                      }
+
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveResultCaseIndex(idx)}
+                          className={`px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 ${btnClass}`}
+                        >
+                          Case {idx + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div
+                  className="flex-1 overflow-y-auto p-4 font-mono text-[11px] scrollbar-thin bg-transparent"
+                  aria-live="polite"
+                  aria-atomic="true"
                 >
-                  <span className="text-muted-foreground/40 select-none w-14 flex-shrink-0 text-[10px] font-sans">
-                    {output.timestamp}
-                  </span>
-                  <div className="flex-shrink-0 mt-0.5">{getIcon(output.type)}</div>
-                  <span className={`${getTextColor(output.type)} break-all leading-normal font-mono`}>
-                    {output.content}
-                  </span>
-                </motion.div>
-              ))
+                  {outputs.filter((line) => line.caseIndex === activeResultCaseIndex || line.caseIndex === undefined).length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground/60 font-sans">
+                      <span>Console empty. Click Run to execute script.</span>
+                    </div>
+                  ) : (
+                    outputs
+                      .filter((line) => line.caseIndex === activeResultCaseIndex || line.caseIndex === undefined)
+                      .map((output) => (
+                        <div
+                          key={output.id}
+                          className="flex items-start gap-3 py-1 border-b border-glass-border/10 last:border-0"
+                        >
+                          <span className="text-muted-foreground/40 select-none w-14 flex-shrink-0 text-[10px] font-sans">
+                            {output.timestamp}
+                          </span>
+                          <div className="flex-shrink-0 mt-0.5">{getIcon(output.type)}</div>
+                          <span className={`${getTextColor(output.type)} break-all leading-normal font-mono`}>
+                            {output.content}
+                          </span>
+                        </div>
+                      ))
+                  )}
+                  <div ref={outputEndRef} />
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
-          <div ref={outputEndRef} />
         </div>
 
         {/* Status bar */}
         <div className="px-4 py-2 border-t border-glass-border/10 bg-secondary/20 flex items-center justify-between">
           <div className="flex items-center gap-3 text-[9px] text-muted-foreground font-mono">
             <span>
-              {outputs.length} line{outputs.length !== 1 ? "s" : ""}
+              {outputs.filter((line) => line.caseIndex === activeResultCaseIndex || line.caseIndex === undefined).length} line
+              {outputs.filter((line) => line.caseIndex === activeResultCaseIndex || line.caseIndex === undefined).length !== 1 ? "s" : ""}
             </span>
-            {execStats && (
+            {execStats[activeResultCaseIndex] && (
               <>
                 <span className="text-glass-border/40 font-sans">•</span>
                 <span className="text-foreground font-bold">
-                  CPU: {execStats.cpuTime !== undefined && execStats.cpuTime !== null ? `${execStats.cpuTime}s` : "N/A"}
+                  CPU: {execStats[activeResultCaseIndex].cpuTime !== undefined && execStats[activeResultCaseIndex].cpuTime !== null ? `${execStats[activeResultCaseIndex].cpuTime}s` : "N/A"}
                 </span>
                 <span className="text-glass-border/40 font-sans">•</span>
                 <span className="text-foreground font-bold">
-                  Memory: {execStats.memory !== undefined && execStats.memory !== null ? `${execStats.memory} KB` : "N/A"}
+                  Memory: {execStats[activeResultCaseIndex].memory !== undefined && execStats[activeResultCaseIndex].memory !== null ? `${execStats[activeResultCaseIndex].memory} KB` : "N/A"}
                 </span>
               </>
             )}

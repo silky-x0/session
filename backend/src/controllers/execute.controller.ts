@@ -9,7 +9,7 @@ export const executeCode = async (
   req: Request,
   res: Response,
 ): Promise<void> => {
-  const { language, code } = req.body;
+  const { language, code, stdin } = req.body;
 
   if (!code || !language) {
     throw new AppError(400, "Both 'language' and 'code' fields are required");
@@ -22,7 +22,7 @@ export const executeCode = async (
     );
   }
 
-  const result = await handleCodeExecution({ language, code });
+  const result = await handleCodeExecution({ language, code, stdin });
 
   res.json(result);
 };

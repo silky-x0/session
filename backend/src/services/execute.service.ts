@@ -4,6 +4,7 @@ import { config } from "../config/env";
 export interface CodeRequest {
   language: string;
   code: string;
+  stdin?: string;
 }
 
 export interface ExecutionResult {
@@ -37,6 +38,7 @@ export const supportedLanguages = Object.keys(LANGUAGE_MAP);
 export const handleCodeExecution = async ({
   language,
   code,
+  stdin,
 }: CodeRequest): Promise<ExecutionResult> => {
   const jdoodleConfig = LANGUAGE_MAP[language.toLowerCase()];
 
@@ -69,6 +71,7 @@ export const handleCodeExecution = async ({
         script: code,
         language: jdoodleConfig.language,
         versionIndex: jdoodleConfig.versionIndex,
+        stdin: stdin || "",
       }),
     });
 
