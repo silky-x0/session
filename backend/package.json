@@ -25,7 +25,6 @@
     "@types/ws": "^8.18.1",
     "bullmq": "^5.78.1",
     "cors": "^2.8.5",
-    "dockerode": "^4.0.9",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "ioredis": "5.10.1",
@@ -39,7 +38,6 @@
     "yjs": "^13.6.29"
   },
   "devDependencies": {
-    "@types/dockerode": "^4.0.1",
     "@types/ioredis": "^4.28.10",
     "@types/supertest": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.18",
