@@ -17,6 +17,8 @@ OPEN_ROUTER_KEY="sk-or-v1-..."
 LIVEBLOCKS_SECRET_KEY="sk_..."
 LIVEBLOCKS_WEBHOOK_SECRET="wh_..."
 REDIS_URL="redis://default:<password>@<host>:<port>"
+JDOODLE_CLIENT_ID="your_client_id"
+JDOODLE_CLIENT_SECRET="your_client_secret"
 ```
 
 | Variable                       | Required | Description                                                          | Example                                      |
@@ -27,6 +29,8 @@ REDIS_URL="redis://default:<password>@<host>:<port>"
 | `LIVEBLOCKS_SECRET_KEY`        | ✅        | Liveblocks secret key for server-side room seeding & active users    | `sk_prod_...`                                |
 | `LIVEBLOCKS_WEBHOOK_SECRET`    | ✅        | Liveblocks webhook signing secret — used to verify incoming webhooks | `wh_...`                                     |
 | `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue               | `redis://default:pass@host:port`             |
+| `JDOODLE_CLIENT_ID`            | ✅        | JDoodle Compiler API Client ID (required for code execution)        | `your_client_id`                             |
+| `JDOODLE_CLIENT_SECRET`        | ✅        | JDoodle Compiler API Client Secret Key (required for code execution) | `your_secret_key`                            |
 
 ---
 

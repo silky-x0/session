@@ -2,9 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../../src/app';
 
-// Mock the session service
-vi.mock('../../src/services/session.service', () => ({
-  generateOpenRouterContent: vi.fn(),
+// Mock the gemini service
+vi.mock('../../src/services/gemini.service', () => ({
+  generateAIContentGemini: vi.fn(),
+}));
+
+// Mock the liveblocks service
+vi.mock('../../src/services/liveblocks.service', () => ({
+  seedLiveblocksRoom: vi.fn(),
 }));
 
 // Mock the aichat service
@@ -17,7 +22,8 @@ vi.mock('../../src/services/yjs.service', () => ({
   initializeDoc: vi.fn(),
 }));
 
-import { generateOpenRouterContent } from '../../src/services/session.service';
+import { generateAIContentGemini } from '../../src/services/gemini.service';
+import { seedLiveblocksRoom } from '../../src/services/liveblocks.service';
 import { handleAiChat } from '../../src/services/aichat.service';
 
 describe('API Routes', () => {
@@ -38,7 +44,8 @@ describe('API Routes', () => {
         question: 'Given an array...',
       };
 
-      vi.mocked(generateOpenRouterContent).mockResolvedValue(mockContent);
+      vi.mocked(generateAIContentGemini).mockResolvedValue(mockContent);
+      vi.mocked(seedLiveblocksRoom).mockResolvedValue();
 
       const response = await request(app)
         .post('/api/ai/session')
@@ -46,10 +53,10 @@ describe('API Routes', () => {
         .expect('Content-Type', /json/)
         .expect(200);
 
-      // The API returns only roomId, not the full content
       expect(response.body).toHaveProperty('roomId');
       expect(typeof response.body.roomId).toBe('string');
-      expect(generateOpenRouterContent).toHaveBeenCalledWith('Two sum problem');
+      expect(generateAIContentGemini).toHaveBeenCalledWith('Two sum problem');
+      expect(seedLiveblocksRoom).toHaveBeenCalled();
     });
 
     it('should return 400 when prompt is missing', async () => {
@@ -63,7 +70,7 @@ describe('API Routes', () => {
     });
 
     it('should return 500 on service errors', async () => {
-      vi.mocked(generateOpenRouterContent).mockRejectedValue(new Error('Service error'));
+      vi.mocked(generateAIContentGemini).mockRejectedValue(new Error('Service error'));
 
       const response = await request(app)
         .post('/api/ai/session')

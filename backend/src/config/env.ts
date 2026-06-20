@@ -23,5 +23,6 @@ export const config = {
   },
   liveBlocksWebhookSecret: process.env.LIVEBLOCKS_WEBHOOK_SECRET!,
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-
+  jdoodleClientId: process.env.JDOODLE_CLIENT_ID,
+  jdoodleClientSecret: process.env.JDOODLE_CLIENT_SECRET,
 };

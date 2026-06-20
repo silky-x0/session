@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const asyncHandler_1 = require("../middleware/asyncHandler");
+const webhook_controller_1 = require("../controllers/webhook.controller");
+const verifyLiveblocksWebhook_1 = require("../middleware/verifyLiveblocksWebhook");
+const router = (0, express_1.Router)();
+router.use(verifyLiveblocksWebhook_1.verifyLiveblocksWebhook);
+router.post("/", (0, asyncHandler_1.asyncHandler)(webhook_controller_1.handleWebhook));
+exports.default = router;
