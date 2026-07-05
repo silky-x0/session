@@ -61,11 +61,11 @@ export function MetricStat({
       <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
-      <div className="flex items-baseline gap-2">
-        <span className="font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+      <div className="flex flex-col gap-0.5">
+        <span className="font-mono text-xl font-semibold tabular-nums tracking-tight text-foreground">
           {formatValue(animated, precision)}
           {unit && (
-            <span className="ml-0.5 text-sm font-normal text-muted-foreground">{unit}</span>
+            <span className="ml-0.5 text-xs font-normal text-muted-foreground">{unit}</span>
           )}
         </span>
         {hasDelta && (

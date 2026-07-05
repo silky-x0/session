@@ -191,6 +191,7 @@ export function OutputPanel({
         ]);
 
         try {
+          const fetchStart = performance.now();
           const response = await fetch(`${API_URL}/api/code/execute`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -200,6 +201,7 @@ export function OutputPanel({
               stdin: tcStdin,
             }),
           });
+          const fetchMs = performance.now() - fetchStart;
 
           const data = await response.json();
 
@@ -218,18 +220,20 @@ export function OutputPanel({
 
           const newOutputs: OutputLine[] = [];
           const now = Date.now();
+          let hasOutputErrors = false;
 
-          // stdout lines
+         
           if (data.stdout) {
             const lines = data.stdout.split("\n");
-            // Remove trailing newline empty line to keep logs clean
             if (lines.length > 1 && lines[lines.length - 1] === "") {
               lines.pop();
             }
             lines.forEach((line: string, i: number) => {
+              const lineType = detectLineType(line);
+              if (lineType === "error") hasOutputErrors = true;
               newOutputs.push({
                 id: `${now}-stdout-${index}-${i}`,
-                type: detectLineType(line),
+                type: lineType,
                 content: line,
                 timestamp: getTimestamp(),
                 caseIndex: index,
@@ -239,6 +243,7 @@ export function OutputPanel({
 
           // stderr lines
           if (data.stderr) {
+            hasOutputErrors = true;
             const lines = data.stderr.split("\n");
             if (lines.length > 1 && lines[lines.length - 1] === "") {
               lines.pop();
@@ -254,6 +259,12 @@ export function OutputPanel({
             });
           }
 
+          // Effective exit code: use JDoodle's value if non-zero,
+          // otherwise fall back to output-based detection.
+          const effectiveExitCode = (data.exitCode !== 0)
+            ? (data.exitCode as number)
+            : (hasOutputErrors ? 1 : 0);
+
           // Summary line
           if (data.timedOut) {
             newOutputs.push({
@@ -263,7 +274,7 @@ export function OutputPanel({
               timestamp: getTimestamp(),
               caseIndex: index,
             });
-          } else if (data.exitCode === 0) {
+          } else if (effectiveExitCode === 0) {
             newOutputs.push({
               id: `${now}-exit-${index}`,
               type: "success",
@@ -275,7 +286,9 @@ export function OutputPanel({
             newOutputs.push({
               id: `${now}-exit-${index}`,
               type: "error",
-              content: `Process exited with code ${data.exitCode}`,
+              content: hasOutputErrors
+                ? `Process exited with errors`
+                : `Process exited with code ${effectiveExitCode}`,
               timestamp: getTimestamp(),
               caseIndex: index,
             });
@@ -284,7 +297,9 @@ export function OutputPanel({
           pushOutputLines(newOutputs);
           return {
             index,
-            stats: { memory: data.memory, cpuTime: data.cpuTime },
+            exitCode: effectiveExitCode,
+            timedOut: !!data.timedOut,
+            stats: { memory: data.memory, cpuTime: data.cpuTime, wallTimeMs: fetchMs },
           };
         } catch (err: any) {
           pushOutputLines([
@@ -296,7 +311,7 @@ export function OutputPanel({
               caseIndex: index,
             },
           ]);
-          return { index, stats: null };
+          return { index, exitCode: -1, timedOut: false, stats: null };
         }
       });
 
@@ -311,66 +326,57 @@ export function OutputPanel({
       });
       setExecStats(statsMap);
 
-      // Populate performance metrics card
-      const validRuns = completed.filter(r => r.stats !== null);
-      if (validRuns.length > 0 && setMetricsHistory && setPerfData) {
-        let totalTime = 0;
-        let totalMem = 0;
-        let validCount = 0;
-        
-        validRuns.forEach(r => {
-          if (r.stats?.cpuTime !== undefined && r.stats?.memory !== undefined) {
-            const ms = parseFloat(r.stats.cpuTime as string) * 1000;
-            const mb = parseFloat(r.stats.memory as string) / 1024;
-            if (!isNaN(ms) && !isNaN(mb)) {
-              totalTime += ms;
-              totalMem += mb;
-              validCount++;
-            }
-          }
+      // Build one metric entry per test case so the chart shows every run.
+      if (completed.length > 0 && setMetricsHistory && setPerfData) {
+        const newEntries: ExecutionMetric[] = completed.map(r => {
+          const rawTime = r.stats?.cpuTime;
+          const rawMem  = r.stats?.memory;
+          const jdoodleMs = rawTime != null ? parseFloat(rawTime as string) * 1000 : 0;
+          // Prefer JDoodle cpuTime; fall back to wall-clock when it's zero
+          // (JDoodle returns "0.000" for fast programs making comparisons useless).
+          const ms = (!isNaN(jdoodleMs) && jdoodleMs > 0)
+            ? jdoodleMs
+            : (r.stats?.wallTimeMs ?? 0);
+          const mb = rawMem  != null ? parseFloat(rawMem  as string) / 1024 : 0;
+          return {
+            timestamp: new Date().toISOString(),
+            executionTime: isNaN(ms) ? 0 : Math.round(ms),
+            memoryUsage: isNaN(mb) ? 0 : mb,
+            cpuUsage: Math.round(15 + Math.random() * 15),
+          };
         });
 
-        if (validCount > 0) {
-          const avgTime = totalTime / validCount;
-          const avgMem = totalMem / validCount;
-          const successCount = completed.filter(r => r.stats !== null).length;
-          const successRate = (successCount / completed.length) * 100;
+        // A case is successful only if it exited with code 0 and didn't time out.
+        const successCount = completed.filter(
+          r => r.exitCode === 0 && !r.timedOut
+        ).length;
+        const successRate = (successCount / completed.length) * 100;
 
-          setMetricsHistory(prev => {
-            const newRun: ExecutionMetric = {
-              timestamp: new Date().toISOString(),
-              executionTime: avgTime,
-              memoryUsage: avgMem,
-              cpuUsage: Math.round(15 + Math.random() * 15),
-            };
-            const updated = [...prev, newRun].slice(-20);
-            
-            const previousRun = prev[prev.length - 1];
-            const previousTime = previousRun ? previousRun.executionTime : avgTime;
-            const diff = previousTime - avgTime;
-            const improvementPercent = previousTime > 0 ? (diff / previousTime) * 100 : 0;
+        setMetricsHistory(prev => {
+          const updated = [...prev, ...newEntries].slice(-20);
 
-            let status: PerformanceStatus = "stable";
-            if (successRate < 95) {
-              status = "critical";
-            } else if (improvementPercent < -10) {
-              status = "warning";
-            }
+          const previousRun = prev[prev.length - 1];
+          const latestEntry = newEntries[newEntries.length - 1];
+          const currentTime = latestEntry.executionTime;
+          const previousTime = previousRun ? previousRun.executionTime : currentTime;
+          const diff = previousTime - currentTime;
+          const improvementPercent = previousTime > 0 ? (diff / previousTime) * 100 : 0;
 
+          let status: PerformanceStatus = "stable";
+          if (successRate < 95)            status = "critical";
+          else if (improvementPercent < -10) status = "warning";
+
+          setTimeout(() => {
             setPerfData({
               metrics: updated,
               successRate,
-              comparison: {
-                current: avgTime,
-                previous: previousTime,
-                improvementPercent,
-              },
+              comparison: { current: currentTime, previous: previousTime, improvementPercent },
               status,
             });
+          }, 0);
 
-            return updated;
-          });
-        }
+          return updated;
+        });
       }
     } finally {
       // Release lock

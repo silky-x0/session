@@ -24,7 +24,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: any[] }
   return (
     <div className="rounded-md border border-border bg-popover/95 px-3 py-2 text-xs shadow-md backdrop-blur-sm">
       <div className="mb-1 flex items-center justify-between gap-4 text-muted-foreground">
-        <span>Run #{point.runIndex + 1}</span>
+        <span>{point.label ?? `Run #${point.runIndex + 1}`}</span>
         <span className="font-mono tabular-nums">{time}</span>
       </div>
       <div className="space-y-0.5 font-mono tabular-nums text-popover-foreground">
@@ -49,7 +49,16 @@ export function ExecutionTimeChart({ data }: Props) {
   const indexed = data.map((d, i) => ({ ...d, runIndex: i }));
   const min = Math.min(...data.map((d) => d.executionTime));
   const max = Math.max(...data.map((d) => d.executionTime));
-  const pad = Math.max(4, Math.round((max - min) * 0.2));
+  const range = Math.max(max - min, 20);
+  const pad = Math.max(4, Math.round(range * 0.25));
+  const yMin = 0;
+  const yMax = max + pad;
+
+  // Format tick labels compactly and compute axis width from the widest label.
+  const formatTick = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}s` : `${v}ms`;
+  const widestLabel = formatTick(yMax);
+  // ~7px per character at font-size 11, minimum 36px
+  const yAxisWidth = Math.max(36, widestLabel.length * 7 + 4);
 
   return (
     <div
@@ -80,12 +89,12 @@ export function ExecutionTimeChart({ data }: Props) {
             minTickGap={16}
           />
           <YAxis
-            domain={[Math.max(0, min - pad), max + pad]}
+            domain={[yMin, yMax]}
             tickLine={false}
             axisLine={false}
-            width={36}
+            width={yAxisWidth}
             tick={{ fill: "var(--color-muted-foreground)", fontSize: 11 }}
-            tickFormatter={(v) => `${v}ms`}
+            tickFormatter={formatTick}
           />
           <Tooltip
             content={<ChartTooltip />}
@@ -101,7 +110,11 @@ export function ExecutionTimeChart({ data }: Props) {
             strokeWidth={1.75}
             strokeOpacity={0.9}
             fill="url(#execFill)"
-            dot={false}
+            dot={(
+              data.length <= 20
+                ? { r: 3, fill: "currentColor", strokeWidth: 0 }
+                : false
+            )}
             activeDot={{
               r: 3.5,
               strokeWidth: 2,

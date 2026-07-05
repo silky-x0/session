@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Phone, PhoneCall, Plus, Undo2, Redo2, Settings } from "lucide-react";
+import { Phone, PhoneCall, Undo2, Redo2, Settings } from "lucide-react";
 import {
   useStatus,
   useUndo,
@@ -18,7 +18,6 @@ interface TopBarProps {
   inCall: boolean;
   language: string;
   onJoinAudio: () => void;
-  onCreateRoom: () => void;
   onLanguageChange: (lang: string) => void;
   onOpenSettings?: () => void;
   activeMainView?: "code" | "whiteboard";
@@ -45,7 +44,6 @@ export function TopBar({
   inCall,
   language,
   onJoinAudio,
-  onCreateRoom,
   onLanguageChange,
   onOpenSettings,
   activeMainView,

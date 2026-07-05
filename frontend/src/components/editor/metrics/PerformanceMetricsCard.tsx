@@ -119,7 +119,7 @@ export function PerformanceMetricsCard({
             }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
               <MetricStat
                 label="Execution"
                 value={latest.executionTime}
