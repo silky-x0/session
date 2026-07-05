@@ -64,7 +64,7 @@ export function ExecutionTimeChart({ data }: Props) {
     <div
       role="img"
       aria-label={`Execution time over last ${data.length} runs, min ${min}ms, max ${max}ms`}
-      className="h-[220px] w-full text-foreground"
+      className="h-[160px] sm:h-[220px] w-full text-foreground"
     >
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={indexed} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>

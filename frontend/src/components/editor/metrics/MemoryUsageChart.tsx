@@ -33,13 +33,13 @@ export function MemoryUsageChart({ data }: { data: ExecutionMetric[] }) {
     <div
       role="img"
       aria-label={`Memory usage trend, min ${min}MB, max ${max}MB`}
-      className="h-16 w-full text-muted-foreground"
+      className="h-14 sm:h-16 w-full text-foreground"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={indexed} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+        <AreaChart data={indexed} margin={{ top: 6, right: 6, bottom: 6, left: 6 }}>
           <defs>
             <linearGradient id="memFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="currentColor" stopOpacity={0.18} />
+              <stop offset="0%" stopColor="currentColor" stopOpacity={0.25} />
               <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -54,7 +54,7 @@ export function MemoryUsageChart({ data }: { data: ExecutionMetric[] }) {
             type="monotone"
             dataKey="memoryUsage"
             stroke="currentColor"
-            strokeWidth={1.5}
+            strokeWidth={2}
             fill="url(#memFill)"
             dot={data.length <= 20 ? { r: 2.5, fill: "currentColor", strokeWidth: 0 } : false}
             activeDot={{ r: 3, strokeWidth: 2, stroke: "var(--color-background)", fill: "currentColor" }}
