@@ -80,8 +80,8 @@ function CollaborativeEditorInner({
     "code",
   );
   const [isMetricsOpen, setIsMetricsOpen] = useState(false);
-  const [, setMetricsHistory] = useState<ExecutionMetric[]>([]);
-  const [perfData, setPerfData] = useState<PerformanceData>({
+  const [, setMetricsHistoryState] = useState<ExecutionMetric[]>([]);
+  const [perfData, setLocalPerfData] = useState<PerformanceData>({
     metrics: [],
     successRate: 0,
     comparison: { current: 0, previous: 0, improvementPercent: 0 },
@@ -89,10 +89,60 @@ function CollaborativeEditorInner({
   });
   const [isRunning, setIsRunning] = useState(false);
 
+  // Wrappers to sync metrics history and performance data across all users via Y.js
+  const setMetricsHistory = (
+    value: ExecutionMetric[] | ((prev: ExecutionMetric[]) => ExecutionMetric[])
+  ) => {
+    if (!yExecRef.current) return;
+    const currentStr = yExecRef.current.get("metricsHistory") as string | undefined;
+    let currentList: ExecutionMetric[] = [];
+    if (currentStr) {
+      try {
+        currentList = JSON.parse(currentStr);
+      } catch {}
+    }
+    const newList = typeof value === "function" ? value(currentList) : value;
+    yExecRef.current.set("metricsHistory", JSON.stringify(newList));
+  };
+
+  const setPerfData = (
+    value: PerformanceData | ((prev: PerformanceData) => PerformanceData)
+  ) => {
+    if (!yExecRef.current) return;
+    const currentStr = yExecRef.current.get("perfData") as string | undefined;
+    let currentData: PerformanceData = {
+      metrics: [],
+      successRate: 0,
+      comparison: { current: 0, previous: 0, improvementPercent: 0 },
+      status: "stable",
+    };
+    if (currentStr) {
+      try {
+        currentData = JSON.parse(currentStr);
+      } catch {}
+    }
+    const newData = typeof value === "function" ? value(currentData) : value;
+    yExecRef.current.set("perfData", JSON.stringify(newData));
+  };
+
   useEffect(() => {
     if (!yExecRef.current) return;
     const handleExecChange = () => {
       setIsRunning(!!yExecRef.current?.get("isRunning"));
+
+      const sharedHistory = yExecRef.current?.get("metricsHistory") as string | undefined;
+      if (sharedHistory) {
+        try {
+          setMetricsHistoryState(JSON.parse(sharedHistory));
+        } catch {}
+      }
+
+      const sharedPerf = yExecRef.current?.get("perfData") as string | undefined;
+      if (sharedPerf) {
+        try {
+          setLocalPerfData(JSON.parse(sharedPerf));
+        } catch {}
+      }
     };
     yExecRef.current.observe(handleExecChange);
     handleExecChange();

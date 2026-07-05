@@ -142,7 +142,6 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
       {/* Backdrop */}
       <div
         className='absolute inset-0 bg-[#050505]/90 backdrop-blur-xl'
-        onClick={onCancel}
       />
 
       {/* Close Button */}
