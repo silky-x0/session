@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { editor } from "monaco-editor";
-import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import { useRoom, useStatus, useOthers } from "@liveblocks/react/suspense";
@@ -56,7 +55,6 @@ function CollaborativeEditorInner({
 }: {
   onRoomReady?: () => void;
 }) {
-  const navigate = useNavigate();
   const room = useRoom();
   const status = useStatus();
   const { zenMode, theme } = useTheme();
@@ -82,7 +80,7 @@ function CollaborativeEditorInner({
     "code",
   );
   const [isMetricsOpen, setIsMetricsOpen] = useState(false);
-  const [metricsHistory, setMetricsHistory] = useState<ExecutionMetric[]>([]);
+  const [, setMetricsHistory] = useState<ExecutionMetric[]>([]);
   const [perfData, setPerfData] = useState<PerformanceData>({
     metrics: [],
     successRate: 0,
@@ -305,11 +303,6 @@ function CollaborativeEditorInner({
     }
   };
 
-  const handleCreateRoom = () => {
-    const id = crypto.randomUUID().slice(0, 8);
-    navigate(`/editor?room=${id}`);
-  };
-
   useEffect(() => {
     return () => {
       bindingRef.current?.destroy();
@@ -348,7 +341,6 @@ function CollaborativeEditorInner({
           inCall={false}
           language={language}
           onJoinAudio={() => {}}
-          onCreateRoom={handleCreateRoom}
           onLanguageChange={handleLanguageChange}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeMainView={activeMainView}
@@ -419,7 +411,7 @@ function CollaborativeEditorInner({
                       : "opacity-0 pointer-events-none z-0"
                   }`}
                 >
-                  <CodeEditor onMount={handleEditorDidMount} />
+                  <CodeEditor onMount={handleEditorDidMount} language={language} />
                 </div>
 
                 {/* Excalidraw Whiteboard Wrapper */}
@@ -471,7 +463,7 @@ function CollaborativeEditorInner({
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <CodeEditor onMount={handleEditorDidMount} />
+                  <CodeEditor onMount={handleEditorDidMount} language={language} />
                 </motion.div>
               )}
               {activePanel === "whiteboard" && (
