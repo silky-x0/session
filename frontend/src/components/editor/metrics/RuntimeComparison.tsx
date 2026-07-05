@@ -48,7 +48,7 @@ export function RuntimeComparison({ data }: { data: RuntimeComparisonData }) {
   const animatedDelta = useAnimatedNumber(Math.abs(data.improvementPercent));
 
   return (
-    <div className="grid grid-cols-3 items-end gap-4">
+    <div className="grid grid-cols-3 items-end gap-2 sm:gap-4">
       <Cell label="Current run" value={data.current} unit="ms" />
       <Cell label="Previous run" value={data.previous} unit="ms" />
       <div className="flex flex-col gap-1">

@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "../ThemeContext";
-import { useUpdateMyPresence, useSelf } from "@liveblocks/react/suspense";
+import { useUpdateMyPresence, useSelf, useOthers } from "@liveblocks/react/suspense";
 import * as Y from "yjs";
 
 
@@ -74,6 +74,8 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const others = useOthers();
+  const isAnyUserTyping = isTyping || others.some((o) => o.presence?.isTyping);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Sync messages with Yjs yChat
@@ -110,6 +112,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
     yChat?.push([userMessage]);
     setInput("");
     setIsTyping(true);
+    updateMyPresence({ isTyping: true });
 
     try {
       // Extract code context (10 lines above and below cursor)
@@ -154,6 +157,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
       yChat?.push([errorMessage]);
     } finally {
       setIsTyping(false);
+      updateMyPresence({ isTyping: false });
     }
   };
 
@@ -250,7 +254,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
             ))}
           </AnimatePresence>
 
-          {isTyping && (
+          {isAnyUserTyping && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

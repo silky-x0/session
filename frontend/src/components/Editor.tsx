@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { editor } from "monaco-editor";
-import { useNavigate } from "react-router-dom";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import { useRoom, useStatus, useOthers } from "@liveblocks/react/suspense";
@@ -56,7 +55,6 @@ function CollaborativeEditorInner({
 }: {
   onRoomReady?: () => void;
 }) {
-  const navigate = useNavigate();
   const room = useRoom();
   const status = useStatus();
   const { zenMode, theme } = useTheme();
@@ -82,8 +80,8 @@ function CollaborativeEditorInner({
     "code",
   );
   const [isMetricsOpen, setIsMetricsOpen] = useState(false);
-  const [metricsHistory, setMetricsHistory] = useState<ExecutionMetric[]>([]);
-  const [perfData, setPerfData] = useState<PerformanceData>({
+  const [, setMetricsHistoryState] = useState<ExecutionMetric[]>([]);
+  const [perfData, setLocalPerfData] = useState<PerformanceData>({
     metrics: [],
     successRate: 0,
     comparison: { current: 0, previous: 0, improvementPercent: 0 },
@@ -91,10 +89,60 @@ function CollaborativeEditorInner({
   });
   const [isRunning, setIsRunning] = useState(false);
 
+  // Wrappers to sync metrics history and performance data across all users via Y.js
+  const setMetricsHistory = (
+    value: ExecutionMetric[] | ((prev: ExecutionMetric[]) => ExecutionMetric[])
+  ) => {
+    if (!yExecRef.current) return;
+    const currentStr = yExecRef.current.get("metricsHistory") as string | undefined;
+    let currentList: ExecutionMetric[] = [];
+    if (currentStr) {
+      try {
+        currentList = JSON.parse(currentStr);
+      } catch {}
+    }
+    const newList = typeof value === "function" ? value(currentList) : value;
+    yExecRef.current.set("metricsHistory", JSON.stringify(newList));
+  };
+
+  const setPerfData = (
+    value: PerformanceData | ((prev: PerformanceData) => PerformanceData)
+  ) => {
+    if (!yExecRef.current) return;
+    const currentStr = yExecRef.current.get("perfData") as string | undefined;
+    let currentData: PerformanceData = {
+      metrics: [],
+      successRate: 0,
+      comparison: { current: 0, previous: 0, improvementPercent: 0 },
+      status: "stable",
+    };
+    if (currentStr) {
+      try {
+        currentData = JSON.parse(currentStr);
+      } catch {}
+    }
+    const newData = typeof value === "function" ? value(currentData) : value;
+    yExecRef.current.set("perfData", JSON.stringify(newData));
+  };
+
   useEffect(() => {
     if (!yExecRef.current) return;
     const handleExecChange = () => {
       setIsRunning(!!yExecRef.current?.get("isRunning"));
+
+      const sharedHistory = yExecRef.current?.get("metricsHistory") as string | undefined;
+      if (sharedHistory) {
+        try {
+          setMetricsHistoryState(JSON.parse(sharedHistory));
+        } catch {}
+      }
+
+      const sharedPerf = yExecRef.current?.get("perfData") as string | undefined;
+      if (sharedPerf) {
+        try {
+          setLocalPerfData(JSON.parse(sharedPerf));
+        } catch {}
+      }
     };
     yExecRef.current.observe(handleExecChange);
     handleExecChange();
@@ -305,11 +353,6 @@ function CollaborativeEditorInner({
     }
   };
 
-  const handleCreateRoom = () => {
-    const id = crypto.randomUUID().slice(0, 8);
-    navigate(`/editor?room=${id}`);
-  };
-
   useEffect(() => {
     return () => {
       bindingRef.current?.destroy();
@@ -348,7 +391,6 @@ function CollaborativeEditorInner({
           inCall={false}
           language={language}
           onJoinAudio={() => {}}
-          onCreateRoom={handleCreateRoom}
           onLanguageChange={handleLanguageChange}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeMainView={activeMainView}
@@ -419,7 +461,7 @@ function CollaborativeEditorInner({
                       : "opacity-0 pointer-events-none z-0"
                   }`}
                 >
-                  <CodeEditor onMount={handleEditorDidMount} />
+                  <CodeEditor onMount={handleEditorDidMount} language={language} />
                 </div>
 
                 {/* Excalidraw Whiteboard Wrapper */}
@@ -471,7 +513,7 @@ function CollaborativeEditorInner({
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <CodeEditor onMount={handleEditorDidMount} />
+                  <CodeEditor onMount={handleEditorDidMount} language={language} />
                 </motion.div>
               )}
               {activePanel === "whiteboard" && (
@@ -554,7 +596,7 @@ function CollaborativeEditorInner({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
                 transition={{ duration: 0.2 }}
-                className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-0 z-[100]'
+                className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg px-4 sm:px-0 z-[100]'
               >
                 <div className='relative'>
                   {/* Close Button */}

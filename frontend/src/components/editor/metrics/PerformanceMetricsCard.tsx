@@ -45,9 +45,9 @@ function LoadingState() {
           </div>
         ))}
       </div>
-      <Shimmer className="h-[220px] w-full" />
-      <Shimmer className="h-16 w-full" />
-      <div className="grid grid-cols-3 gap-4">
+      <Shimmer className="h-[160px] sm:h-[220px] w-full" />
+      <Shimmer className="h-12 sm:h-16 w-full" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <Shimmer className="h-12" />
         <Shimmer className="h-12" />
         <Shimmer className="h-12" />
@@ -92,7 +92,7 @@ export function PerformanceMetricsCard({
       whileHover={{ scale: 1.005 }}
       className={`group rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-shadow duration-200 hover:border-foreground/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${className}`}
     >
-      <header className="flex items-center justify-between gap-4 border-b border-border/60 px-6 py-4">
+      <header className="flex items-center justify-between gap-4 border-b border-border/60 px-4 sm:px-6 py-4">
         <div className="flex flex-col">
           <h2 className="text-sm font-semibold tracking-tight text-foreground">
             Performance Metrics
@@ -104,7 +104,7 @@ export function PerformanceMetricsCard({
         <StatusBadge status={data.status} />
       </header>
 
-      <div className="px-6 py-5">
+      <div className="px-4 sm:px-6 py-4 sm:py-5">
         {loading ? (
           <LoadingState />
         ) : !hasData || !latest ? (
@@ -119,7 +119,7 @@ export function PerformanceMetricsCard({
             }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
               <MetricStat
                 label="Execution"
                 value={latest.executionTime}

@@ -3,6 +3,7 @@ export interface ExecutionMetric {
   executionTime: number; // ms
   memoryUsage: number; // MB
   cpuUsage: number; // %
+  label?: string; // e.g. "Case 1", "Case 2"
 }
 
 export interface RuntimeComparisonData {
