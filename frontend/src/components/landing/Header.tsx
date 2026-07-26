@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import React from "react";
+// import { motion, AnimatePresence } from "framer-motion";
+// import { Menu, X } from "lucide-react";
 
 export const Header: React.FC = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/features", label: "Features" },
-    { href: "/pricing", label: "Pricing" },
-    { href: "/about", label: "About" },
-  ];
+  // const navLinks = [
+  //   { href: "/", label: "Home" },
+  //   { href: "/features", label: "Features" },
+  //   { href: "/pricing", label: "Pricing" },
+  //   { href: "/about", label: "About" },
+  // ];
 
   return (
     <header className="flex justify-between items-center px-4 sm:px-6 py-2.5 sticky top-0 z-50 bg-transparent">
@@ -29,7 +29,7 @@ export const Header: React.FC = () => {
       </a>
 
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex gap-8 absolute left-1/2 -translate-x-1/2">
+      {/* <nav className="hidden md:flex gap-8 absolute left-1/2 -translate-x-1/2">
         {navLinks.map((link) => (
           <a 
             key={link.label}
@@ -39,9 +39,9 @@ export const Header: React.FC = () => {
             {link.label}
           </a>
         ))}
-      </nav>
+      </nav> */}
 
-      <div className="flex gap-3 sm:gap-4 items-center z-50">
+      {/* <div className="flex gap-3 sm:gap-4 items-center z-50">
         <div className="hidden sm:flex gap-3 sm:gap-4 items-center">
           <a
             href="/login"
@@ -55,19 +55,19 @@ export const Header: React.FC = () => {
           >
             Sign up
           </a>
-        </div>
+        </div> */}
 
         {/* Mobile Menu Button */}
-        <button 
+        {/* <button 
           className="md:hidden p-2 text-white/70 hover:text-white transition-colors"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-      </div>
+      </div> */}
 
       {/* Mobile Menu Overlay */}
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -104,7 +104,7 @@ export const Header: React.FC = () => {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </header>
   );
 };

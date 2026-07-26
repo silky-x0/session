@@ -94,7 +94,7 @@ export const Hero: React.FC = () => {
           <LinkPreview
             url='#'
             isStatic
-            imageSrc='/cale.mp4'
+            imageSrc=''
             className='text-cyber-cyan/70 hover:text-cyber-cyan transition-colors font-semibold'
           >
             post-session analysis
