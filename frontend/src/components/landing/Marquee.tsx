@@ -24,7 +24,7 @@ export const Marquee: React.FC = () => {
   return (
     <section className='pt-6 sm:pt-8 lg:pt-12 pb-6 sm:pb-10 overflow-hidden w-full relative'>
       <h2 className='text-center font-bold font-sans uppercase text-[10px] sm:text-xs tracking-widest text-white/40 mb-2 sm:mb-4 px-4'>
-        Trusted by top engineering teams
+        Trusted by top engineering teams (in future)
       </h2>
 
 
