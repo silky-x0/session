@@ -7,18 +7,18 @@ const WORDS = ["interview", "pairing session", "code review"];
 
 export const Hero: React.FC = () => {
   const [wordIndex, setWordIndex] = useState(0);
-  const [history, setHistory] = useState<{ roomId: string; timestamp: number }[]>([]);
+  // const [history, setHistory] = useState<{ roomId: string; timestamp: number }[]>([]);
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("session-history");
-      if (stored) {
-        setHistory(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error("Failed to load session history", e);
-    }
-  }, []);
+  // useEffect(() => {
+  //   try {
+  //     const stored = localStorage.getItem("session-history");
+  //     if (stored) {
+  //       setHistory(JSON.parse(stored));
+  //     }
+  //   } catch (e) {
+  //     console.error("Failed to load session history", e);
+  //   }
+  // }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
