@@ -135,6 +135,8 @@ function CollaborativeEditorInner({
         try {
           setMetricsHistoryState(JSON.parse(sharedHistory));
         } catch {}
+      } else {
+        setMetricsHistoryState([]);
       }
 
       const sharedPerf = yExecRef.current?.get("perfData") as string | undefined;
@@ -142,6 +144,13 @@ function CollaborativeEditorInner({
         try {
           setLocalPerfData(JSON.parse(sharedPerf));
         } catch {}
+      } else {
+        setLocalPerfData({
+          metrics: [],
+          successRate: 0,
+          comparison: { current: 0, previous: 0, improvementPercent: 0 },
+          status: "stable",
+        });
       }
     };
     yExecRef.current.observe(handleExecChange);
