@@ -67,6 +67,20 @@ export function CodeEditor({ onMount, language = "javascript" }: CodeEditorProps
     editorRef.current = editorInstance;
     monacoRef.current = monaco;
 
+    // Configure TypeScript / JavaScript compiler options so each file/buffer is treated as an isolated module
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ESNext,
+      allowNonTsExtensions: true,
+      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+      isolatedModules: true,
+    });
+
+    monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ESNext,
+      allowNonTsExtensions: true,
+      isolatedModules: true,
+    });
+
     // Suppress TS/JS diagnostics immediately on mount if language is non-JS/TS
     const isJsTs = language === "javascript" || language === "typescript";
     const opts = isJsTs
