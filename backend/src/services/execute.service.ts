@@ -59,6 +59,15 @@ export const handleCodeExecution = async ({
     );
   }
 
+  // Strip top-level exports for JS/TS so JDoodle script mode execution does not crash
+  let scriptToExecute = code;
+  if (language.toLowerCase() === "javascript" || language.toLowerCase() === "typescript") {
+    scriptToExecute = code
+      .replace(/^export\s+default\s+/gm, "")
+      .replace(/^export\s+\{\}\s*;?/gm, "")
+      .replace(/^export\s+/gm, "");
+  }
+
   try {
     const response = await fetch("https://api.jdoodle.com/v1/execute", {
       method: "POST",
@@ -68,7 +77,7 @@ export const handleCodeExecution = async ({
       body: JSON.stringify({
         clientId,
         clientSecret,
-        script: code,
+        script: scriptToExecute,
         language: jdoodleConfig.language,
         versionIndex: jdoodleConfig.versionIndex,
         stdin: stdin || "",
