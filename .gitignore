@@ -1,0 +1,13 @@
+graphify-out
+.agent
+.agents
+.gemini
+.graphify_venv
+.adal
+node_modules
+.directory
+features.md
+skills-lock.json
+PRODUCT.md
+GEMINI.md
+dist/
