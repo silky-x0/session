@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { config } from "./config/env";
 import { errorHandler } from "./middleware/errorHandler";
+import { globalApiLimiter } from "./middleware/rateLimiter";
 import aiRoutes from "./routes/ai.routes";
 import codeRoutes from "./routes/code.routes";
 import webhookRoutes from "./routes/webhook.routes";
@@ -16,9 +17,11 @@ app.use(
   }),
 );
 
-app.use("/webhook",express.raw({type: "application/json"}), webhookRoutes);
+app.use("/webhook", express.raw({ type: "application/json" }), webhookRoutes);
 
 app.use(express.json());
+
+app.use("/api", globalApiLimiter);
 
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
