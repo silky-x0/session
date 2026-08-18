@@ -6,16 +6,36 @@ interface TokenBucketOptions {
   capacity: number;
   refillTimeMs: number; 
   errorMessage: string;
+  useCompoundKey?: boolean; // If true, rate limit by IP + Room ID
 }
 
 
 const createTokenBucketLimiter = (options: TokenBucketOptions) => {
-  const { keyPrefix, capacity, refillTimeMs, errorMessage } = options;
-  const refillRate = capacity / refillTimeMs;
+  const { keyPrefix, capacity, refillTimeMs, errorMessage, useCompoundKey } = options;
+  const refillRate = capacity / refillTimeMs; 
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const ip = req.ip || req.headers["x-forwarded-for"] || req.socket.remoteAddress || "anonymous";
-    const redisKey = `ratelimit:${keyPrefix}:${ip}`;
+    
+    let redisKey = `ratelimit:${keyPrefix}:${ip}`;
+
+    // If compound key is enabled, resolve the Room ID
+    if (useCompoundKey) {
+      let roomId = req.body?.roomId || req.query?.room || req.headers["x-room-id"] || "";
+
+      // Fallback: Attempt to extract room parameter from the HTTP Referer header
+      if (!roomId && req.headers.referer) {
+        try {
+          const refererUrl = new URL(req.headers.referer);
+          roomId = refererUrl.searchParams.get("room") || "";
+        } catch {}
+      }
+
+      if (roomId) {
+        redisKey = `ratelimit:${keyPrefix}:${ip}:${roomId}`;
+      }
+    }
+
     const now = Date.now();
 
     try {
@@ -64,33 +84,58 @@ const createTokenBucketLimiter = (options: TokenBucketOptions) => {
         res.status(429).json({ error: errorMessage });
       }
     } catch (error) {
-     // if redis aint available
+      // Fallback: If Redis is unavailable, log the error and fail open to prevent blocking legitimate traffic
       console.error(`Rate Limiter error [${keyPrefix}]:`, error);
       next();
     }
   };
 };
 
-// Strict Limiter for Code Execution: Max 5 executions, refilled over 1 minute (1 token per 12 seconds)
-export const codeExecutionLimiter = createTokenBucketLimiter({
-  keyPrefix: "code-exec",
+// DUAL KEY LIMITERS FOR CODE EXECUTION
+
+// 1. Room-Specific Code Execution: Max 5 runs/min per IP + Room
+export const roomCodeExecutionLimiter = createTokenBucketLimiter({
+  keyPrefix: "room-code-exec",
   capacity: 5,
   refillTimeMs: 60 * 1000,
-  errorMessage: "Too many code execution requests. Please wait before executing again.",
+  useCompoundKey: true,
+  errorMessage: "Too many code execution requests in this room. Please wait.",
 });
 
-// Moderate Limiter for AI Chat & Session Generation: Max 10 requests, refilled over 1 minute (1 token per 6 seconds)
-export const aiServiceLimiter = createTokenBucketLimiter({
-  keyPrefix: "ai-service",
+// 2. Global IP Code Execution: Max 30 runs/min per IP across all rooms
+export const globalIpCodeExecutionLimiter = createTokenBucketLimiter({
+  keyPrefix: "global-ip-code-exec",
+  capacity: 30,
+  refillTimeMs: 60 * 1000,
+  useCompoundKey: false,
+  errorMessage: "High volume of code execution from your network. Please wait.",
+});
+
+// DUAL KEY LIMITERS FOR AI SERVICES 
+
+// 1. Room-Specific AI Limit: Max 10 requests/min per IP + Room
+export const roomAiServiceLimiter = createTokenBucketLimiter({
+  keyPrefix: "room-ai-service",
   capacity: 10,
   refillTimeMs: 60 * 1000,
-  errorMessage: "Too many AI requests. Please wait a moment before sending another message.",
+  useCompoundKey: true,
+  errorMessage: "Too many AI requests in this room. Please wait a moment.",
 });
 
-// Global baseline rate limiter: Max 100 requests, refilled over 15 minutes
+// 2. Global IP AI Limit: Max 50 requests/min per IP across all rooms
+export const globalIpAiServiceLimiter = createTokenBucketLimiter({
+  keyPrefix: "global-ip-ai-service",
+  capacity: 50,
+  refillTimeMs: 60 * 1000,
+  useCompoundKey: false,
+  errorMessage: "High volume of AI requests from your network. Please wait.",
+});
+
+// Baseline rate limiter: Max 100 requests per 15 minutes per IP
 export const globalApiLimiter = createTokenBucketLimiter({
   keyPrefix: "global-api",
   capacity: 100,
   refillTimeMs: 15 * 60 * 1000,
+  useCompoundKey: false,
   errorMessage: "Too many requests to the server. Please try again later.",
 });
