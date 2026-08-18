@@ -2,7 +2,7 @@
 
 ## Overview
 
-Session is a full-stack monorepo with a React frontend and a Node.js/Express backend. Real-time collaboration is handled by **Liveblocks** (cloud CRDT/presence) + **Yjs** (conflict-free document model), and isolated code execution runs inside ephemeral **Docker** containers.
+Session is a full-stack monorepo with a React frontend and a Node.js/Express backend. Real-time collaboration is handled by **Liveblocks** (cloud CRDT/presence) + **Yjs** (conflict-free document model), and code execution is handled via the **JDoodle API** (ideal for serverless & PaaS cloud platforms) with an optional **Docker** container execution strategy for self-hosted setups.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -23,17 +23,19 @@ Session is a full-stack monorepo with a React frontend and a Node.js/Express bac
 │                                                             │
 │   ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │
 │   │ session.svc  │  │  aichat.svc  │  │  execute.svc   │  │
-│   │ (AI codegen  │  │ (AI chat via │  │ (Docker runner)│  │
-│   │  + LB seed)  │  │  OpenRouter) │  │                │  │
-│   └──────────────┘  └──────────────┘  └────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                             │
-              ┌──────────────┴──────────────┐
-              │    Docker Engine (host)      │
-              │  python:3.11-alpine          │
-              │  node:20-alpine              │
-              │  gcc:latest                  │
-              └─────────────────────────────┘
+│   │ (AI codegen  │  │ (AI chat via │  │  (JDoodle API /│  │
+│   │  + LB seed)  │  │  OpenRouter) │  │   Docker)      │  │
+│   └──────────────┘  └──────────────┘  └───────┬────────┘  │
+└───────────────────────────────────────────────┼─────────────┘
+                                                │
+                 ┌──────────────────────────────┴──────────────────────────────┐
+                 │                                                             │
+  [Primary Cloud Execution]                                     [Self-Hosted Option]
+  ┌──────────────────────────────┐                               ┌─────────────────────────────┐
+  │   JDoodle REST API           │                               │    Docker Engine (host)      │
+  │   https://api.jdoodle.com    │                               │  python:3.11-alpine         │
+  │   (Cloud execution runner)   │                               │  node:20-alpine / gcc       │
+  └──────────────────────────────┘                               └─────────────────────────────┘
 ```
 
 ---
@@ -118,10 +120,10 @@ backend/src/
 │   ├── session.service.ts    ← AI problem gen → Liveblocks seed
 │   ├── liveblocks.service.ts ← Liveblocks Node SDK wrapper
 │   ├── aichat.service.ts     ← streaming AI chat
-│   ├── execute.service.ts    ← Docker container lifecycle
+│   ├── execute.service.ts    ← JDoodle API execution (with optional Docker runner)
 │   └── yjs.service.ts        ← (legacy) in-memory Yjs store
 └── utils/
-    └── languageMapper.ts     ← maps language names → Docker images
+    └── languageMapper.ts     ← maps language names → JDoodle codes / Docker images
 ```
 
 ### Session Bootstrap Flow
@@ -168,6 +170,41 @@ type Presence = {
 
 ## Code Execution Pipeline
 
+Session supports code execution via two distinct execution engines: **JDoodle API** (Primary Cloud Execution) and **Docker Container Runner** (Self-Hosted Execution).
+
+### Execution Strategy & Architectural Decision
+
+> **Why switch to JDoodle API for cloud deployments?**
+>
+> Most managed PaaS and serverless platforms—including Render, Railway, AWS Lambda, and Heroku—allow applications to be deployed as containers but do not provide ordinary application workloads with access to a host Docker daemon or Docker socket, so Docker-in-Docker and spawning sibling containers are generally not supported. Some platforms provide specialized sandboxed environments that support nested container execution; for example, Vercel Sandbox can run Docker inside an isolated Firecracker microVM.
+> 
+> By switching to the **JDoodle API** (`https://api.jdoodle.com/v1/execute`), code execution runs securely via external cloud sandboxes, eliminating host Docker dependencies and enabling zero-friction deployment on services like Render and Vercel.
+>
+> **Retaining both strategies**:
+> - **JDoodle API** (Primary / Default): Designed for cloud platform deployments without Docker daemon access. Executes multi-language code out-of-the-box using API key credentials (`JDOODLE_CLIENT_ID` / `JDOODLE_CLIENT_SECRET`).
+> - **Docker Ephemeral Containers** (Self-Hosted): Retained for self-hosted VPS/VM infrastructure (e.g., AWS EC2, DigitalOcean, Hetzner) where root/Docker socket permissions are available for local container isolation.
+
+---
+
+### Primary Flow: JDoodle API Execution
+
+```
+User clicks "Run"
+  → OutputPanel sends Liveblocks broadcast "execute"
+    → BroadcastProvider receives broadcast
+      → POST /api/execute  { code, language, stdin? }
+        → execute.service.ts
+          → Map language & version index (languageMapper)
+          → Strip JS/TS export declarations for script runner
+          → POST https://api.jdoodle.com/v1/execute
+            → JSON response { output, statusCode, memory, cpuTime }
+              → Y.Array("output").push(...)   ← synced across collaborators
+```
+
+---
+
+### Alternative Flow: Ephemeral Docker Container Execution (Self-Hosted)
+
 ```
 User clicks "Run"
   → OutputPanel sends Liveblocks broadcast "execute"
@@ -184,12 +221,11 @@ User clicks "Run"
 
 > The diagram below illustrates the full Docker execution lifecycle — from the browser "Run" click, through the Express backend, to the ephemeral container and back.
 
-
 <br>
 
 ![Docker Execution Service Diagram](../frontend/public/exec-backend.excalidraw.png)
 
-### Container Constraints
+#### Container Constraints (Docker Mode)
 
 ```json
 {
@@ -202,7 +238,7 @@ User clicks "Run"
 }
 ```
 
-> **Planned**: Execution queue to throttle concurrent container requests and prevent host resource exhaustion.
+> **Note**: In Docker mode, execution queues can be used to throttle concurrent container requests and prevent host resource exhaustion.
 
 ---
 
