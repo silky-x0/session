@@ -47,12 +47,13 @@
 |---|---|
 | **Real-Time Collaboration** | Live code sync via Yjs + Liveblocks, Monaco Editor (VS Code engine), multi-language support, live cursors & selections with user colors |
 | **AI Assistance** | AI-generated questions tuned to experience level, integrated AI chat panel, session bootstrap (problem + starter code), powered by OpenRouter (Kimi model) |
-| **Code Execution** | Docker-isolated execution for Python, JavaScript, C, C++ — shared output synced to all collaborators |
+| **Code Execution** | JDoodle API (primary, cloud) + optional ephemeral Docker containers (self-hosted) — multi-language, shared output synced to all collaborators |
 | **Interview Mode** | Problem panel with difficulty, hints system, complexity display, solution reveal, post-session analysis |
 | **Audio & Video** | Built-in audio & video calls so interviewers and candidates share one room — no Zoom, no context switch |
+| **Security** | Redis-backed Token Bucket rate limiting, dual-key (IP + Room) compound keys, ephemeral TTL cleanup, fail-open Redis fallback |
 | **Premium UI/UX** | Deep Carbon & Neon Pulse design system, glassmorphism, JetBrains Mono, Framer Motion transitions, route-aware shutter animations |
 | **Presence** | Avatar stack, live cursors, sync status badge, connection loss toasts |
-| **Coming Soon** | Excalidraw whiteboard, follow-me cursor, execution queue |
+| **Coming Soon** | Follow-me cursor, inline code comments, session playback, WebRTC audio/video |
 
 ---
 
@@ -78,9 +79,12 @@
 |---|---|
 | **Node.js + Express** | HTTP server with layered routing |
 | **TypeScript** | Type-safe server code |
-| **Liveblocks Node SDK** | Server-side room seeding |
+| **Liveblocks Node SDK** | Server-side room seeding and webhook processing |
 | **OpenRouter SDK** | AI model access (Kimi, etc.) |
-| **Docker SDK** | Ephemeral code execution containers |
+| **JDoodle API** | Primary cloud code execution (multi-language, no Docker required) |
+| **Redis + ioredis** | Token Bucket rate-limit state, BullMQ job persistence |
+| **BullMQ** | Delayed job queue for ephemeral room deletion |
+| **Docker SDK** | Optional ephemeral containers for self-hosted deployments |
 
 ---
 
@@ -111,13 +115,14 @@ session/
 │   └── src/
 │       ├── config/               # env.ts, kimi2thinking.ts
 │       ├── controllers/          # session, aichat, execute
-│       ├── middleware/           # errorHandler, asyncHandler
+│       ├── middleware/           # errorHandler, asyncHandler, rateLimiter
 │       ├── routes/               # ai.routes.ts, code.routes.ts
 │       ├── services/             # session, liveblocks, aichat, execute, yjs
 │       └── utils/                # languageMapper
 │
 ├── docs/
-│   ├── ARCHITECTURE.md           # System design, data flow diagrams
+│   ├── ARCHITECTURE.md           # System design, data flow, rate limiting, execution pipeline
+│   ├── ROADMAP.md                # Completed, in-progress, and planned features
 │   ├── CONTRIBUTING.md           # Workflow, code style, project-specific notes
 │   ├── DEPLOYMENT.md             # Vercel + Render setup
 │   └── ENV_VARS.md               # All environment variables reference
@@ -133,9 +138,11 @@ session/
 
 - **Node.js** v18+
 - **npm**
-- **Docker** (required for code execution feature)
 - A **Liveblocks** account (free) — get your keys at [liveblocks.io](https://liveblocks.io)
+- A **JDoodle** API account — [jdoodle.com](https://jdoodle.com) (free tier available)
 - An **OpenRouter** API key — [openrouter.ai](https://openrouter.ai)
+- A **Redis** instance — [Redis Cloud](https://redis.io/try-free/) free tier works (required for rate limiting & room deletion queue)
+- **Docker** _(optional)_ — only needed for self-hosted code execution
 
 ### Installation
 
@@ -152,12 +159,9 @@ cp .env.example .env    # then fill in your keys
 cd ../frontend
 npm install
 cp .env.example .env    # then fill in your keys
-
-# Pull Docker images for code execution
-docker pull python:3.11-alpine
-docker pull node:20-alpine
-docker pull gcc:latest
 ```
+
+
 
 ### Running Locally
 
@@ -177,7 +181,8 @@ Open `http://localhost:5173`, click **"Start Session"**, share the URL — done.
 
 | Doc | Contents |
 |-----|----------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, component tree, data flow, Yjs/Liveblocks internals, execution pipeline |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System diagram, component tree, data flow, rate limiting design, execution pipeline |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Completed features, active work, and planned backlog |
 | [docs/ENV_VARS.md](docs/ENV_VARS.md) | Every environment variable for backend and frontend |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Render + Vercel deployment instructions |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | PR workflow, code style, project-specific gotchas |

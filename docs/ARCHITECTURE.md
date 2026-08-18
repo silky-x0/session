@@ -90,10 +90,14 @@ App.tsx
 
 ```
 HTTP Request
-  → Express Router (routes/)
+  → CORS middleware
+  → /webhook branch (raw body, HMAC verify) ← exits here for webhook events
+  → express.json() body parser
+  → globalApiLimiter (all /api/* routes)
+  → Route-specific dual-key limiters
     → Controller (controllers/)
       → Service (services/)
-        → External API / Docker / Liveblocks Node SDK
+        → External API / JDoodle / Liveblocks Node SDK
           → Response
 ```
 
@@ -112,7 +116,8 @@ backend/src/
 │   └── execute.controller.ts ← POST /api/execute
 ├── middleware/
 │   ├── errorHandler.ts       ← global error handler
-│   └── asyncHandler.ts       ← wraps async route handlers
+│   ├── asyncHandler.ts       ← wraps async route handlers
+│   └── rateLimiter.ts        ← Token Bucket rate limiting middleware (Redis-backed)
 ├── routes/
 │   ├── ai.routes.ts          ← /api/session, /api/chat
 │   └── code.routes.ts        ← /api/execute
@@ -143,6 +148,91 @@ When a user clicks **"Start Session"** with AI generation enabled:
 ```
 
 ---
+
+## API Security & Rate Limiting
+
+### Why Rate Limiting is Critical for This Application
+
+Session integrates three external **paid-per-invocation** API services: JDoodle (code execution), Google Gemini (session generation), and OpenRouter (AI chat). Without rate limiting, any unauthenticated caller reaching the deployed backend can drain API credits, cause financial cost overruns, or exhaust quota limits for all legitimate users.
+
+### Algorithm: Redis-Backed Token Bucket
+
+> **Why Token Bucket over alternatives?**
+>
+> - **Fixed Window**: Vulnerable to "double-bursting" — a client can make 2× the allowed limit by clustering requests around a window reset boundary. For a paid execution API, this means overspending on each burst window reset.
+> - **Leaky Bucket**: Queues requests for constant-rate processing. A bot spam attack fills the queue and the backend continues calling JDoodle/Gemini for hours after the attack ends, draining credits even after the attacker has stopped.
+> - **Sliding Window Log**: Stores a timestamp for every request in a Redis sorted set — memory usage scales linearly with traffic, leading to Redis Out-of-Memory (OOM) crashes under spam.
+> - **Token Bucket** (chosen): Each request consumes one token from a bucket. Tokens accumulate continuously over time up to a maximum capacity. Short legitimate bursts (e.g., a developer clicking "Run" twice quickly) are absorbed by the token buffer, while sustained spam exhausts the bucket and is blocked immediately with HTTP 429. Memory usage is constant — only two numbers (`tokens`, `lastRefill`) per IP key in Redis.
+
+**Token math per request:**
+```
+newTokens = min(capacity, oldTokens + (elapsedMs × refillRate))
+refillRate = capacity / refillTimeMs  (tokens per millisecond)
+```
+
+Each bucket in Redis self-expires via a TTL set equal to `refillTimeMs`, so idle users are automatically garbage-collected.
+
+### Dual-Key (Compound Key) Pattern
+
+IP-only rate limiting breaks down on **shared networks** (university campuses, corporate offices, home NAT routers) where multiple users appear to the server as a single public IP address. One user consuming their rate limit would block all other users on the same network.
+
+To solve this, rate limiters operate with two independent Redis keys in series:
+
+| Layer | Redis Key | Limit | Purpose |
+|---|---|---|---|
+| **Global IP** | `ratelimit:{prefix}:{ip}` | 30 runs/min | Prevents a single IP from abusing multiple rooms to multiply their limit |
+| **Room-Specific** | `ratelimit:{prefix}:{ip}:{roomId}` | 5 runs/min | Ensures fair per-workspace isolation so one room's user can't block another |
+
+Both checks must pass before a request reaches the controller:
+
+```
+Request arrives at /api/code/execute
+  → globalIpCodeExecutionLimiter checks ratelimit:global-ip-code-exec:{ip}
+    → (if remaining > 0) consume token, pass through
+      → roomCodeExecutionLimiter checks ratelimit:room-code-exec:{ip}:{roomId}
+        → (if remaining > 0) consume token, pass through
+          → executeCode controller → JDoodle API
+    → (if 0 remaining) reject with HTTP 429 + Retry-After header
+```
+
+The `roomId` is resolved dynamically from `req.body.roomId`, `req.query.room`, `req.headers["x-room-id"]`, or parsed from the `Referer` header URL. If no room is present (e.g., a bot hitting the endpoint directly), the key falls back to IP-only, applying the stricter room-level limit.
+
+### Rate Limiter Inventory
+
+| Exported Middleware | Redis Key Pattern | Capacity | Window | Applied To |
+|---|---|---|---|---|
+| `globalIpCodeExecutionLimiter` | `ratelimit:global-ip-code-exec:{ip}` | 30 tokens | 1 minute | `POST /api/code/execute` (per-route) |
+| `roomCodeExecutionLimiter` | `ratelimit:room-code-exec:{ip}:{roomId}` | 5 tokens | 1 minute | `POST /api/code/execute` (per-route) |
+| `globalIpAiServiceLimiter` | `ratelimit:global-ip-ai-service:{ip}` | 50 tokens | 1 minute | All `GET/POST /api/ai/*` (router-level) |
+| `roomAiServiceLimiter` | `ratelimit:room-ai-service:{ip}:{roomId}` | 10 tokens | 1 minute | All `GET/POST /api/ai/*` (router-level) |
+| `globalApiLimiter` | `ratelimit:global-api:{ip}` | 100 tokens | 15 minutes | All `/api/*` (app-level) |
+
+### Middleware Layering in app.ts
+
+```
+HTTP Request
+  → CORS middleware
+  ├── /webhook → express.raw() → verifyLiveblocksWebhook → handleWebhook
+  │              (bypasses json parser and all rate limiters intentionally)
+  └── /api/*
+        → express.json()
+        → globalApiLimiter      ← app.use("/api", globalApiLimiter)
+        ├── /api/ai/*
+        │     → globalIpAiServiceLimiter   ← router.use()
+        │     → roomAiServiceLimiter       ← router.use()
+        │     → /session → createAiSession controller
+        │     → /chat    → chatWithAI controller
+        └── /api/code/*
+              → /execute
+                  → globalIpCodeExecutionLimiter  ← per-route
+                  → roomCodeExecutionLimiter       ← per-route
+                  → executeCode controller
+```
+
+> **Fail-Open Behaviour**: If Redis is unreachable (connection error), the rate limiter logs the error and calls `next()` — requests are allowed through rather than failing closed. This prioritises availability for users over security during Redis downtime. For production hardening, consider adding a secondary in-memory fallback limiter.
+
+---
+
 
 ## Real-Time Collaboration
 
