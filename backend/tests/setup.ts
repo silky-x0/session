@@ -6,6 +6,8 @@ beforeAll(() => {
   process.env.NODE_ENV = 'test';
   process.env.OPENROUTER_API_KEY = 'test-api-key';
   process.env.GEMINI_API_KEY = 'test-gemini-key';
+  // Used by token.service as signing secret for room session tokens
+  process.env.LIVEBLOCKS_SECRET_KEY = 'test-liveblocks-secret';
 });
 
 afterAll(() => {

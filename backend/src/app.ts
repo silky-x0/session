@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler";
 import { globalApiLimiter } from "./middleware/rateLimiter";
 import aiRoutes from "./routes/ai.routes";
 import codeRoutes from "./routes/code.routes";
+import sessionRoutes from "./routes/session.routes";
 import webhookRoutes from "./routes/webhook.routes";
 const app = express();
 
@@ -19,10 +20,12 @@ app.use(
 
 app.use("/webhook", express.raw({ type: "application/json" }), webhookRoutes);
 
-app.use(express.json());
+// Global body cap (individual fields have stricter limits (see utils/payloadLimits))
+app.use(express.json({ limit: "512kb" }));
 
 app.use("/api", globalApiLimiter);
 
+app.use("/api/sessions", sessionRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
 

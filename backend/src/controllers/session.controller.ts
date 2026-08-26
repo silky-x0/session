@@ -4,6 +4,7 @@ import { seedLiveblocksRoom } from "../services/liveblocks.service";
 import { generateAIContentGemini } from "../services/gemini.service";
 import { normalizeLanguage } from "../utils/languageMapper";
 import { AppError } from "../middleware/errorHandler";
+import { PAYLOAD_LIMITS, assertSizeLimit } from "../utils/payloadLimits";
 
 export const createAiSession = async (
   req: Request,
@@ -14,6 +15,8 @@ export const createAiSession = async (
   if (!prompt) {
     throw new AppError(400, "Prompt is required");
   }
+
+  assertSizeLimit(prompt, PAYLOAD_LIMITS.promptBytes, "prompt");
 
 
   let aiResponse;

@@ -25,6 +25,12 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  // Body parser: JSON payload exceeded the global express.json() limit
+  if ((err as any)?.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Request body too large' });
+    return;
+  }
+
   // Known operational errors (validation, not found, etc.)
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
