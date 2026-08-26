@@ -9,6 +9,19 @@ interface TokenBucketOptions {
   useCompoundKey?: boolean; // If true, rate limit by IP + Room ID
 }
 
+// Bounded wait for Redis ops — prevents ioredis' offline queue from hanging
+// requests indefinitely when Redis is unreachable (maxRetriesPerRequest: null)
+const REDIS_OP_TIMEOUT_MS = 500;
+
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`Redis op timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); },
+    );
+  });
+
 
 const createTokenBucketLimiter = (options: TokenBucketOptions) => {
   const { keyPrefix, capacity, refillTimeMs, errorMessage, useCompoundKey } = options;
@@ -38,9 +51,14 @@ const createTokenBucketLimiter = (options: TokenBucketOptions) => {
 
     const now = Date.now();
 
+    if (redisConnection.status !== "ready") {
+      next();
+      return;
+    }
+
     try {
-     
-      const rawData = await redisConnection.hgetall(redisKey);
+      
+      const rawData = await withTimeout(redisConnection.hgetall(redisKey), REDIS_OP_TIMEOUT_MS);
       
       let tokens = capacity;
       let lastRefill = now;
@@ -61,13 +79,16 @@ const createTokenBucketLimiter = (options: TokenBucketOptions) => {
       if (tokens >= 1) {
         tokens = tokens - 1;
 
-        await redisConnection.multi()
-          .hset(redisKey, {
-            tokens: tokens.toString(),
-            lastRefill: lastRefill.toString(),
-          })
-          .pexpire(redisKey, refillTimeMs)
-          .exec();
+        await withTimeout(
+          redisConnection.multi()
+            .hset(redisKey, {
+              tokens: tokens.toString(),
+              lastRefill: lastRefill.toString(),
+            })
+            .pexpire(redisKey, refillTimeMs)
+            .exec(),
+          REDIS_OP_TIMEOUT_MS,
+        );
 
         res.setHeader("RateLimit-Limit", capacity);
         res.setHeader("RateLimit-Remaining", Math.floor(tokens));
