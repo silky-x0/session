@@ -16,6 +16,7 @@ FRONTEND_URL="http://localhost:5173"
 OPEN_ROUTER_KEY="sk-or-v1-..."
 LIVEBLOCKS_SECRET_KEY="sk_..."
 LIVEBLOCKS_WEBHOOK_SECRET="wh_..."
+SESSION_TOKEN_SECRET="a-long-random-string"
 REDIS_URL="redis://default:<password>@<host>:<port>"
 JDOODLE_CLIENT_ID="your_client_id"
 JDOODLE_CLIENT_SECRET="your_client_secret"
@@ -27,6 +28,7 @@ JDOODLE_CLIENT_SECRET="your_client_secret"
 | `FRONTEND_URL`                 | ✅        | Frontend origin — used in CORS allow-list                            | `http://localhost:5173`                      |
 | `OPEN_ROUTER_KEY`              | ✅        | OpenRouter API key for AI problem generation & chat                  | `sk-or-v1-...`                               |
 | `LIVEBLOCKS_SECRET_KEY`        | ✅        | Liveblocks secret key for server-side room seeding & active users    | `sk_prod_...`                                |
+| `SESSION_TOKEN_SECRET`         | ⚠️        | HMAC secret signing room session tokens — falls back to `LIVEBLOCKS_SECRET_KEY` if unset; set a dedicated value in production so rotating Liveblocks keys doesn't invalidate sessions | `openssl rand -hex 32` |
 | `LIVEBLOCKS_WEBHOOK_SECRET`    | ✅        | Liveblocks webhook signing secret — used to verify incoming webhooks | `wh_...`                                     |
 | `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue               | `redis://default:pass@host:port`             |
 | `JDOODLE_CLIENT_ID`            | ✅        | JDoodle Compiler API Client ID (required for code execution)        | `your_client_id`                             |

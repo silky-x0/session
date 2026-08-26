@@ -4,13 +4,6 @@ Items here are tracked loosely. For structured feature planning per mode, see `f
 
 ## In Progress
 
-### Session & Request Validation
-
-- [ ] Understand token-based authorization flow (`Authorization: Bearer <token>` header)
-- [ ] Decide on session validation approach (Room Session Token vs. User Auth)
-- [ ] Create `validateSessionToken` middleware to verify incoming requests
-- [ ] Validate request body payload sizes (e.g., limit code execution string length to 20 KB)
-
 ### Verification & Testing
 
 - [ ] Test rate limiting with HTTP requests to confirm `429 Too Many Requests` response
@@ -18,6 +11,8 @@ Items here are tracked loosely. For structured feature planning per mode, see `f
 - [ ] Verify frontend handles rate limit responses gracefully (e.g., displaying user toast notifications)
 
 ## Completed
+
+- [x] Session & request validation — **Room Session Tokens chosen over User Auth** (login-less product): backend mints short-lived HS256 JWTs bound to a `roomId` (`POST /api/sessions/:roomId/token`); `validateSessionToken` middleware guards `/api/code/*` and `/api/ai/chat` with `Authorization: Bearer` (401 invalid/expired, 403 room mismatch); payload caps — 20 KB code, 10 KB stdin, 8 KB prompt, 512 KB global body → 413; rate limiter now fails open fast when Redis is unreachable instead of hanging
 
 - [x] Ephemeral room deletion — BullMQ + Redis delayed jobs, Liveblocks webhook integration, idempotent scheduling, safety re-check in worker
 - [x] Fix AI chat output sync with collaborators

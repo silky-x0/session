@@ -92,14 +92,29 @@ App.tsx
 HTTP Request
   → CORS middleware
   → /webhook branch (raw body, HMAC verify) ← exits here for webhook events
-  → express.json() body parser
+  → express.json() body parser (512 KB global cap → 413)
   → globalApiLimiter (all /api/* routes)
+  → POST /api/sessions/:roomId/token (public) ← mints room session token, exits here
+  → validateSessionToken on protected routes (/api/code/*, /api/ai/chat)
+      401 missing/invalid/expired · 403 room mismatch · req.session = payload
   → Route-specific dual-key limiters
-    → Controller (controllers/)
+    → Controller (controllers/, per-field payload caps → 413)
       → Service (services/)
         → External API / JDoodle / Liveblocks Node SDK
           → Response
 ```
+
+### Room Session Token Auth
+
+The product is login-less: anyone with a room link can collaborate via Liveblocks' public key. To stop anonymous abuse of paid backend resources (JDoodle credits, AI tokens), protected REST routes require a **Room Session Token** — chosen over full User Auth to preserve the zero-friction UX:
+
+1. Client entering the editor calls `POST /api/sessions/:roomId/token` (public, rate-limited).
+2. Backend returns a short-lived (2 h) self-contained JWT (HS256, `node:crypto` — no extra deps) bound to `{ roomId, iat, exp }`, signed with `SESSION_TOKEN_SECRET` (falls back to `LIVEBLOCKS_SECRET_KEY`).
+3. Every request to `/api/code/*` and `/api/ai/chat` carries `Authorization: Bearer <token>`.
+4. `validateSessionToken` (`middleware/auth.ts`) verifies signature + expiry (401), that the token's room matches the request's target room resolved from `body.roomId → query.room → x-room-id → Referer` (403), then attaches the decoded payload as `req.session`. Stateless — no Redis lookup; rate limiting handles volume separately.
+5. The frontend caches tokens per room in `lib/apiClient.ts` and transparently re-mints once on a 401.
+
+Payload size limits guard individual fields before they reach paid services or get echoed in error messages: code ≤ 20 KB, stdin ≤ 10 KB, prompt ≤ 8 KB, codeContext ≤ 20 KB, language ≤ 32 chars, plus a 512 KB global JSON body cap (`entity.too.large` → 413).
 
 ### Layered Design
 
@@ -117,10 +132,12 @@ backend/src/
 ├── middleware/
 │   ├── errorHandler.ts       ← global error handler
 │   ├── asyncHandler.ts       ← wraps async route handlers
+│   ├── auth.ts               ← validateSessionToken (Bearer room token) middleware
 │   └── rateLimiter.ts        ← Token Bucket rate limiting middleware (Redis-backed)
 ├── routes/
 │   ├── ai.routes.ts          ← /api/session, /api/chat
-│   └── code.routes.ts        ← /api/execute
+│   ├── code.routes.ts        ← /api/execute
+│   └── session.routes.ts     ← /api/sessions/:roomId/token
 ├── services/
 │   ├── session.service.ts    ← AI problem gen → Liveblocks seed
 │   ├── liveblocks.service.ts ← Liveblocks Node SDK wrapper
