@@ -5,8 +5,9 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus, prism } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useTheme } from "../ThemeContext";
-import { useUpdateMyPresence, useSelf, useOthers } from "@liveblocks/react/suspense";
+import { useUpdateMyPresence, useSelf, useOthers, useRoom } from "@liveblocks/react/suspense";
 import * as Y from "yjs";
+import { authedFetch } from "../../lib/apiClient";
 
 
 interface Message {
@@ -70,6 +71,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
   const { theme } = useTheme();
   const updateMyPresence = useUpdateMyPresence();
   const self = useSelf();
+  const room = useRoom();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -118,9 +120,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
       // Extract code context (10 lines above and below cursor)
       const codeContext = getCodeContext(editorRef.current, 10, 10);
 
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-      
-      const response = await fetch(`${apiUrl}/api/ai/chat`, {
+      const response = await authedFetch("/api/ai/chat", room.id, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

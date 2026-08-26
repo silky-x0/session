@@ -19,8 +19,9 @@ import {
 } from "react";
 import type { editor } from "monaco-editor";
 import * as Y from "yjs";
-import { useUpdateMyPresence } from "@liveblocks/react/suspense";
+import { useUpdateMyPresence, useRoom } from "@liveblocks/react/suspense";
 import type { ExecutionMetric, PerformanceData, PerformanceStatus } from "./metrics/types";
+import { authedFetch } from "../../lib/apiClient";
 
 const SUPPORTED_LANGUAGES = [
   "python",
@@ -34,8 +35,6 @@ const SUPPORTED_LANGUAGES = [
   "swift",
   "zig"
 ];
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:1234";
 
 interface OutputLine {
   id: string;
@@ -114,6 +113,7 @@ export function OutputPanel({
   
   const outputEndRef = useRef<HTMLDivElement>(null);
   const updateMyPresence = useUpdateMyPresence();
+  const room = useRoom();
 
   const isSupported = SUPPORTED_LANGUAGES.includes(language.toLowerCase());
 
@@ -192,7 +192,7 @@ export function OutputPanel({
 
         try {
           const fetchStart = performance.now();
-          const response = await fetch(`${API_URL}/api/code/execute`, {
+          const response = await authedFetch("/api/code/execute", room.id, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
