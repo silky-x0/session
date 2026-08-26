@@ -17,6 +17,8 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL,
   NVIDIA_API_KEY: process.env.NVIDIA_API_KEY,
   liveBlockSecretKey: process.env.LIVEBLOCKS_SECRET_KEY!,
+  sessionTokenSecret:
+    process.env.SESSION_TOKEN_SECRET || process.env.LIVEBLOCKS_SECRET_KEY,
   cors: {
     origin: getCorsOrigin(),
     credentials: process.env.NODE_ENV === 'production',
