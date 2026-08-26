@@ -26,6 +26,14 @@ import { generateAIContentGemini } from '../../src/services/gemini.service';
 import { seedLiveblocksRoom } from '../../src/services/liveblocks.service';
 import { handleAiChat } from '../../src/services/aichat.service';
 
+// Helper: mint a valid room session token (chat route is protected)
+const getRoomToken = async (): Promise<string> => {
+  const response = await request(app)
+    .post('/api/sessions/api-test-room/token')
+    .expect(200);
+  return response.body.token;
+};
+
 describe('API Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -85,10 +93,13 @@ describe('API Routes', () => {
     it('should respond to chat messages', async () => {
       vi.mocked(handleAiChat).mockResolvedValue('Here is the answer');
 
+      const token = await getRoomToken();
+
       const response = await request(app)
         .post('/api/ai/chat')
-        .send({ 
-          prompt: 'How do I optimize this?',  
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          prompt: 'How do I optimize this?',
           codeContext: 'function example() {}',
         })
         .expect('Content-Type', /json/)
@@ -98,8 +109,11 @@ describe('API Routes', () => {
     });
 
     it('should return 400 when prompt is missing', async () => {
+      const token = await getRoomToken();
+
       const response = await request(app)
         .post('/api/ai/chat')
+        .set('Authorization', `Bearer ${token}`)
         .send({ codeContext: 'some code' })
         .expect(400);
 
