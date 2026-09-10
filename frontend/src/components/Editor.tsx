@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from "react";
 import { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
-import { useRoom, useStatus, useOthers } from "@liveblocks/react/suspense";
+import { useRoom, useStatus, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense";
 import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
@@ -21,6 +21,8 @@ import { SettingsPanel } from "./editor/SettingsPanel";
 import { Whiteboard } from "./editor/Whiteboard";
 import { PerformanceMetricsCard } from "./editor/metrics/PerformanceMetricsCard";
 import type { ExecutionMetric, PerformanceData } from "./editor/metrics/types";
+
+import { VideoCall } from "./editor/VideoCall";
 
 const randomColor = () =>
   "#" +
@@ -59,6 +61,24 @@ function CollaborativeEditorInner({
   const status = useStatus();
   const { zenMode, theme } = useTheme();
   const others = useOthers();
+  const updateMyPresence = useUpdateMyPresence();
+
+  // LiveKit call state — SFU, not mesh P2P
+  const [inCall, setInCall] = useState(false);
+  const nickname = useMemo(() => getNickname(), []);
+  const identity = useMemo(
+    () => `${nickname}-${Math.random().toString(36).slice(2, 8)}`,
+    [nickname],
+  );
+
+  const handleJoinCall = () => {
+    setInCall(true);
+    updateMyPresence({ isInCall: true } as never);
+  };
+  const handleLeaveCall = () => {
+    setInCall(false);
+    updateMyPresence({ isInCall: false } as never);
+  };
 
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -397,9 +417,10 @@ function CollaborativeEditorInner({
         {/* Top Bar — now uses useStatus internally instead of isConnected prop */}
         <TopBar
           roomId={roomId}
-          inCall={false}
+          inCall={inCall}
           language={language}
-          onJoinAudio={() => {}}
+          onJoinAudio={handleJoinCall}
+          onLeaveAudio={handleLeaveCall}
           onLanguageChange={handleLanguageChange}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeMainView={activeMainView}
@@ -407,6 +428,26 @@ function CollaborativeEditorInner({
           collaboratorsInEditor={inEditor}
           collaboratorsInWhiteboard={inWhiteboard}
         />
+
+        {/* LiveKit call overlay — lazy-loaded, zero bundle cost until Join */}
+        {inCall && (
+          <div className='fixed bottom-3 right-3 z-[90] w-[340px] max-w-[calc(100vw-24px)]'>
+            <Suspense
+              fallback={
+                <div className='glass-panel rounded-xl p-3 text-xs text-muted-foreground'>
+                  Loading call…
+                </div>
+              }
+            >
+              <VideoCall
+                roomId={roomId}
+                identity={identity}
+                name={nickname}
+                onLeave={handleLeaveCall}
+              />
+            </Suspense>
+          </div>
+        )}
 
         {/* Problem Panel */}
         {metadata.title && !zenMode && (

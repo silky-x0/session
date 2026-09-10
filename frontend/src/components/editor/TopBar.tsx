@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Phone, PhoneCall, Undo2, Redo2, Settings } from "lucide-react";
+import { Phone, PhoneCall, PhoneOff, Undo2, Redo2, Settings } from "lucide-react";
 import {
   useStatus,
   useUndo,
@@ -18,6 +18,7 @@ interface TopBarProps {
   inCall: boolean;
   language: string;
   onJoinAudio: () => void;
+  onLeaveAudio?: () => void;
   onLanguageChange: (lang: string) => void;
   onOpenSettings?: () => void;
   activeMainView?: "code" | "whiteboard";
@@ -44,6 +45,7 @@ export function TopBar({
   inCall,
   language,
   onJoinAudio,
+  onLeaveAudio,
   onLanguageChange,
   onOpenSettings,
   activeMainView,
@@ -171,17 +173,29 @@ export function TopBar({
             className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-foreground border border-glass-border/30 hover:bg-muted/20 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer'
           >
             <Phone className='w-3 h-3' />
-            <span className='hidden sm:inline'>Join Audio</span>
+            <span className='hidden sm:inline'>Join Call</span>
           </motion.button>
         ) : (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className='flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]'
-          >
-            <PhoneCall className='w-3 h-3' />
-            <span className='hidden sm:inline'>Audio Active</span>
-          </motion.div>
+          <div className='flex items-center gap-1.5'>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className='flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]'
+            >
+              <PhoneCall className='w-3 h-3' />
+              <span className='hidden sm:inline'>In Call</span>
+            </motion.div>
+            <motion.button
+              onClick={onLeaveAudio}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title='Leave call'
+              className='flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors text-[10px] sm:text-[11px] font-medium cursor-pointer'
+            >
+              <PhoneOff className='w-3 h-3' />
+              <span className='hidden sm:inline'>Leave</span>
+            </motion.button>
+          </div>
         )}
 
         {/* <motion.button

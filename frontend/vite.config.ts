@@ -31,6 +31,10 @@ export default defineConfig({
           'lucide-react': ['lucide-react'],
           // Monaco Editor
           'monaco-editor': ['@monaco-editor/react', 'monaco-editor'],
+          // NOTE: no manual chunk for livekit — splitting it away from
+          // its CJS dep `loglevel` breaks default-import interop
+          // (`Ms.default.getLogger is not a function`). React.lazy on
+          // VideoCall already code-splits it.
         },
       },
     },
@@ -38,9 +42,17 @@ export default defineConfig({
     minify: 'esbuild',
   },
 
-  // Optimize Monaco - only include needed languages
+  // LiveKit packages and their CJS dependency `loglevel` must be pre-bundled
+  // explicitly because VideoCall is lazy-loaded (so Vite's initial scan misses them).
+  // Pre-bundling them converts loglevel's CJS export to ESM so .getLogger is defined.
   optimizeDeps: {
-    include: ['@monaco-editor/react'],
+    include: [
+      '@monaco-editor/react',
+      '@livekit/components-react',
+      '@livekit/components-core',
+      'livekit-client',
+      'loglevel',
+    ],
   },
 
   plugins: [

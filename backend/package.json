@@ -29,6 +29,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.2",
     "ioredis": "5.10.1",
+    "livekit-server-sdk": "^2.19.0",
     "nodemon": "^3.1.11",
     "openai": "^6.34.0",
     "ts-node": "^10.9.2",
@@ -36,7 +37,8 @@
     "ws": "^8.19.0",
     "y-protocols": "^1.0.7",
     "y-websocket": "^3.0.0",
-    "yjs": "^13.6.29"
+    "yjs": "^13.6.29",
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@types/ioredis": "^4.28.10",

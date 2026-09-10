@@ -6,6 +6,7 @@ import { globalApiLimiter } from "./middleware/rateLimiter";
 import aiRoutes from "./routes/ai.routes";
 import codeRoutes from "./routes/code.routes";
 import sessionRoutes from "./routes/session.routes";
+import livekitRoutes from "./routes/livekit.routes";
 import webhookRoutes from "./routes/webhook.routes";
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api", globalApiLimiter);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/code", codeRoutes);
+app.use("/api/livekit", livekitRoutes);
 
 
 app.get("/health", (req, res) => {
