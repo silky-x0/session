@@ -22,7 +22,7 @@ import { Whiteboard } from "./editor/Whiteboard";
 import { PerformanceMetricsCard } from "./editor/metrics/PerformanceMetricsCard";
 import type { ExecutionMetric, PerformanceData } from "./editor/metrics/types";
 
-import { VideoCall } from "./editor/VideoCall";
+import { VideoCall } from "./editor/neoVideoCall";
 
 const randomColor = () =>
   "#" +
@@ -65,6 +65,11 @@ function CollaborativeEditorInner({
 
   // LiveKit call state — SFU, not mesh P2P
   const [inCall, setInCall] = useState(false);
+  const [callStatus, setCallStatus] = useState<{
+    count: number;
+    speakingName: string | null;
+    muted: boolean;
+  }>({ count: 1, speakingName: null, muted: false });
   const nickname = useMemo(() => getNickname(), []);
   const identity = useMemo(
     () => `${nickname}-${Math.random().toString(36).slice(2, 8)}`,
@@ -418,6 +423,9 @@ function CollaborativeEditorInner({
         <TopBar
           roomId={roomId}
           inCall={inCall}
+          callCount={callStatus.count}
+          speakingName={callStatus.speakingName}
+          callMuted={callStatus.muted}
           language={language}
           onJoinAudio={handleJoinCall}
           onLeaveAudio={handleLeaveCall}
@@ -429,24 +437,14 @@ function CollaborativeEditorInner({
           collaboratorsInWhiteboard={inWhiteboard}
         />
 
-        {/* LiveKit call overlay — lazy-loaded, zero bundle cost until Join */}
         {inCall && (
-          <div className='fixed bottom-3 right-3 z-[90] w-[340px] max-w-[calc(100vw-24px)]'>
-            <Suspense
-              fallback={
-                <div className='glass-panel rounded-xl p-3 text-xs text-muted-foreground'>
-                  Loading call…
-                </div>
-              }
-            >
-              <VideoCall
-                roomId={roomId}
-                identity={identity}
-                name={nickname}
-                onLeave={handleLeaveCall}
-              />
-            </Suspense>
-          </div>
+          <VideoCall
+            roomId={roomId}
+            identity={identity}
+            name={nickname}
+            onLeave={handleLeaveCall}
+            onStatus={setCallStatus}
+          />
         )}
 
         {/* Problem Panel */}

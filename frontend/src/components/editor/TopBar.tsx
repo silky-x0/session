@@ -16,6 +16,9 @@ import { NotificationBell } from "./NotificationsPanel";
 interface TopBarProps {
   roomId: string;
   inCall: boolean;
+  callCount?: number;
+  speakingName?: string | null;
+  callMuted?: boolean;
   language: string;
   onJoinAudio: () => void;
   onLeaveAudio?: () => void;
@@ -43,6 +46,9 @@ const LANGUAGES = [
 export function TopBar({
   roomId,
   inCall,
+  callCount,
+  speakingName,
+  callMuted,
   language,
   onJoinAudio,
   onLeaveAudio,
@@ -180,10 +186,30 @@ export function TopBar({
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className='flex items-center gap-1.5 px-2 py-1 text-cyber-cyan text-[10px] sm:text-[11px]'
+              title={
+                speakingName
+                  ? `${speakingName} is speaking`
+                  : callMuted
+                    ? "You are muted"
+                    : "In call"
+              }
+              className={`flex items-center gap-1.5 px-2 py-1 text-[10px] sm:text-[11px] max-w-[160px] ${
+                callMuted ? "text-red-400" : "text-cyber-cyan"
+              }`}
             >
-              <PhoneCall className='w-3 h-3' />
-              <span className='hidden sm:inline'>In Call</span>
+              <span
+                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                  callMuted ? "bg-red-500" : "bg-green-500 animate-pulse"
+                }`}
+              />
+              <PhoneCall className='w-3 h-3 flex-shrink-0' />
+              <span className='hidden sm:inline truncate'>
+                {speakingName
+                  ? `${speakingName.slice(0, 12)} speaking`
+                  : callMuted
+                    ? "Muted"
+                    : `${callCount ?? 1} in call`}
+              </span>
             </motion.div>
             <motion.button
               onClick={onLeaveAudio}
