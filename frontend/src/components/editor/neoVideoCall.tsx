@@ -72,14 +72,14 @@ function CamTile({
   trackRef,
   speaking,
   mirrored,
-  size,
   isPinned,
   onTogglePin,
 }: {
   trackRef: TrackReferenceOrPlaceholder;
   speaking: boolean;
   mirrored?: boolean;
-  size: "sm" | "md" | "lg" | "grid";
+  /** Reserved for per-size tile chrome; currently all tiles share one look. */
+  size?: "sm" | "md" | "lg" | "grid";
   isPinned?: boolean;
   onTogglePin?: () => void;
 }) {
@@ -132,10 +132,8 @@ function CamTile({
 }
 
 function CallLayerInner({
-  onLeave,
   onStatus,
 }: {
-  onLeave: () => void;
   onStatus?: ((s: CallStatus) => void) | undefined;
 }) {
   const roomState = useConnectionState();
@@ -801,7 +799,7 @@ export function VideoCall({
         video
         onDisconnected={onLeave}
       >
-        <CallLayerInner onLeave={onLeave} onStatus={onStatus} />
+        <CallLayerInner onStatus={onStatus} />
       </LiveKitRoom>
     </div>
   );
