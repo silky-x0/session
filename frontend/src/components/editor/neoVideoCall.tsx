@@ -20,6 +20,10 @@ import {
   Minimize2,
   PhoneOff,
   X,
+  Pin,
+  PinOff,
+  Expand,
+  Shrink,
 } from "lucide-react";
 import { getLivekitCredentials } from "@/lib/livekit";
 
@@ -63,22 +67,26 @@ function initials(label: string): string {
     .toUpperCase();
 }
 
-/** Small camera tile with speaking ring, name label, mic badge. */
+/** Camera tile with speaking ring, name label, mic badge, and pin action. */
 function CamTile({
   trackRef,
   speaking,
   mirrored,
   size,
+  isPinned,
+  onTogglePin,
 }: {
   trackRef: TrackReferenceOrPlaceholder;
   speaking: boolean;
   mirrored?: boolean;
-  size: "sm" | "md" | "lg";
+  size: "sm" | "md" | "lg" | "grid";
+  isPinned?: boolean;
+  onTogglePin?: () => void;
 }) {
   const p = trackRef.participant;
   const label = displayName(p.identity, p.name);
   const micOff = !p.isMicrophoneEnabled;
-  const h = size === "sm" ? "h-12" : size === "md" ? "h-24" : "h-full min-h-[180px]";
+  const h = "w-full aspect-video";
 
   return (
     <div
@@ -93,11 +101,29 @@ function CamTile({
         trackRef={trackRef}
         className="h-full w-full [&_video]:object-cover"
       />
-      <span className="absolute bottom-1 left-1.5 max-w-[80%] truncate text-[10px] font-medium text-white/90 bg-black/50 px-1.5 py-0.5 rounded">
-        {label}
+      <span className="absolute bottom-1 left-1.5 max-w-[80%] truncate text-[10px] font-medium text-white/90 bg-black/50 px-1.5 py-0.5 rounded flex items-center gap-1 z-10">
+        {isPinned && <Pin className="w-2.5 h-2.5 text-primary fill-primary shrink-0" />}
+        <span className="truncate">{label}</span>
       </span>
+      {onTogglePin && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTogglePin();
+          }}
+          title={isPinned ? "Unpin participant" : "Pin participant"}
+          aria-label={isPinned ? "Unpin participant" : "Pin participant"}
+          className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-md transition-all cursor-pointer z-20 ${
+            isPinned
+              ? "bg-primary text-background opacity-100 shadow-md"
+              : "bg-black/60 text-white/80 opacity-0 group-hover/tile:opacity-100 hover:text-white hover:bg-black/80"
+          }`}
+        >
+          {isPinned ? <PinOff className="w-3 h-3" /> : <Pin className="w-3 h-3" />}
+        </button>
+      )}
       {micOff && (
-        <span className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-red-400">
+        <span className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-red-400 z-10">
           <MicOff className="w-3 h-3" />
         </span>
       )}
@@ -145,7 +171,7 @@ function CallLayerInner({
   const autoFocused = useRef(false);
   const dismissedShareSid = useRef<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ dx: number; dy: number; sx: number; sy: number } | null>(null);
+  const dragRef = useRef<{ dx: number; dy: number; sx: number; sy: number; th: number } | null>(null);
   const suppressClickRef = useRef(false);
   const onStatusRef = useRef(onStatus);
   onStatusRef.current = onStatus;
@@ -211,6 +237,8 @@ function CallLayerInner({
       dy: e.clientY - r.top,
       sx: e.clientX,
       sy: e.clientY,
+      // Fingers jitter more than mice — bigger tap-vs-drag threshold.
+      th: e.pointerType === "touch" ? 12 : 6,
     };
     suppressClickRef.current = false;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
@@ -218,7 +246,7 @@ function CallLayerInner({
   const onDragMove = (e: React.PointerEvent) => {
     const d = dragRef.current;
     if (!d) return;
-    if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 6) {
+    if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > d.th) {
       suppressClickRef.current = true;
     }
     setPos(clampPos(e.clientX - d.dx, e.clientY - d.dy));
@@ -239,15 +267,20 @@ function CallLayerInner({
     }
   };
 
-  // Re-clamp after minimize/maximize: the box size changes, so a saved
-  // position that fit the old size can push the new size out of viewport.
+  // Re-clamp whenever box size changes (mode switch, camera turn on/off, video load).
   useLayoutEffect(() => {
-    setPos((p) => {
-      if (!p) return p;
-      const c = clampPos(p.x, p.y);
-      return c.x === p.x && c.y === p.y ? p : c;
+    const el = boxRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      setPos((p) => {
+        if (!p) return p;
+        const c = clampPos(p.x, p.y);
+        return c.x === p.x && c.y === p.y ? p : c;
+      });
     });
-  }, [mode, clampPos]);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [clampPos, mode]);
 
   // Reset a stale saved position on resize + track viewport for fit sizing.
   useEffect(() => {
@@ -274,24 +307,185 @@ function CallLayerInner({
   const isSpeaking = (identity: string) =>
     speaking.some((p) => p.identity === identity);
 
+  const [pinnedIdentity, setPinnedIdentity] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Auto reset pin when pinned participant disconnects
+  useEffect(() => {
+    if (pinnedIdentity && !camTracks.some((t) => t.participant.identity === pinnedIdentity)) {
+      setPinnedIdentity(null);
+    }
+  }, [camTracks, pinnedIdentity]);
+
+  const togglePin = useCallback((identity: string) => {
+    setPinnedIdentity((current) => (current === identity ? null : identity));
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((prev) => {
+      const next = !prev;
+      if (next) {
+        if (boxRef.current?.requestFullscreen) {
+          boxRef.current.requestFullscreen().catch(() => {});
+        }
+      } else {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const onFSChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFSChange);
+    return () => document.removeEventListener("fullscreenchange", onFSChange);
+  }, []);
+
   const localCam = camTracks.find((t) => t.participant.isLocal) ?? null;
   const remoteCams = camTracks.filter((t) => !t.participant.isLocal);
-  const heroTrack = remoteCams[0] ?? localCam;
-  const stripTracks = (remoteCams[0] ? [localCam, ...remoteCams.slice(1)] : remoteCams.slice(0)).filter(
-    Boolean,
-  ) as TrackReferenceOrPlaceholder[];
-  const overflow = Math.max(0, count - 3);
+
+  const pinnedTrack = pinnedIdentity
+    ? camTracks.find((t) => t.participant.identity === pinnedIdentity) ?? null
+    : null;
+
+  const heroTrack = pinnedTrack ?? remoteCams[0] ?? localCam;
+  const stripTracks = camTracks.filter((t) => t !== heroTrack);
+  const overflow = Math.max(0, stripTracks.length - 3);
 
   const duration = formatDuration(now - (connectedAt.current || now));
 
-  // Focus width computed in JS: fits viewport width AND height (16:9 video
-  // plus ~210px of header/strip/controls chrome). No scroll, no clipping.
+  // Determine if focus mode should show balanced equal grid (2-4 participants, no pin/share)
+  const isGridView = mode === "focus" && !share && !pinnedIdentity && camTracks.length >= 2;
+
+  // Focus width computed in JS: fits viewport width AND height
   const focusW = Math.round(
     Math.min(680, vp.w - 32, Math.max(264, ((vp.h - 210) * 16) / 9)),
   );
 
   const controlBtn =
-    "flex items-center justify-center w-11 h-11 rounded-full bg-secondary/80 border border-border text-foreground hover:bg-secondary transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4";
+    "flex items-center justify-center w-11 h-11 rounded-full bg-secondary/80 border border-border text-foreground hover:bg-secondary transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]";
+
+  // Dedicated full screen layout mode (mobile & desktop friendly)
+  if (isFullscreen) {
+    return (
+      <div
+        ref={boxRef}
+        className="fixed inset-0 z-[9999] bg-black flex flex-col select-none overflow-hidden touch-none"
+      >
+        {/* Fullscreen Header */}
+        <div className="flex items-center justify-between px-3 sm:px-4 h-12 bg-black/80 backdrop-blur-md border-b border-white/10 shrink-0 z-30">
+          <span className="text-xs sm:text-sm font-mono text-white/90 truncate max-w-[65%]">
+            {share
+              ? `${displayName(share.participant.identity, share.participant.name)}’s Screen`
+              : `${count} in call`}{" "}
+            · {duration}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Exit full screen"
+              title="Exit full screen"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-white text-xs font-medium cursor-pointer min-h-[36px] border border-white/10"
+            >
+              <Shrink className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Exit Full Screen</span>
+            </button>
+            <button
+              onClick={() => {
+                toggleFullscreen();
+                setMode("minimal");
+              }}
+              aria-label="Close full screen"
+              title="Close full screen"
+              className="p-2 rounded-lg bg-secondary/80 hover:bg-secondary text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-white/10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Fullscreen Display Area */}
+        <div className="flex-1 min-h-0 relative flex items-center justify-center p-1 sm:p-4 bg-black overflow-hidden">
+          {share ? (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <ParticipantTile
+                trackRef={share}
+                className="h-full w-full max-h-full max-w-full [&_video]:object-contain [&_video]:max-h-full [&_video]:w-full"
+              />
+            </div>
+          ) : (
+            heroTrack && (
+              <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
+                <CamTile
+                  trackRef={heroTrack}
+                  size="lg"
+                  speaking={isSpeaking(heroTrack.participant.identity)}
+                  mirrored={heroTrack.participant.isLocal}
+                  isPinned={pinnedIdentity === heroTrack.participant.identity}
+                  onTogglePin={() => togglePin(heroTrack.participant.identity)}
+                />
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Floating Participant Strip & Controls at Bottom */}
+        <div className="p-2 flex items-center justify-between gap-2 bg-black/80 backdrop-blur-md border-t border-white/10 shrink-0 overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            {camTracks.map((t) => (
+              <div key={t.participant.identity} className="w-20 sm:w-28 shrink-0">
+                <CamTile
+                  trackRef={t}
+                  size="sm"
+                  speaking={isSpeaking(t.participant.identity)}
+                  mirrored={t.participant.isLocal}
+                  isPinned={pinnedIdentity === t.participant.identity}
+                  onTogglePin={() => togglePin(t.participant.identity)}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <TrackToggle
+              source={Track.Source.Microphone}
+              showIcon
+              className={controlBtn}
+            />
+            <TrackToggle
+              source={Track.Source.Camera}
+              showIcon
+              className={controlBtn}
+            />
+            <TrackToggle
+              source={Track.Source.ScreenShare}
+              showIcon
+              className={controlBtn}
+            />
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Exit full screen"
+              title="Exit full screen"
+              className={controlBtn}
+            >
+              <Shrink className="w-4 h-4 text-primary" />
+            </button>
+            <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
+              <PhoneOff />
+            </DisconnectButton>
+          </div>
+        </div>
+
+        <RoomAudioRenderer />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -300,7 +494,7 @@ function CallLayerInner({
       style={
         pos
           ? { left: pos.x, top: pos.y }
-          : { left: 24, bottom: 24 }
+          : { left: vp.w < 640 ? 12 : 24, bottom: vp.w < 640 ? 12 : 24 }
       }
     >
       {mode === "minimal" && (
@@ -318,7 +512,7 @@ function CallLayerInner({
           onPointerUp={onDragEnd}
           aria-label="Open call preview"
           title="Open call preview"
-          className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition-colors"
+          className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition-colors touch-none"
         >
           <span className="flex -space-x-2">
             {[localCam, ...remoteCams.slice(0, 2)].map(
@@ -355,8 +549,8 @@ function CallLayerInner({
 
       {mode !== "minimal" && (
         <div
-          className={`glass-panel rounded-2xl overflow-hidden border border-glass-border/40 ${
-            mode === "focus" ? "" : "w-[264px]"
+          className={`glass-panel rounded-2xl overflow-hidden border border-glass-border/40 flex flex-col ${
+            mode === "focus" ? "max-h-[calc(100vh-16px)]" : "w-[264px]"
           }`}
           style={mode === "focus" ? { width: focusW } : undefined}
         >
@@ -365,13 +559,22 @@ function CallLayerInner({
             onPointerDown={onDragStart}
             onPointerMove={onDragMove}
             onPointerUp={onDragEnd}
-            className="flex items-center justify-between px-2.5 h-9 cursor-grab active:cursor-grabbing border-b border-border/60 touch-none"
+            className="flex items-center justify-between px-2.5 h-9 cursor-grab active:cursor-grabbing border-b border-border/60 touch-none shrink-0"
           >
-            <span className="text-[11px] font-mono text-muted-foreground">
+            <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[65%]">
               {count} in call · {duration}
               {share ? " · sharing" : ""}
+              {pinnedIdentity ? " · pinned" : ""}
             </span>
             <span className="flex items-center gap-1">
+              <button
+                onClick={toggleFullscreen}
+                aria-label="Full screen"
+                title="Full screen view"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center"
+              >
+                <Expand className="w-3.5 h-3.5 text-primary" />
+              </button>
               {mode === "preview" ? (
                 <button
                   onClick={() => setMode("focus")}
@@ -403,32 +606,71 @@ function CallLayerInner({
           </div>
 
           {/* Body */}
-          <div className="p-2 flex flex-col gap-2">
+          <div className="p-2 flex flex-col gap-2 overflow-y-auto min-h-0">
             {mode === "focus" && share ? (
               <>
-                <div className="relative rounded-xl overflow-hidden bg-black/60 border border-glass-border/40 aspect-video">
+                <div className="group/share relative rounded-xl overflow-hidden bg-black/60 border border-glass-border/40 aspect-video flex-1 min-h-0">
                   <ParticipantTile
                     trackRef={share}
                     className="h-full w-full [&_video]:object-contain"
                   />
-                  <span className="absolute bottom-1.5 left-2 text-[10px] font-medium text-white/90 bg-black/50 px-1.5 py-0.5 rounded">
+                  <span className="absolute bottom-1.5 left-2 text-[10px] font-medium text-white/90 bg-black/50 px-1.5 py-0.5 rounded backdrop-blur-md z-10">
                     {displayName(share.participant.identity, share.participant.name)}’s screen
                   </span>
+                  <button
+                    onClick={toggleFullscreen}
+                    title="View screen share in full screen"
+                    aria-label="View screen share in full screen"
+                    className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/75 hover:bg-black/90 text-white text-xs font-medium backdrop-blur-md flex items-center gap-1.5 z-20 cursor-pointer border border-white/20 transition-all shadow-md active:scale-95 min-h-[36px]"
+                  >
+                    <Expand className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-semibold">Full Screen</span>
+                  </button>
                 </div>
-                <div className="flex gap-2">
-                  {camTracks.slice(0, 4).map((t) => (
-                    <div key={t.participant.identity} className="flex-1 min-w-0">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {camTracks.map((t) => (
+                    <div key={t.participant.identity} className="w-28 shrink-0">
                       <CamTile
                         trackRef={t}
                         size="sm"
                         speaking={isSpeaking(t.participant.identity)}
                         mirrored={t.participant.isLocal}
+                        isPinned={pinnedIdentity === t.participant.identity}
+                        onTogglePin={() => togglePin(t.participant.identity)}
                       />
                     </div>
                   ))}
                 </div>
               </>
+            ) : isGridView ? (
+              /* Balanced equal grid layout when 2-4 participants are in focus mode without a pin */
+              <div
+                className={`grid gap-2 ${
+                  camTracks.length <= 2 ? "grid-cols-2" : "grid-cols-2"
+                }`}
+              >
+                {camTracks.slice(0, 4).map((t) => (
+                  <CamTile
+                    key={t.participant.identity}
+                    trackRef={t}
+                    size="grid"
+                    speaking={isSpeaking(t.participant.identity)}
+                    mirrored={t.participant.isLocal}
+                    isPinned={pinnedIdentity === t.participant.identity}
+                    onTogglePin={() => togglePin(t.participant.identity)}
+                  />
+                ))}
+                {camTracks.length > 4 && (
+                  <div
+                    title={`${camTracks.length - 4} more in call`}
+                    className="aspect-video w-full rounded-xl bg-secondary/60 border border-border flex items-center justify-center text-xs font-bold text-muted-foreground"
+                  >
+                    +{camTracks.length - 4} more
+                  </div>
+                )}
+              </div>
             ) : (
+              /* Single hero layout (1 person, or pinned participant, or preview mode) */
               <>
                 {heroTrack && (
                   <CamTile
@@ -436,24 +678,35 @@ function CallLayerInner({
                     size={mode === "focus" ? "lg" : "md"}
                     speaking={isSpeaking(heroTrack.participant.identity)}
                     mirrored={heroTrack.participant.isLocal}
+                    isPinned={pinnedIdentity === heroTrack.participant.identity}
+                    onTogglePin={() => togglePin(heroTrack.participant.identity)}
                   />
                 )}
                 {stripTracks.length > 0 && (
-                  <div className="flex gap-2">
-                    {stripTracks.slice(0, 2).map((t) => (
-                      <div key={t.participant.identity} className="flex-1 min-w-0">
+                  <div className={`flex gap-2 ${mode === "preview" ? "" : "overflow-x-auto pb-1"}`}>
+                    {stripTracks.slice(0, 3).map((t) => (
+                      <div
+                        key={t.participant.identity}
+                        className={mode === "preview" ? "flex-1 min-w-0" : "w-28 shrink-0"}
+                      >
                         <CamTile
                           trackRef={t}
                           size="sm"
                           speaking={isSpeaking(t.participant.identity)}
                           mirrored={t.participant.isLocal}
+                          isPinned={pinnedIdentity === t.participant.identity}
+                          onTogglePin={() => togglePin(t.participant.identity)}
                         />
                       </div>
                     ))}
                     {overflow > 0 && (
                       <div
-                        title={`${overflow} more in call (audio only shown)`}
-                        className="flex-1 min-w-0 h-12 rounded-xl bg-secondary/60 border border-border flex items-center justify-center text-[11px] font-bold text-muted-foreground"
+                        title={`${overflow} more in call`}
+                        className={
+                          mode === "preview"
+                            ? "flex-1 min-w-0 aspect-video rounded-xl bg-secondary/60 border border-border flex items-center justify-center text-[11px] font-bold text-muted-foreground"
+                            : "w-28 aspect-video shrink-0 rounded-xl bg-secondary/60 border border-border flex items-center justify-center text-[11px] font-bold text-muted-foreground"
+                        }
                       >
                         +{overflow}
                       </div>
@@ -480,7 +733,7 @@ function CallLayerInner({
                 showIcon
                 className={controlBtn}
               />
-              <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4">
+              <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
                 <PhoneOff />
               </DisconnectButton>
             </div>
