@@ -3,6 +3,7 @@ import cors from "cors";
 import { config } from "./config/env";
 import { errorHandler } from "./middleware/errorHandler";
 import { globalApiLimiter } from "./middleware/rateLimiter";
+import { isRedisReady, redisConnection } from "./config/redis";
 import aiRoutes from "./routes/ai.routes";
 import codeRoutes from "./routes/code.routes";
 import sessionRoutes from "./routes/session.routes";
@@ -32,8 +33,14 @@ app.use("/api/code", codeRoutes);
 app.use("/api/livekit", livekitRoutes);
 
 
+// Always 200 so orchestrator health checks don't restart the app when
+// Redis blips — check the `redis.ready` field to verify connectivity.
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "Server is running" });
+  res.json({
+    status: "ok",
+    message: "Server is running",
+    redis: { status: redisConnection.status, ready: isRedisReady() },
+  });
 });
 app.use(errorHandler);
 
