@@ -73,11 +73,25 @@ The BullMQ room-deletion queue requires a Redis instance. The free **30 MB** tie
 | **Tier** | Free 30 MB |
 | **Eviction Policy** | `noeviction` (change in database settings — free tier defaults to `volatile-lru`) |
 
-Construct the connection URL from the Redis Cloud dashboard's connection snippet:
+Construct the connection URL from the Redis Cloud dashboard's connection snippet.
+Use it **exactly as shown** — if the dashboard gives `redis://...`, use that;
+if it gives `rediss://...` (TLS port), use that (TLS is handled automatically).
 ```
-rediss://default:<password>@<host>:<port>
+redis://default:<password>@<host>:<port>
 ```
-> Use `rediss://` (with double `s`) for TLS — required on Redis Cloud production databases.
+
+### Troubleshooting: "can't connect" / zero connections on the Redis console
+
+Zero connections means the backend never reached Redis Cloud. Check in order:
+
+1. `REDIS_URL` is set in that environment (Render dashboard → Environment).
+   If it is missing, the backend falls back to `redis://localhost:6379` and
+   logs `[Redis] REDIS_URL is not set — falling back...` at boot.
+2. The URL matches the current Redis Cloud dashboard snippet (rotated
+   passwords / deleted databases cause silent auth failures).
+3. `GET https://<your-backend>/health` returns `"redis": {"ready": true}`.
+   The backend keeps three connections (`backend:app`, `backend:room-deletion-queue`,
+   `backend:room-deletion-worker`) — expect ~3 clients on the console, not zero.
 
 ---
 

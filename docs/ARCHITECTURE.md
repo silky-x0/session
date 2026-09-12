@@ -367,7 +367,7 @@ Rooms are created by the AI session service and are considered **ephemeral** —
 | `controllers/userentered.controller.ts` | Cancels pending deletion when a user re-enters |
 | `queues/roomDeletion.queue.ts` | BullMQ queue — `scheduleRoomDeletion()` + `cancelRoomDeletion()` helpers |
 | `workers/roomDeletion.worker.ts` | Processes fired jobs — safety re-check + `liveblocks.deleteRoom()` |
-| `config/redis.ts` | Shared IORedis connection (`maxRetriesPerRequest: null` required by BullMQ) |
+| `config/redis.ts` | Connection factory (`createRedisConnection`) — one dedicated IORedis client per role (`app`, `room-deletion-queue`, `room-deletion-worker`), TLS auto-detected from `rediss://`, `maxRetriesPerRequest: null` for BullMQ, `withRedisTimeout` fail-fast helper |
 
 ### Deletion Flow
 
@@ -378,27 +378,36 @@ Liveblocks → POST /webhook
 
 [userLeft, numActiveUsers === 0]
   → scheduleRoomDeletion(roomId, 15min)
-    → BullMQ: queue.add(roomId, { roomId }, { jobId: roomId, delay: 15min, attempts: 3 })
+    → clear any stale delayed job, then BullMQ: queue.add(roomId, { roomId }, { jobId: roomId, delay: 15min, attempts: 3 })
       → Job persisted in Redis (survives server restarts)
+      → Redis unreachable? Log loudly and skip — webhook still returns 200 (fail open)
 
 [userEntered]
   → cancelRoomDeletion(roomId)
-    → BullMQ: queue.remove(roomId)  ← no-op if job already fired/gone
+    → BullMQ: queue.remove(roomId)  ← no-op if job already fired/gone; never throws
 
 [Job fires after 15min delay]
   → roomDeletion.worker.ts processor
     → liveblocks.getActiveUsers(roomId)
+      → 404 (room already gone) → skip, no retry
       → if users present → abort (log DELETION_ABORTED)
       → if empty → liveblocks.deleteRoom(roomId)
-        → success: log DELETION_SUCCESS
+        → success: log success
+        → 404 (deleted meanwhile) → treat as success, no retry
         → failure: re-throw → BullMQ retries (3x, exponential backoff: 5s base)
 ```
 
 ### Key Design Decisions
 
-- **Idempotency via `jobId: roomId`** — BullMQ silently rejects a second `queue.add()` with the same `jobId` if the job is still pending. Safe to call `scheduleRoomDeletion` multiple times for the same room.
+- **Idempotency via `jobId: roomId` + last-empty-wins** — scheduling first removes any stale delayed job, then adds with `jobId: roomId`. A duplicate add (same pending job) is treated as already-scheduled, never an error.
+- **Dedicated connection per role** — the queue, the worker and general commands each own an IORedis client (named `backend:<role>:pid-<pid>`, visible as separate clients on the Redis Cloud console). Never share one client across BullMQ roles.
+- **Fail open on Redis outage** — queue ops have a 5s timeout; on failure the webhook logs loudly and still returns 200. Rate limiting already fails open the same way.
+- **Bounded job retention** — completed/failed jobs are trimmed (`removeOnComplete`, `removeOnFail` counts) so the free-tier Redis database doesn't fill up.
+- **Observability** — `GET /health` reports `redis: { status, ready }`; expect ~3 connected clients on the Redis Cloud console. Zero connections means the backend never reached Redis Cloud (usually `REDIS_URL` missing in that environment — without it the backend falls back to `redis://localhost:6379` and warns at boot).
 - **Redis persistence** — delayed jobs survive backend restarts. A `setTimeout` alternative would lose all pending timers on every deploy.
 - **Safety re-check in the worker** — the 15-minute window is a race condition surface. A user could re-enter after the job fires but before `cancelRoomDeletion` ran. The `getActiveUsers` check guards against deleting an occupied room.
 - **Exponential backoff** — on Liveblocks API failure, BullMQ waits 5s → 10s → 20s before retrying (up to 3 attempts total).
 - **Worker started as side-effect import** — `index.ts` uses `import "./workers/roomDeletion.worker"` — the `Worker` constructor starts listening on import, no explicit `.run()` call needed. Same pattern as `initializeWebSocketServer`.
+- **Graceful shutdown** — `index.ts` handles `SIGTERM`/`SIGINT`: stops the HTTP server, then closes the worker, the queue and the app Redis connection in order, so in-flight deletions finish and BullMQ locks are released cleanly on redeploy.
+- **Worker concurrency + reconnect resilience** — the worker runs with `concurrency: 5` and emits `ready` / `completed` / `failed` / `stalled` / `error` logs; Redis clients use capped reconnect backoff (max 5s) with `ready` / `close` / `reconnecting` / `end` lifecycle logs, so outages are visible in logs instead of silent.
 

@@ -30,7 +30,7 @@ JDOODLE_CLIENT_SECRET="your_client_secret"
 | `LIVEBLOCKS_SECRET_KEY`        | ✅        | Liveblocks secret key for server-side room seeding & active users    | `sk_prod_...`                                |
 | `SESSION_TOKEN_SECRET`         | ⚠️        | HMAC secret signing room session tokens — falls back to `LIVEBLOCKS_SECRET_KEY` if unset; set a dedicated value in production so rotating Liveblocks keys doesn't invalidate sessions | `openssl rand -hex 32` |
 | `LIVEBLOCKS_WEBHOOK_SECRET`    | ✅        | Liveblocks webhook signing secret — used to verify incoming webhooks | `wh_...`                                     |
-| `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue               | `redis://default:pass@host:port`             |
+| `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue + rate limiting. Use the Redis Cloud dashboard snippet verbatim (`redis://...` or `rediss://...` — TLS is auto-detected). If unset, the backend falls back to `redis://localhost:6379` and warns at boot. | `redis://default:pass@host:port`             |
 | `JDOODLE_CLIENT_ID`            | ✅        | JDoodle Compiler API Client ID (required for code execution)        | `your_client_id`                             |
 | `JDOODLE_CLIENT_SECRET`        | ✅        | JDoodle Compiler API Client Secret Key (required for code execution) | `your_secret_key`                            |
 
@@ -62,3 +62,4 @@ VITE_LIVEBLOCKS_PUBLIC_KEY=pk_...
 - Use `https://` for `FRONTEND_URL` and `VITE_API_URL` in production
 - Liveblocks keys: use `pk_prod_...` / `sk_prod_...` (not dev keys) for production
 - Both Vercel and Render support setting env vars in their dashboards — do not use `.env` files on the server
+- On Render, `REDIS_URL` must be set in the dashboard (Environment) or room cleanup silently never reaches Redis Cloud — verify with `GET https://<backend>/health` (`"redis": {"ready": true}`) and ~3 clients on the Redis Cloud console
