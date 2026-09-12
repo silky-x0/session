@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
-import { useRoom, useStatus, useOthers } from "@liveblocks/react/suspense";
+import { useRoom, useStatus, useOthers, useUpdateMyPresence } from "@liveblocks/react/suspense";
 import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
@@ -21,6 +21,8 @@ import { SettingsPanel } from "./editor/SettingsPanel";
 import { Whiteboard } from "./editor/Whiteboard";
 import { PerformanceMetricsCard } from "./editor/metrics/PerformanceMetricsCard";
 import type { ExecutionMetric, PerformanceData } from "./editor/metrics/types";
+
+import { VideoCall } from "./editor/neoVideoCall";
 
 const randomColor = () =>
   "#" +
@@ -59,6 +61,29 @@ function CollaborativeEditorInner({
   const status = useStatus();
   const { zenMode, theme } = useTheme();
   const others = useOthers();
+  const updateMyPresence = useUpdateMyPresence();
+
+  // LiveKit call state — SFU, not mesh P2P
+  const [inCall, setInCall] = useState(false);
+  const [callStatus, setCallStatus] = useState<{
+    count: number;
+    speakingName: string | null;
+    muted: boolean;
+  }>({ count: 1, speakingName: null, muted: false });
+  const nickname = useMemo(() => getNickname(), []);
+  const identity = useMemo(
+    () => `${nickname}-${Math.random().toString(36).slice(2, 8)}`,
+    [nickname],
+  );
+
+  const handleJoinCall = () => {
+    setInCall(true);
+    updateMyPresence({ isInCall: true } as never);
+  };
+  const handleLeaveCall = () => {
+    setInCall(false);
+    updateMyPresence({ isInCall: false } as never);
+  };
 
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
@@ -397,9 +422,13 @@ function CollaborativeEditorInner({
         {/* Top Bar — now uses useStatus internally instead of isConnected prop */}
         <TopBar
           roomId={roomId}
-          inCall={false}
+          inCall={inCall}
+          callCount={callStatus.count}
+          speakingName={callStatus.speakingName}
+          callMuted={callStatus.muted}
           language={language}
-          onJoinAudio={() => {}}
+          onJoinAudio={handleJoinCall}
+          onLeaveAudio={handleLeaveCall}
           onLanguageChange={handleLanguageChange}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeMainView={activeMainView}
@@ -407,6 +436,16 @@ function CollaborativeEditorInner({
           collaboratorsInEditor={inEditor}
           collaboratorsInWhiteboard={inWhiteboard}
         />
+
+        {inCall && (
+          <VideoCall
+            roomId={roomId}
+            identity={identity}
+            name={nickname}
+            onLeave={handleLeaveCall}
+            onStatus={setCallStatus}
+          />
+        )}
 
         {/* Problem Panel */}
         {metadata.title && !zenMode && (

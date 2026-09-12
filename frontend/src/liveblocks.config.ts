@@ -4,6 +4,7 @@ declare global {
     Presence: {
       cursor: { elementId: string; anchorX: "left" | "right"; x: number; y: number } | null;
       isTyping: boolean;
+      isInCall?: boolean;
       selectedLineNumber: number | null;
       hoveredPanel: "editor" | "whiteboard" | "chat" | "output" | "problem" | null;
       info?: {
