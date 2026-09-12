@@ -95,17 +95,14 @@ Zero connections means the backend never reached Redis Cloud. Check in order:
 
 ---
 
-## Docker Images (for Code Execution)
+## Code Execution (JDoodle Cloud)
 
-The backend's execution service requires these images to be available on the host machine running the backend:
+Code execution runs through the JDoodle cloud API — no Docker or host setup
+required on the deployment target. Just set `JDOODLE_CLIENT_ID` and
+`JDOODLE_CLIENT_SECRET` in the backend environment.
 
-```bash
-docker pull python:3.11-alpine
-docker pull node:20-alpine
-docker pull gcc:latest
-```
-
-> On Render, Docker is not available on free-tier instances. The execution feature requires a plan with Docker access, or an alternative self-hosted deployment.
+> Ephemeral Docker containers as a self-hosted execution alternative are a
+> planned design (see `ARCHITECTURE.md`) — not implemented.
 
 ---
 

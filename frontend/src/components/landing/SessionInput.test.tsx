@@ -28,7 +28,7 @@ describe('SessionInput', () => {
     renderWithRouter(<SessionInput />);
     
     expect(
-      screen.getByPlaceholderText(/Paste a problem, snippet, or interview prompt/i)
+      screen.getByPlaceholderText(/Paste a prompt or start empty/i)
     ).toBeInTheDocument();
   });
 
@@ -57,7 +57,11 @@ describe('SessionInput', () => {
     const submitButton = buttons[buttons.length - 1]; // Last button is submit
     await user.click(submitButton);
     
-    expect(mockNavigate).toHaveBeenCalledWith('/editor?room=test-room');
+    // Nickname overlay appears — enter a nickname to proceed
+    const nicknameInput = await screen.findByPlaceholderText(/Enter your nickname/i);
+    await user.type(nicknameInput, 'tester{enter}');
+    
+    expect(mockNavigate).toHaveBeenCalledWith('/editor?room=test-room&nickname=tester');
   });
 
   it('generates random room ID when starting without prompt', async () => {
@@ -69,6 +73,10 @@ describe('SessionInput', () => {
     const submitButton = buttons[buttons.length - 1];
     await user.click(submitButton);
     
-    expect(mockNavigate).toHaveBeenCalledWith(expect.stringMatching(/\/editor\?room=.+/));
+    // Nickname overlay appears — enter a nickname to proceed
+    const nicknameInput = await screen.findByPlaceholderText(/Enter your nickname/i);
+    await user.type(nicknameInput, 'tester{enter}');
+    
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringMatching(/\/editor\?room=.+&nickname=tester/));
   });
 });

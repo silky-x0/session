@@ -16,17 +16,16 @@ describe('Hero', () => {
     // Use getByRole for the h1 heading specifically
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toBeInTheDocument();
-    expect(heading).toHaveTextContent(/real-time/i);
-    expect(heading).toHaveTextContent(/coding/i);
+    expect(heading).toHaveTextContent(/stop juggling tabs/i);
+    expect(heading).toHaveTextContent(/your entire/i);
     expect(heading).toHaveTextContent(/session/i);
-    expect(heading).toHaveTextContent(/that matter/i);
   });
 
   it('renders the description paragraph', () => {
     renderWithRouter(<Hero />);
     
     expect(
-      screen.getByText(/Session is a real-time collaborative coding environment/i)
+      screen.getByText(/ai-generated questions/i)
     ).toBeInTheDocument();
   });
 
@@ -35,7 +34,7 @@ describe('Hero', () => {
     
     // Check for the input placeholder
     expect(
-      screen.getByPlaceholderText(/Paste a problem, snippet, or interview prompt/i)
+      screen.getByPlaceholderText(/Paste a prompt or start empty/i)
     ).toBeInTheDocument();
   });
 

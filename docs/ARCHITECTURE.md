@@ -310,7 +310,11 @@ User clicks "Run"
 
 ---
 
-### Alternative Flow: Ephemeral Docker Container Execution (Self-Hosted)
+### Alternative Flow (Planned, Not Implemented): Ephemeral Docker Container Execution
+
+> **Status:** this flow is a design sketch only — there is no Docker execution
+> path in the code (`execute.service.ts` is JDoodle-only, no container runtime
+> dependency). Do not present it as a working feature.
 
 ```
 User clicks "Run"
@@ -318,7 +322,7 @@ User clicks "Run"
     → BroadcastProvider receives broadcast
       → POST /api/execute  { code, language }
         → execute.service.ts
-          → docker.run(image, code)   ← ephemeral container
+          → docker.run(image, code)   ← ephemeral container (NOT IMPLEMENTED)
             → stream stdout/stderr    ← demultiplexed
               → response chunks
                 → Y.Array("output").push(...)   ← synced to all users
@@ -326,13 +330,13 @@ User clicks "Run"
 
 <br>
 
-> The diagram below illustrates the full Docker execution lifecycle — from the browser "Run" click, through the Express backend, to the ephemeral container and back.
+> The diagram below sketches the planned Docker execution lifecycle — from the browser "Run" click, through the Express backend, to the ephemeral container and back. (Design reference only; not implemented.)
 
 <br>
 
 ![Docker Execution Service Diagram](../frontend/public/exec-backend.excalidraw.png)
 
-#### Container Constraints (Docker Mode)
+#### Container Constraints (Planned Docker Mode)
 
 ```json
 {
@@ -345,7 +349,7 @@ User clicks "Run"
 }
 ```
 
-> **Note**: In Docker mode, execution queues can be used to throttle concurrent container requests and prevent host resource exhaustion.
+> **Note**: In the planned Docker mode, execution queues could throttle concurrent container requests and prevent host resource exhaustion. (The shipped JDoodle path needs no host containers.)
 
 ---
 

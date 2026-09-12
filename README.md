@@ -6,7 +6,7 @@
   
   <h3>the coding room that thinks with you</h3>
   
-  <p>Stop juggling tabs. Session gives interviewers and engineers a shared live IDE, AI-generated questions tuned to experience level, audio &amp; video, and post-session analysis — all from a single link. No setup. No credit card.</p>
+  <p>Stop juggling tabs. Session gives interviewers and engineers a shared live IDE, AI-generated questions tuned to experience level, audio &amp; video, and a shared whiteboard — all from a single link. No setup. No credit card.</p>
 
   <br />
 
@@ -46,14 +46,15 @@
 | Category | What's Included |
 |---|---|
 | **Real-Time Collaboration** | Live code sync via Yjs + Liveblocks, Monaco Editor (VS Code engine), multi-language support, live cursors & selections with user colors |
-| **AI Assistance** | AI-generated questions tuned to experience level, integrated AI chat panel, session bootstrap (problem + starter code), powered by OpenRouter (Kimi model) |
-| **Code Execution** | JDoodle API (primary, cloud) + optional ephemeral Docker containers (self-hosted) — multi-language, shared output synced to all collaborators |
-| **Interview Mode** | Problem panel with difficulty, hints system, complexity display, solution reveal, post-session analysis |
+| **AI Assistance** | Type a topic, role, or brief on the landing page → AI generates a full interview question (problem statement, starter code, hints, difficulty) and seeds your room with it. Plus an integrated AI chat panel. Gemini by default, OpenRouter-supported via `AI_PROVIDER` |
+| **Code Execution** | JDoodle cloud API — multi-language, shared output synced to all collaborators |
+| **Interview Mode** | Problem panel with difficulty, hints system, complexity display, solution reveal |
 | **Audio & Video** | Built-in audio & video calls so interviewers and candidates share one room — no Zoom, no context switch |
+| **Whiteboard** | Shared Excalidraw canvas synced to every collaborator in real time — sketch architecture diagrams and logic flows together |
 | **Security** | Redis-backed Token Bucket rate limiting, dual-key (IP + Room) compound keys, ephemeral TTL cleanup, fail-open Redis fallback |
 | **Premium UI/UX** | Deep Carbon & Neon Pulse design system, glassmorphism, JetBrains Mono, Framer Motion transitions, route-aware shutter animations |
 | **Presence** | Avatar stack, live cursors, sync status badge, connection loss toasts |
-| **Coming Soon** | Follow-me cursor, inline code comments, session playback, WebRTC audio/video |
+| **Coming Soon** | Follow-me cursor, inline code comments, session playback |
 
 ---
 
@@ -69,6 +70,7 @@
 | **Tailwind CSS v4** | Utility-first styling |
 | **Liveblocks** | Real-time presence, CRDT sync, broadcast |
 | **Monaco Editor** | VS Code-grade editor |
+| **LiveKit Client** | Audio & video calls |
 | **Yjs + y-monaco** | Conflict-free collaborative document |
 | **Framer Motion** | Animations and route transitions |
 | **React Router v7** | Client-side routing |
@@ -80,11 +82,11 @@
 | **Node.js + Express** | HTTP server with layered routing |
 | **TypeScript** | Type-safe server code |
 | **Liveblocks Node SDK** | Server-side room seeding and webhook processing |
-| **OpenRouter SDK** | AI model access (Kimi, etc.) |
-| **JDoodle API** | Primary cloud code execution (multi-language, no Docker required) |
+| **LiveKit Server SDK** | Call tokens and room management |
+| **Gemini / OpenRouter SDK** | Pluggable AI providers (selected via `AI_PROVIDER`) |
+| **JDoodle API** | Cloud code execution (multi-language, no Docker required) |
 | **Redis + ioredis** | Token Bucket rate-limit state, BullMQ job persistence |
 | **BullMQ** | Delayed job queue for ephemeral room deletion |
-| **Docker SDK** | Optional ephemeral containers for self-hosted deployments |
 
 ---
 
@@ -113,12 +115,15 @@ session/
 │
 ├── backend/
 │   └── src/
-│       ├── config/               # env.ts, kimi2thinking.ts
-│       ├── controllers/          # session, aichat, execute
-│       ├── middleware/           # errorHandler, asyncHandler, rateLimiter
-│       ├── routes/               # ai.routes.ts, code.routes.ts
-│       ├── services/             # session, liveblocks, aichat, execute, yjs
-│       └── utils/                # languageMapper
+│       ├── config/               # env, redis, liveblock, AI providers
+│       ├── controllers/          # session, aichat, execute, webhook (userentered/userleft), livekit
+│       ├── middleware/           # errorHandler, asyncHandler, rateLimiter, auth, session tokens
+│       ├── queues/               # roomDeletion queue (BullMQ scheduling)
+│       ├── workers/              # roomDeletion worker (delayed cleanup)
+│       ├── websocket/            # socket server
+│       ├── routes/               # ai, code, session, livekit, webhook
+│       ├── services/             # session, liveblocks, aichat, execute (JDoodle), yjs, livekit, tokens
+│       └── utils/                # languageMapper, payloadLimits
 │
 ├── docs/
 │   ├── ARCHITECTURE.md           # System design, data flow, rate limiting, execution pipeline
@@ -140,9 +145,9 @@ session/
 - **npm**
 - A **Liveblocks** account (free) — get your keys at [liveblocks.io](https://liveblocks.io)
 - A **JDoodle** API account — [jdoodle.com](https://jdoodle.com) (free tier available)
-- An **OpenRouter** API key — [openrouter.ai](https://openrouter.ai)
+- A **Gemini** API key — [aistudio.google.com](https://aistudio.google.com) (default AI provider; or set `AI_PROVIDER=openrouter` with an [OpenRouter](https://openrouter.ai) key)
+- A **LiveKit Cloud** project (free) — [cloud.livekit.io](https://cloud.livekit.io) (required for audio & video calls)
 - A **Redis** instance — [Redis Cloud](https://redis.io/try-free/) free tier works (required for rate limiting & room deletion queue)
-- **Docker** _(optional)_ — only needed for self-hosted code execution
 
 ### Installation
 
@@ -173,7 +178,7 @@ cd backend && npm run dev
 cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173`, click **"Start Session"**, share the URL — done.
+Open `http://localhost:5173`, type a topic or role (or start empty), click **"Start Session"**, share the URL — done.
 
 ---
 

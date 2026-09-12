@@ -69,7 +69,7 @@ export const Hero: React.FC = () => {
 
         {/* Subheading — tighter, covers all three personas */}
         <p className='sm:hidden font-sans text-white/50 text-sm max-w-[300px] leading-relaxed text-center'>
-          one link. shared IDE, AI questions, video, and post-session analysis.
+          one link. shared IDE, AI questions, video, and whiteboard.
         </p>
         <p className='hidden sm:block font-sans text-white/50 text-base max-w-[520px] leading-relaxed text-center'>
           Session gives interviewers and engineers a shared{" "}
@@ -97,7 +97,7 @@ export const Hero: React.FC = () => {
             imageSrc=''
             className='text-cyber-cyan/70 hover:text-cyber-cyan transition-colors font-semibold'
           >
-            post-session analysis
+            shared whiteboard
           </LinkPreview>{" "}
           , all from a single link.
         </p>
