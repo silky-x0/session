@@ -49,6 +49,7 @@ interface OutputPanelProps {
   language: string;
   yOutput: Y.Array<any> | null;
   yExec: Y.Map<any> | null;
+  getCode?: () => string;
   onOpenMetrics?: () => void;
   setMetricsHistory?: React.Dispatch<React.SetStateAction<ExecutionMetric[]>>;
   setPerfData?: React.Dispatch<React.SetStateAction<PerformanceData>>;
@@ -97,6 +98,7 @@ export function OutputPanel({
   language,
   yOutput,
   yExec,
+  getCode,
   onOpenMetrics,
   setMetricsHistory,
   setPerfData,
@@ -155,7 +157,21 @@ export function OutputPanel({
     if (!yExec || !yOutput) return;
     if (yExec.get("isRunning")) return;
 
-    const code = editorRef.current?.getValue();
+    let code: string | undefined;
+    if (getCode) {
+      try {
+        code = getCode();
+      } catch {
+        code = undefined;
+      }
+    }
+    if (!code?.trim()) {
+      try {
+        code = editorRef.current?.getValue();
+      } catch {
+        code = undefined;
+      }
+    }
     if (!code?.trim()) {
       pushOutputLines([
         {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { editor } from "monaco-editor";
 import * as Y from "yjs";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
@@ -197,6 +197,16 @@ function CollaborativeEditorInner({
   const [yWhiteboard, setYWhiteboard] = useState<Y.Text | null>(null);
   const [yChat, setYChat] = useState<Y.Array<any> | null>(null);
 
+  const getCode = useCallback(() => {
+    const fromYjs = yDocRef.current?.getText("monaco")?.toString();
+    if (fromYjs?.trim()) return fromYjs;
+    try {
+      return editorRef.current?.getValue() ?? fromYjs ?? "";
+    } catch {
+      return fromYjs ?? "";
+    }
+  }, []);
+
   const roomId =
     new URLSearchParams(window.location.search).get("room") || "default";
 
@@ -347,6 +357,9 @@ function CollaborativeEditorInner({
         // populates the editor from yText (source of truth)
         model.setValue("");
       }
+      
+      bindingRef.current?.destroy();
+      bindingRef.current = null;
       bindingRef.current = new MonacoBinding(
         yText,
         model,
@@ -532,13 +545,14 @@ function CollaborativeEditorInner({
           >
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
-              <AIChat editorRef={editorRef} yChat={yChat} />
+              <AIChat editorRef={editorRef} yChat={yChat} getFullCode={getCode} />
             </div>
 
             {/* Output - Bottom */}
             <div className='h-[240px] xl:h-[280px] flex-shrink-0'>
               <OutputPanel
                 editorRef={editorRef}
+                getCode={getCode}
                 language={language}
                 yOutput={yOutputRef.current}
                 yExec={yExecRef.current}
@@ -585,7 +599,7 @@ function CollaborativeEditorInner({
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <AIChat editorRef={editorRef} yChat={yChat} />
+                  <AIChat editorRef={editorRef} yChat={yChat} getFullCode={getCode} />
                 </motion.div>
               )}
               {activePanel === "output" && (
@@ -599,6 +613,7 @@ function CollaborativeEditorInner({
                 >
                   <OutputPanel
                     editorRef={editorRef}
+                    getCode={getCode}
                     language={language}
                     yOutput={yOutputRef.current}
                     yExec={yExecRef.current}

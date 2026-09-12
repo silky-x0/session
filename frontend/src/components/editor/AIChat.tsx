@@ -20,12 +20,18 @@ interface Message {
 interface AIChatProps {
   editorRef: React.MutableRefObject<any>;
   yChat: Y.Array<any> | null;
+  getFullCode?: () => string;
 }
 
 function getCodeContext(editor: any, linesAbove: number = 10, linesBelow: number = 10): { code: string; cursorLine: number } | null {
   if (!editor) return null;
 
-  const model = editor.getModel();
+  let model;
+  try {
+    model = editor.getModel();
+  } catch {
+    return null;
+  }
   if (!model) return null;
 
   const position = editor.getPosition();
@@ -67,7 +73,7 @@ const DEFAULT_MESSAGE: Message = {
   content: "Hi! I'm Kernel, your AI coding assistant. Ask me anything about your code or programming concepts. I can see the code around your cursor!",
 };
 
-export function AIChat({ editorRef, yChat }: AIChatProps) {
+export function AIChat({ editorRef, yChat, getFullCode }: AIChatProps) {
   const { theme } = useTheme();
   const updateMyPresence = useUpdateMyPresence();
   const self = useSelf();
@@ -117,8 +123,25 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
     updateMyPresence({ isTyping: true });
 
     try {
-      // Extract code context (10 lines above and below cursor)
-      const codeContext = getCodeContext(editorRef.current, 10, 10);
+      // Extract code context (10 lines above and below cursor). Falls back
+      // to the full Yjs-backed code when the editor is unavailable, e.g. on
+      // mobile where Monaco unmounts while the chat tab is shown.
+      let codeContext: { code: string; cursorLine: number } | null = null;
+      try {
+        codeContext = getCodeContext(editorRef.current, 10, 10);
+      } catch {
+        codeContext = null;
+      }
+      let fallbackCode: string | undefined;
+      if (!codeContext && getFullCode) {
+        try {
+          const full = getFullCode();
+          // Keep under the backend's 20 KB codeContext limit.
+          fallbackCode = full?.trim() ? full.slice(0, 15000) : undefined;
+        } catch {
+          fallbackCode = undefined;
+        }
+      }
 
       const response = await authedFetch("/api/ai/chat", room.id, {
         method: "POST",
@@ -127,7 +150,7 @@ export function AIChat({ editorRef, yChat }: AIChatProps) {
         },
         body: JSON.stringify({
           prompt: input,
-          codeContext: codeContext?.code,
+          codeContext: codeContext?.code ?? fallbackCode,
           cursorLine: codeContext?.cursorLine,
           history: messages.map(m => ({ role: m.role, content: m.content })),
         }),
