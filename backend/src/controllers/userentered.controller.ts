@@ -7,7 +7,14 @@ export const handleUserEntered = async (
 ): Promise<void> => {
   const { roomId, numActiveUsers } = event.data;
   if (numActiveUsers === 1) {
-    await cancelRoomDeletion(roomId);
-    //add log
+    try {
+      await cancelRoomDeletion(roomId);
+    } catch (err) {
+      // Fail open: never break the Liveblocks webhook because Redis is down.
+      console.error(
+        `[userEntered] Could not cancel deletion for ${roomId}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
   }
 };
