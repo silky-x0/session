@@ -1,34 +1,44 @@
 # Session
 
-**Real-time coding sessions that matter.**
+Session is a collaborative code editor in the browser. Open a room, share the link, and write code together — with audio/video chat built in.
 
-Session appears to be a real-time collaborative coding environment built for pair programming, interviews, and focused technical discussions — with audio, video, and live execution.
+It's still early. The landing page and editor work, collaboration works via Liveblocks + Yjs, calls run on LiveKit.
 
-## Features
+## What it does
 
-- **Modern UI/UX**: Dark theme, neon accents, and geometric typography.
-- **Floating Showcase**: Interactive scattered layout for an organic feel.
-- **Cursor Spotlight**: Dynamic flashlight effect on the background grid.
-- **Real-time Collaboration**: (Planned) Audio/Video/Code sync.
+- Shared Monaco editor (multiple people, same file, live cursors)
+- Whiteboard via Excalidraw
+- Audio/video via LiveKit
+- Landing page at `/`, editor at `/editor?room=your-room-name`
 
-## Tech Stack
+## Stack
 
-- **Frontend**: React, TypeScript, Vite
-- **Styling**: Tailwind CSS v4, Custom Fonts (IBM Plex Sans, Inter)
-- **Icons**: Hand-crafted SVGs (Logo, Favicon)
+React + TypeScript + Vite. Tailwind v4 for styling. Monaco for the editor, Yjs + Liveblocks for sync, LiveKit for calls.
 
-## Getting Started
+## Run it locally
 
-1.  Install dependencies:
+You need Node 20+.
 
-    ```bash
-    npm install
-    ```
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-2.  Run the development server:
+Then open http://localhost:5173.
 
-    ```bash
-    npm run dev
-    ```
+You'll need keys for this to actually work together:
 
-3.  Open [http://localhost:5173](http://localhost:5173) to view the landing page.
+- `VITE_LIVEBLOCKS_PUBLIC_KEY` — from Liveblocks
+- `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` — from LiveKit
+- `VITE_API_URL` / `VITE_WS_URL` — backend, defaults to localhost:1234
+
+Without those, the UI loads but rooms/calls won't connect.
+
+## Scripts
+
+- `npm run dev` — local dev server
+- `npm run build` — typecheck + production build
+- `npm run test` — unit tests (Vitest)
+- `npm run test:e2e` — e2e tests (Playwright)
+- `npm run lint` — eslint
