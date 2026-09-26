@@ -5,6 +5,8 @@ import { generateAIContentGemini } from "../services/gemini.service";
 import { normalizeLanguage } from "../utils/languageMapper";
 import { AppError } from "../middleware/errorHandler";
 import { PAYLOAD_LIMITS, assertSizeLimit } from "../utils/payloadLimits";
+import { classifyPrompt } from "../services/ai/promptClassifier";
+import { generateRemainingQuestions } from "../services/questionGenerator.service";
 
 export const createAiSession = async (
   req: Request,
@@ -18,10 +20,16 @@ export const createAiSession = async (
 
   assertSizeLimit(prompt, PAYLOAD_LIMITS.promptBytes, "prompt");
 
-
   let aiResponse;
+  let promptType: "problem" | "profile" = "problem";
+  
   try {
-    aiResponse = await generateAIContentGemini(prompt);
+    const [response, type] = await Promise.all([
+      generateAIContentGemini(prompt),
+      classifyPrompt(prompt)
+    ]);
+    aiResponse = response;
+    promptType = type;
   } catch (error: any) {
     throw new AppError(500, "Failed to create AI session");
   }
@@ -43,5 +51,23 @@ export const createAiSession = async (
     question: aiResponse.question,
   });
 
-  res.json({ roomId });
+  res.json({ roomId, promptType });
+};
+
+export const generateRemainingController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { roomId, prompt, promptType, generatedTitles } = req.body;
+
+  if (!roomId || !prompt || !promptType || !generatedTitles) {
+    throw new AppError(400, "Missing required fields");
+  }
+
+  // Fire and forget
+  generateRemainingQuestions(roomId, prompt, promptType, generatedTitles).catch((err) => {
+    console.error("Error generating remaining questions:", err);
+  });
+
+  res.status(202).json({ message: "Generation started" });
 };
