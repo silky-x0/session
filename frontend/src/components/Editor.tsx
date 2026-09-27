@@ -21,6 +21,7 @@ import { SettingsPanel } from "./editor/SettingsPanel";
 import { Whiteboard } from "./editor/Whiteboard";
 import { PerformanceMetricsCard } from "./editor/metrics/PerformanceMetricsCard";
 import type { ExecutionMetric, PerformanceData } from "./editor/metrics/types";
+import { authedFetch } from "../lib/apiClient";
 
 import { VideoCall } from "./editor/neoVideoCall";
 
@@ -45,6 +46,21 @@ interface Metadata {
   fullSolution?: string;
   starterCode?: string;
 }
+
+interface QuestionSlot {
+  status: "pending" | "generating" | "ready" | "error";
+  title?: string;
+  difficulty?: string;
+  question?: string;
+  language?: string;
+  hints?: string[];
+  complexity?: { time: string; space: string };
+  starterCode?: string;
+  fullSolution?: string;
+  version?: number;
+}
+
+const getQuestionTextName = (index: number) => `monaco-q${index}`;
 
 type MobilePanel = "editor" | "chat" | "output" | "whiteboard";
 
@@ -87,11 +103,20 @@ function CollaborativeEditorInner({
 
   const providerRef = useRef<LiveblocksYjsProvider | null>(null);
   const bindingRef = useRef<MonacoBinding | null>(null);
+  const boundTextNameRef = useRef<string | null>(null);
   const yMetaObserverRef = useRef<(() => void) | null>(null);
+  const yQuestionsObserverRef = useRef<(() => void) | null>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor>(null);
   const monacoRef = useRef<any>(null);
   const yOutputRef = useRef<Y.Array<any> | null>(null);
   const yExecRef = useRef<Y.Map<any> | null>(null);
+  const yQuestionsRef = useRef<Y.Array<any> | null>(null);
+
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const [questions, setQuestions] = useState<QuestionSlot[]>([]);
+  const [isSynced, setIsSynced] = useState(false);
+  const activeQuestionIndexRef = useRef(0);
+  const generateRemainingFiredRef = useRef(false);
 
   const inWhiteboard = others.filter(
     (o) => o.presence?.hoveredPanel === "whiteboard",
@@ -198,7 +223,15 @@ function CollaborativeEditorInner({
   const [yChat, setYChat] = useState<Y.Array<any> | null>(null);
 
   const getCode = useCallback(() => {
-    const fromYjs = yDocRef.current?.getText("monaco")?.toString();
+    
+    const yDoc = yDocRef.current;
+    const hasMulti =
+      (yQuestionsRef.current?.length ?? 0) > 0 ||
+      (yDoc ? yDoc.getArray("questions").length > 0 : false);
+    const textName = hasMulti
+      ? getQuestionTextName(activeQuestionIndexRef.current)
+      : "monaco";
+    const fromYjs = yDoc?.getText(textName)?.toString();
     if (fromYjs?.trim()) return fromYjs;
     try {
       return editorRef.current?.getValue() ?? fromYjs ?? "";
@@ -218,7 +251,7 @@ function CollaborativeEditorInner({
     }
   }, [status, onRoomReady]);
 
-  // Shared Y.js document and Liveblocks synchronization provider setup
+    
   useEffect(() => {
     if (status !== "connected") return;
 
@@ -236,9 +269,29 @@ function CollaborativeEditorInner({
     setYWhiteboard(yWhiteboardText);
     setYChat(yDoc.getArray("chat"));
 
-    // Metadata Sync via Y.Map
+    const yQuestions = yDoc.getArray("questions");
+    yQuestionsRef.current = yQuestions as Y.Array<any>;
+    const snapshotQuestions = () => {
+      try {
+        const arr = yQuestions.toArray() as unknown as QuestionSlot[];
+        // Yjs returns Y.Map instances — convert to plain objects
+        const plain = (yQuestions.toArray() as any[]).map((entry: any) =>
+          typeof entry?.toJSON === "function" ? entry.toJSON() : entry,
+        ) as QuestionSlot[];
+        void arr;
+        setQuestions(plain);
+      } catch {
+        setQuestions([]);
+      }
+    };
+    const handleQuestionsChange = () => snapshotQuestions();
+    yQuestions.observe(handleQuestionsChange);
+    yQuestionsObserverRef.current = () => yQuestions.unobserve(handleQuestionsChange);
+
+    // Metadata Sync via Y.Map (legacy single-question path + fallback)
     const yMeta = yDoc.getMap("meta");
     const updateMetadata = () => {
+      if (yQuestionsRef.current && yQuestionsRef.current.length > 0) return;
       const lang = yMeta.get("language") as string;
       if (lang) {
         setLanguage(lang);
@@ -269,37 +322,234 @@ function CollaborativeEditorInner({
     yMetaObserverRef.current = () => yMeta.unobserve(updateMetadata);
 
     // Handle metadata defaults on sync
-    yProvider.on("sync", (synced: boolean) => {
+    const handleSync = (synced: boolean) => {
       if (synced) {
+        setIsSynced(true);
+        snapshotQuestions();
+        try {
+          updateMyPresence({
+            currentQuestionIndex: activeQuestionIndexRef.current,
+          } as never);
+        } catch {}
         const syncedLang = yMeta.get("language");
         if (!syncedLang) {
-          yMeta.set("language", "javascript");
+          if (yQuestions.length === 0) {
+            yMeta.set("language", "javascript");
+          }
         } else {
           updateMetadata();
         }
       }
-    });
+    };
+    yProvider.on("sync", handleSync);
 
     // Check immediately in case already synced (most likely yes)
     if (yProvider.synced) {
-      const syncedLang = yMeta.get("language");
-      if (!syncedLang) {
-        yMeta.set("language", "javascript");
-      } else {
-        updateMetadata();
-      }
+      handleSync(true);
     }
 
     return () => {
       yMetaObserverRef.current?.();
+      yQuestionsObserverRef.current?.();
+      try {
+        (yProvider as any).off?.("sync", handleSync);
+      } catch {}
       yProvider.destroy();
       yDoc.destroy();
       providerRef.current = null;
       yDocRef.current = null;
       yOutputRef.current = null;
       yExecRef.current = null;
+      yQuestionsRef.current = null;
+      setIsSynced(false);
     };
+    
   }, [room, status]);
+
+  const updateMetadataFromQuestions = useCallback(() => {
+    const yDoc = yDocRef.current;
+    if (!yDoc) return;
+    const yArr = yQuestionsRef.current ?? yDoc.getArray("questions");
+    if (!yArr || yArr.length === 0) return;
+    const raw = (yArr.toArray() as any[])[activeQuestionIndexRef.current];
+    if (!raw) return;
+    const slot = (
+      typeof raw?.toJSON === "function" ? raw.toJSON() : raw
+    ) as QuestionSlot;
+    if (slot.status !== "ready") return;
+    if (slot.language) {
+      setLanguage(slot.language);
+      if (editorRef.current && monacoRef.current) {
+        try {
+          const model = editorRef.current.getModel();
+          if (model)
+            monacoRef.current.editor.setModelLanguage(model, slot.language);
+        } catch {}
+      }
+    }
+    setMetadata({
+      title: slot.title,
+      difficulty: slot.difficulty,
+      question: slot.question,
+      hints: slot.hints,
+      complexity: slot.complexity,
+      fullSolution: slot.fullSolution,
+      starterCode: slot.starterCode,
+    });
+  }, []);
+
+  useEffect(() => {
+    updateMetadataFromQuestions();
+  }, [questions, activeQuestionIndex, updateMetadataFromQuestions]);
+
+    const bindModelToTextName = useCallback(
+    (textName: string, seedStarterCode?: string) => {
+      const yDoc = yDocRef.current;
+      const yProvider = providerRef.current;
+      const editorInstance = editorRef.current;
+      if (!yDoc || !yProvider || !editorInstance) return;
+      const yText = yDoc.getText(textName);
+      const awareness = (yProvider as any).awareness;
+      const model = editorInstance.getModel();
+      if (!model) return;
+
+      // Seed starter code on first open (guard: only when empty).
+      if (yText.length === 0 && seedStarterCode) {
+        try {
+          yText.insert(0, seedStarterCode);
+        } catch {}
+      }
+
+      if (yText.toString().length > 0) {
+        try {
+          model.setValue("");
+        } catch {}
+      }
+      try {
+        bindingRef.current?.destroy();
+      } catch {}
+      bindingRef.current = null;
+      bindingRef.current = new MonacoBinding(
+        yText,
+        model,
+        new Set([editorInstance]),
+        awareness as any,
+      );
+      boundTextNameRef.current = textName;
+    },
+    [],
+  );
+
+  // switch the editor to another question slot.
+  const switchToQuestion = useCallback(
+    (index: number) => {
+      const yDoc = yDocRef.current;
+      if (!yDoc) {
+        setActiveQuestionIndex(index);
+        activeQuestionIndexRef.current = index;
+        return;
+      }
+      const yArr = yQuestionsRef.current ?? yDoc.getArray("questions");
+      const hasMulti = (yArr?.length ?? 0) > 0;
+      const textName = hasMulti ? getQuestionTextName(index) : "monaco";
+
+      // Already bound — just update state + presence.
+      if (boundTextNameRef.current === textName) {
+        setActiveQuestionIndex(index);
+        activeQuestionIndexRef.current = index;
+        try {
+          updateMyPresence({ currentQuestionIndex: index } as never);
+        } catch {}
+        return;
+      }
+
+      // Resolve starter code for first-open seeding.
+      let seed: string | undefined;
+      try {
+        const raw = (yArr?.toArray() as any[])?.[index];
+        const slot = (
+          typeof raw?.toJSON === "function" ? raw.toJSON() : raw
+        ) as QuestionSlot | undefined;
+        if (slot?.status === "ready") seed = slot.starterCode;
+        if (slot?.language) {
+          setLanguage(slot.language);
+          if (editorRef.current && monacoRef.current) {
+            try {
+              const m = editorRef.current.getModel();
+              if (m)
+                monacoRef.current.editor.setModelLanguage(m, slot.language);
+            } catch {}
+          }
+        }
+      } catch {}
+
+      setActiveQuestionIndex(index);
+      activeQuestionIndexRef.current = index;
+      bindModelToTextName(textName, seed);
+      try {
+        updateMyPresence({ currentQuestionIndex: index } as never);
+      } catch {}
+    },
+    [bindModelToTextName, updateMyPresence],
+  );
+
+  // if the editor mounted before Yjs sync resolved (pre-sync guess
+  // bound the wrong slot), rebind once the questions array arrives.
+  useEffect(() => {
+    if (!isSynced || !editorRef.current) return;
+    const expected =
+      questions.length > 0
+        ? getQuestionTextName(activeQuestionIndexRef.current)
+        : "monaco";
+    if (boundTextNameRef.current && boundTextNameRef.current !== expected) {
+      switchToQuestion(activeQuestionIndexRef.current);
+    }
+    
+  }, [isSynced, questions]);
+
+  // trigger Q2–Q5 background generation once after entering the
+  // workspace. Guarded against double-firing (StrictMode + two collaborators).
+  useEffect(() => {
+    if (!isSynced || questions.length === 0) return;
+    if (generateRemainingFiredRef.current) return;
+    // Double-trigger guard: only the client that sees slot 1 still pending
+    // may start the queue.
+    if (questions[1]?.status !== "pending") return;
+
+    let ctx: { prompt: string; promptType: "problem" | "profile" } | null =
+      null;
+    try {
+      const raw = sessionStorage.getItem(`ai-session-${roomId}`);
+      if (raw) ctx = JSON.parse(raw);
+    } catch {}
+    if (!ctx?.prompt) return;
+
+    // Cross-client guard via shared execution map.
+    try {
+      if (yExecRef.current?.get("queueStarted")) return;
+      yExecRef.current?.set("queueStarted", true);
+    } catch {}
+    generateRemainingFiredRef.current = true;
+
+    const generatedTitles = questions[0]?.title
+      ? [questions[0].title as string]
+      : [];
+    authedFetch(`/api/ai/session/generate-remaining`, roomId, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        roomId,
+        prompt: ctx.prompt,
+        promptType: ctx.promptType ?? "problem",
+        generatedTitles,
+      }),
+    }).catch((err) => {
+      console.warn("generate-remaining trigger failed:", err);
+      generateRemainingFiredRef.current = false;
+      // Leave queueStarted set so a retry can be triggered manually
+      // (Phase 3 retry button) instead of hot-looping here.
+    });
+  }, [isSynced, questions, roomId]);
 
   function handleEditorDidMount(editorInstance: any, monaco: any) {
     console.log("Editor mounted!");
@@ -340,7 +590,13 @@ function CollaborativeEditorInner({
     const yProvider = providerRef.current;
     if (!yDoc || !yProvider) return;
 
-    const yText = yDoc.getText("monaco");
+    const yArr = yDoc.getArray("questions");
+    const hasMulti =
+      yArr.length > 0 || yDoc.getText("monaco-q0").length > 0;
+    const initialTextName = hasMulti
+      ? getQuestionTextName(activeQuestionIndexRef.current)
+      : "monaco";
+    const yText = yDoc.getText(initialTextName);
     const awareness = yProvider.awareness;
 
     // Set local user state for awareness
@@ -357,7 +613,7 @@ function CollaborativeEditorInner({
         // populates the editor from yText (source of truth)
         model.setValue("");
       }
-      
+
       bindingRef.current?.destroy();
       bindingRef.current = null;
       bindingRef.current = new MonacoBinding(
@@ -366,16 +622,41 @@ function CollaborativeEditorInner({
         new Set([editorInstance]),
         awareness as any,
       );
+      boundTextNameRef.current = initialTextName;
+
+      // Seed presence for the sidebar avatar dots (Phase 3).
+      try {
+        updateMyPresence({
+          currentQuestionIndex: activeQuestionIndexRef.current,
+        } as never);
+      } catch {}
 
       // For a NEW room, yText is empty after binding.
       // Populate it with starter code (from API metadata) or a default.
       if (yText.toString().length === 0) {
-        const yMeta = yDoc.getMap("meta");
-        const starterCode = yMeta.get("starterCode") as string | undefined;
-        if (starterCode) {
-          yText.insert(0, starterCode);
+        if (hasMulti) {
+          try {
+            const raw = (yArr.toArray() as any[])?.[
+              activeQuestionIndexRef.current
+            ];
+            const slot = (
+              typeof raw?.toJSON === "function" ? raw.toJSON() : raw
+            ) as QuestionSlot | undefined;
+            if (slot?.starterCode) yText.insert(0, slot.starterCode);
+          } catch {}
+          if (yText.length === 0) {
+            const yMeta = yDoc.getMap("meta");
+            const starterCode = yMeta.get("starterCode") as string | undefined;
+            if (starterCode) yText.insert(0, starterCode);
+          }
         } else {
-          yText.insert(0, ``);
+          const yMeta = yDoc.getMap("meta");
+          const starterCode = yMeta.get("starterCode") as string | undefined;
+          if (starterCode) {
+            yText.insert(0, starterCode);
+          } else {
+            yText.insert(0, ``);
+          }
         }
       }
     }
@@ -741,6 +1022,7 @@ export default function CollaborativeEditor({
             isTyping: false,
             selectedLineNumber: null,
             hoveredPanel: null,
+            currentQuestionIndex: 0,
             info: {
               name: nickname,
               color: color,
