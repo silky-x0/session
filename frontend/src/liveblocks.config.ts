@@ -7,6 +7,7 @@ declare global {
       isInCall?: boolean;
       selectedLineNumber: number | null;
       hoveredPanel: "editor" | "whiteboard" | "chat" | "output" | "problem" | null;
+      currentQuestionIndex?: number;
       info?: {
         name: string;
         color: string;
