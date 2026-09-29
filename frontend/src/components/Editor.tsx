@@ -7,6 +7,7 @@ import { RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
 import { ErrorBoundary } from "react-error-boundary";
 import { MonacoBinding } from "y-monaco";
 import { CodeEditor } from "./editor/CodeEditor";
+import { QuestionSidebar } from "./editor/QuestionSidebar";
 import { TopBar } from "./editor/TopBar";
 import { ProblemPanel } from "./editor/ProblemPanel";
 import { AIChat } from "./editor/AIChat";
@@ -36,6 +37,21 @@ const getNickname = () => {
   const nickname = params.get("nickname");
   return nickname ? decodeURIComponent(nickname) : "Anonymous";
 };
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isDesktop;
+}
 
 interface Metadata {
   title?: string;
@@ -78,6 +94,7 @@ function CollaborativeEditorInner({
   const { zenMode, theme } = useTheme();
   const others = useOthers();
   const updateMyPresence = useUpdateMyPresence();
+  const isDesktop = useIsDesktop();
 
   // LiveKit call state — SFU, not mesh P2P
   const [inCall, setInCall] = useState(false);
@@ -115,6 +132,8 @@ function CollaborativeEditorInner({
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [questions, setQuestions] = useState<QuestionSlot[]>([]);
   const [isSynced, setIsSynced] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const switchTimeoutRef = useRef<number | null>(null);
   const activeQuestionIndexRef = useRef(0);
   const generateRemainingFiredRef = useRef(false);
 
@@ -274,7 +293,6 @@ function CollaborativeEditorInner({
     const snapshotQuestions = () => {
       try {
         const arr = yQuestions.toArray() as unknown as QuestionSlot[];
-        // Yjs returns Y.Map instances — convert to plain objects
         const plain = (yQuestions.toArray() as any[]).map((entry: any) =>
           typeof entry?.toJSON === "function" ? entry.toJSON() : entry,
         ) as QuestionSlot[];
@@ -285,8 +303,8 @@ function CollaborativeEditorInner({
       }
     };
     const handleQuestionsChange = () => snapshotQuestions();
-    yQuestions.observe(handleQuestionsChange);
-    yQuestionsObserverRef.current = () => yQuestions.unobserve(handleQuestionsChange);
+    yQuestions.observeDeep(handleQuestionsChange);
+    yQuestionsObserverRef.current = () => yQuestions.unobserveDeep(handleQuestionsChange);
 
     // Metadata Sync via Y.Map (legacy single-question path + fallback)
     const yMeta = yDoc.getMap("meta");
@@ -410,25 +428,28 @@ function CollaborativeEditorInner({
       if (!yDoc || !yProvider || !editorInstance) return;
       const yText = yDoc.getText(textName);
       const awareness = (yProvider as any).awareness;
-      const model = editorInstance.getModel();
+      let model;
+      try {
+        model = editorInstance.getModel();
+      } catch {
+        return;
+      }
       if (!model) return;
 
-      // Seed starter code on first open (guard: only when empty).
+      try {
+        bindingRef.current?.destroy();
+      } catch {}
+      bindingRef.current = null;
+
       if (yText.length === 0 && seedStarterCode) {
         try {
           yText.insert(0, seedStarterCode);
         } catch {}
       }
 
-      if (yText.toString().length > 0) {
-        try {
-          model.setValue("");
-        } catch {}
-      }
       try {
-        bindingRef.current?.destroy();
+        model.setValue(yText.toString());
       } catch {}
-      bindingRef.current = null;
       bindingRef.current = new MonacoBinding(
         yText,
         model,
@@ -440,7 +461,6 @@ function CollaborativeEditorInner({
     [],
   );
 
-  // switch the editor to another question slot.
   const switchToQuestion = useCallback(
     (index: number) => {
       const yDoc = yDocRef.current;
@@ -450,10 +470,10 @@ function CollaborativeEditorInner({
         return;
       }
       const yArr = yQuestionsRef.current ?? yDoc.getArray("questions");
-      const hasMulti = (yArr?.length ?? 0) > 0;
+      const hasMulti =
+        (yArr?.length ?? 0) > 0 || yDoc.getText("monaco-q0").length > 0;
       const textName = hasMulti ? getQuestionTextName(index) : "monaco";
 
-      // Already bound — just update state + presence.
       if (boundTextNameRef.current === textName) {
         setActiveQuestionIndex(index);
         activeQuestionIndexRef.current = index;
@@ -463,7 +483,6 @@ function CollaborativeEditorInner({
         return;
       }
 
-      // Resolve starter code for first-open seeding.
       let seed: string | undefined;
       try {
         const raw = (yArr?.toArray() as any[])?.[index];
@@ -485,7 +504,15 @@ function CollaborativeEditorInner({
 
       setActiveQuestionIndex(index);
       activeQuestionIndexRef.current = index;
+      setIsSwitching(true);
+      if (switchTimeoutRef.current !== null) {
+        clearTimeout(switchTimeoutRef.current);
+      }
       bindModelToTextName(textName, seed);
+      switchTimeoutRef.current = window.setTimeout(() => {
+        setIsSwitching(false);
+        switchTimeoutRef.current = null;
+      }, 200);
       try {
         updateMyPresence({ currentQuestionIndex: index } as never);
       } catch {}
@@ -493,8 +520,6 @@ function CollaborativeEditorInner({
     [bindModelToTextName, updateMyPresence],
   );
 
-  // if the editor mounted before Yjs sync resolved (pre-sync guess
-  // bound the wrong slot), rebind once the questions array arrives.
   useEffect(() => {
     if (!isSynced || !editorRef.current) return;
     const expected =
@@ -507,13 +532,9 @@ function CollaborativeEditorInner({
     
   }, [isSynced, questions]);
 
-  // trigger Q2–Q5 background generation once after entering the
-  // workspace. Guarded against double-firing (StrictMode + two collaborators).
   useEffect(() => {
     if (!isSynced || questions.length === 0) return;
     if (generateRemainingFiredRef.current) return;
-    // Double-trigger guard: only the client that sees slot 1 still pending
-    // may start the queue.
     if (questions[1]?.status !== "pending") return;
 
     let ctx: { prompt: string; promptType: "problem" | "profile" } | null =
@@ -524,7 +545,6 @@ function CollaborativeEditorInner({
     } catch {}
     if (!ctx?.prompt) return;
 
-    // Cross-client guard via shared execution map.
     try {
       if (yExecRef.current?.get("queueStarted")) return;
       yExecRef.current?.set("queueStarted", true);
@@ -546,10 +566,55 @@ function CollaborativeEditorInner({
     }).catch((err) => {
       console.warn("generate-remaining trigger failed:", err);
       generateRemainingFiredRef.current = false;
-      // Leave queueStarted set so a retry can be triggered manually
-      // (Phase 3 retry button) instead of hot-looping here.
     });
   }, [isSynced, questions, roomId]);
+
+  const presenceByQuestion = useMemo(() => {
+    const map = new Map<number, { name: string; color: string }[]>();
+    for (const o of others) {
+      const idx = o.presence?.currentQuestionIndex;
+      if (typeof idx !== "number") continue;
+      const entry = map.get(idx) ?? [];
+      entry.push({
+        name: o.presence?.info?.name ?? "Anonymous",
+        color: o.presence?.info?.color ?? "var(--color-primary)",
+      });
+      map.set(idx, entry);
+    }
+    return map;
+  }, [others]);
+
+  const handleRetryQuestion = useCallback(
+    (index: number) => {
+      let ctx: { prompt: string; promptType: "problem" | "profile" } | null =
+        null;
+      try {
+        const raw = sessionStorage.getItem(`ai-session-${roomId}`);
+        if (raw) ctx = JSON.parse(raw);
+      } catch {}
+      if (!ctx?.prompt) {
+        console.warn("question retry skipped: no prompt context for room");
+        return;
+      }
+      const generatedTitles = questions
+        .filter((q) => q.status === "ready" && q.title)
+        .map((q) => q.title as string);
+      authedFetch(`/api/ai/session/generate-remaining`, roomId, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roomId,
+          prompt: ctx.prompt,
+          promptType: ctx.promptType ?? "problem",
+          generatedTitles,
+          startFromIndex: index,
+        }),
+      }).catch((err) => {
+        console.warn("question retry failed:", err);
+      });
+    },
+    [questions, roomId],
+  );
 
   function handleEditorDidMount(editorInstance: any, monaco: any) {
     console.log("Editor mounted!");
@@ -607,15 +672,20 @@ function CollaborativeEditorInner({
 
     const model = editorInstance.getModel();
     if (model) {
+      try {
+        bindingRef.current?.destroy();
+      } catch {}
+      bindingRef.current = null;
+
       const existingYjsContent = yText.toString();
       if (existingYjsContent.length > 0) {
         // Existing room — clear defaultValue so MonacoBinding
         // populates the editor from yText (source of truth)
-        model.setValue("");
+        try {
+          model.setValue("");
+        } catch {}
       }
 
-      bindingRef.current?.destroy();
-      bindingRef.current = null;
       bindingRef.current = new MonacoBinding(
         yText,
         model,
@@ -624,7 +694,6 @@ function CollaborativeEditorInner({
       );
       boundTextNameRef.current = initialTextName;
 
-      // Seed presence for the sidebar avatar dots (Phase 3).
       try {
         updateMyPresence({
           currentQuestionIndex: activeQuestionIndexRef.current,
@@ -684,7 +753,26 @@ function CollaborativeEditorInner({
   useEffect(() => {
     return () => {
       bindingRef.current?.destroy();
+      if (switchTimeoutRef.current !== null) {
+        clearTimeout(switchTimeoutRef.current);
+        switchTimeoutRef.current = null;
+      }
     };
+  }, []);
+
+  const handleEditorUnmount = useCallback(() => {
+    try {
+      bindingRef.current?.destroy();
+    } catch {}
+    bindingRef.current = null;
+    boundTextNameRef.current = null;
+    if (switchTimeoutRef.current !== null) {
+      clearTimeout(switchTimeoutRef.current);
+      switchTimeoutRef.current = null;
+    }
+    setIsSwitching(false);
+    editorRef.current = null;
+    monacoRef.current = null;
   }, []);
 
   const mobileTabs: {
@@ -741,13 +829,24 @@ function CollaborativeEditorInner({
           />
         )}
 
-        {/* Problem Panel */}
-        {metadata.title && !zenMode && (
-          <ProblemPanel metadata={metadata} language={language} />
+        {/* Problem Panel (Desktop & Mobile Panel Overlay) */}
+        {((questions.length > 0) || metadata.title) && !zenMode && (
+          <ProblemPanel metadata={metadata} language={language}>
+            {questions.length > 0 ? (
+              <QuestionSidebar
+                questions={questions}
+                activeIndex={activeQuestionIndex}
+                onSelect={switchToQuestion}
+                presenceByQuestion={presenceByQuestion}
+                onRetry={handleRetryQuestion}
+              />
+            ) : undefined}
+          </ProblemPanel>
         )}
 
-        {/* Mobile/Tablet Tab Bar — visible below lg */}
-        <div className='lg:hidden flex items-center gap-1 glass-panel rounded-lg p-1'>
+        {/* Mobile/Tablet Tab Bar */}
+        {!isDesktop && (
+        <div className='flex items-center gap-1 glass-panel rounded-lg p-1'>
           {mobileTabs.map((tab) => {
             const panelCollaborators = getCollaboratorsInPanel(tab.id);
             const showBadge =
@@ -778,19 +877,22 @@ function CollaborativeEditorInner({
             );
           })}
         </div>
+        )}
 
-        {/* Main Content — Desktop: side-by-side, Mobile/Tablet: tabbed panels */}
+        {/* Main Content */}
         <div
           ref={cursorPanelRef}
           className='flex-1 flex overflow-hidden gap-1.5 sm:gap-2 lg:gap-3 relative'
         >
-          {/* ─── Desktop Layout (lg+) ─── */}
-          {/* Left - Code Editor / Whiteboard (desktop only) */}
+          {isDesktop ? (
+          <>
+
+          {/* Left - Code Editor / Whiteboard */}
           <motion.div
             id='workspace-panel'
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className='hidden lg:flex flex-col flex-1 min-w-0'
+            className='flex flex-col flex-1 min-w-0'
           >
             {/* Double-Bezel Workspace Shell */}
             <div className='flex-1 w-full h-full min-h-0 relative p-1.5 bg-glass-border/10 border border-glass-border/40 rounded-3xl shadow-xl backdrop-blur-sm'>
@@ -798,12 +900,16 @@ function CollaborativeEditorInner({
                 {/* Monaco Code Editor Wrapper */}
                 <div
                   className={`absolute inset-0 transition-opacity duration-200 ${
-                    activeMainView === "code"
+                    activeMainView === "code" && !isSwitching
                       ? "opacity-100 pointer-events-auto z-10"
                       : "opacity-0 pointer-events-none z-0"
                   }`}
                 >
-                  <CodeEditor onMount={handleEditorDidMount} language={language} />
+                  <CodeEditor
+                    onMount={handleEditorDidMount}
+                    onUnmount={handleEditorUnmount}
+                    language={language}
+                  />
                 </div>
 
                 {/* Excalidraw Whiteboard Wrapper */}
@@ -820,9 +926,10 @@ function CollaborativeEditorInner({
             </div>
           </motion.div>
 
-          {/* Right - AI Chat & Output (desktop only) */}
+          {/* Right - AI Chat & Output */}
+          {!zenMode && (
           <div
-            className={`hidden lg:flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300 ${zenMode ? "lg:hidden" : ""}`}
+            className='flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300'
           >
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
@@ -843,9 +950,10 @@ function CollaborativeEditorInner({
               />
             </div>
           </div>
-
-          {/* ─── Mobile/Tablet Layout (<lg) ─── */}
-          <div className='lg:hidden flex-1 min-w-0 min-h-0'>
+          )}
+          </>
+          ) : (
+          <div className='flex-1 min-w-0 min-h-0'>
             <AnimatePresence mode='wait'>
               {activePanel === "editor" && (
                 <motion.div
@@ -856,7 +964,15 @@ function CollaborativeEditorInner({
                   transition={{ duration: 0.15 }}
                   className='h-full'
                 >
-                  <CodeEditor onMount={handleEditorDidMount} language={language} />
+                  <div
+                    className={`h-full transition-opacity duration-200 ${isSwitching ? "opacity-0" : "opacity-100"}`}
+                  >
+                    <CodeEditor
+                      onMount={handleEditorDidMount}
+                      onUnmount={handleEditorUnmount}
+                      language={language}
+                    />
+                  </div>
                 </motion.div>
               )}
               {activePanel === "whiteboard" && (
@@ -871,6 +987,7 @@ function CollaborativeEditorInner({
                   <Whiteboard yWhiteboard={yWhiteboard} />
                 </motion.div>
               )}
+
               {activePanel === "chat" && (
                 <motion.div
                   key='chat-panel'
@@ -906,6 +1023,7 @@ function CollaborativeEditorInner({
               )}
             </AnimatePresence>
           </div>
+          )}
         </div>
 
         {/* Floating Settings Panel */}
