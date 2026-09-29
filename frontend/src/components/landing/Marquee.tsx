@@ -11,7 +11,7 @@ const LOGOS = [
 ];
 
 const MarqueeItem = ({ logo }: { logo: { name: string; path: string } }) => (
-  <div className='opacity-40 grayscale invert hover:grayscale-0 hover:invert-0 hover:opacity-100 transition-all duration-500 shrink-0 flex items-center justify-center px-6 sm:px-10 min-w-[120px] sm:min-w-[200px]'>
+  <div className='opacity-40 grayscale invert hover:grayscale-0 hover:invert-0 hover:opacity-100 transition duration-500 shrink-0 flex items-center justify-center px-6 sm:px-10 min-w-[120px] sm:min-w-[200px]'>
     <img
       src={logo.path}
       alt={`${logo.name} logo`}

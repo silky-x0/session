@@ -28,7 +28,7 @@ describe('SessionInput', () => {
     renderWithRouter(<SessionInput />);
     
     expect(
-      screen.getByPlaceholderText(/Paste a prompt or start empty/i)
+      screen.getByPlaceholderText(/Describe your session/i)
     ).toBeInTheDocument();
   });
 

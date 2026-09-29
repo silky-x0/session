@@ -15,7 +15,7 @@ export const ImageGrid: React.FC = () => {
     <section className='relative w-full py-10 sm:py-16 lg:py-20 overflow-hidden'>
       {/* Floating "Run Code" Button Overlay */}
       <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20'>
-        <button className='flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-condensed font-bold uppercase text-xs sm:text-base tracking-wider shadow-2xl hover:bg-white/20 transition-all group'>
+        <button className='flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white font-condensed font-bold uppercase text-xs sm:text-base tracking-wider shadow-2xl hover:bg-white/20 transition group'>
           <svg
             width='14'
             height='14'
@@ -38,7 +38,7 @@ export const ImageGrid: React.FC = () => {
             <img
               src={src}
               alt={`Visual ${i}`}
-              className='w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700'
+              className='w-full h-full object-cover grayscale hover:grayscale-0 transition duration-700'
             />
           </div>
         ))}

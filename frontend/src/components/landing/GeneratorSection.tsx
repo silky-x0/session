@@ -32,7 +32,7 @@ const TABS: TabData[] = [
     card: {
       heading: "Your perfect environment,",
       subheading: "Ready in seconds",
-      body: "Type a thought, drop a brief, or paste a repository — get a fully-configured multiplayer coding session tuned to your framework and needs.",
+      body: "Type a thought, drop a brief, or paste a repository. Get a fully-configured multiplayer coding session tuned to your framework and needs.",
     },
     descPosition: "right-bottom",
     cardRotate: 2,
@@ -52,7 +52,7 @@ const TABS: TabData[] = [
     card: {
       heading: "Real-time execution,",
       subheading: "Zero latency feedback",
-      body: "write once, run instantly. no local setup, no dependency hell — just paste your code and watch it execute in an isolated container shared with everyone in the session.",
+      body: "Write once, run instantly. No local setup, no dependency hell. Just paste your code and watch it execute in an isolated container shared with everyone in the session.",
     },
     descPosition: "left-top",
     cardRotate: -2,
@@ -112,7 +112,7 @@ const TABS: TabData[] = [
     card: {
       heading: "Review & share,",
       subheading: "With full context",
-      body: "after the session ends, get a full breakdown — typing patterns, pause points, code quality flags, and an ai summary of how the candidate performed. built for teams who take hiring seriously.",
+      body: "After the session ends, get a full breakdown. Typing patterns, pause points, code quality flags, and an AI summary of how the candidate performed. Built for teams who take hiring seriously.",
     },
     descPosition: "right-bottom",
     cardRotate: 1,
@@ -217,7 +217,7 @@ export const GeneratorSection: React.FC = () => {
           <button
             key={tab.key}
             onClick={() => setActiveIdx(idx)}
-            className={`px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-mono font-semibold uppercase tracking-widest transition-all duration-300 ${
+            className={`px-3 sm:px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-mono font-semibold uppercase tracking-widest transition duration-150 ease-out active:scale-[0.97] ${
               idx === activeIdx
                 ? "bg-[#1c1c1c] text-white/90 shadow-[0_0_12px_rgba(0,255,65,0.15)]"
                 : "bg-transparent text-white/40 hover:text-white/70"

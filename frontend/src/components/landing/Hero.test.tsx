@@ -25,7 +25,7 @@ describe('Hero', () => {
     renderWithRouter(<Hero />);
     
     expect(
-      screen.getByText(/ai-generated questions/i)
+      screen.getByText(/Built for technical interviews/i)
     ).toBeInTheDocument();
   });
 
@@ -34,7 +34,7 @@ describe('Hero', () => {
     
     // Check for the input placeholder
     expect(
-      screen.getByPlaceholderText(/Paste a prompt or start empty/i)
+      screen.getByPlaceholderText(/Describe your session/i)
     ).toBeInTheDocument();
   });
 
