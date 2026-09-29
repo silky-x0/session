@@ -22,14 +22,23 @@ function EditorLoader() {
 
 interface CodeEditorProps {
   onMount?: (editor: any, monaco: any) => void;
+  onUnmount?: () => void;
   language?: string;
 }
 
-export function CodeEditor({ onMount, language = "javascript" }: CodeEditorProps) {
+export function CodeEditor({ onMount, onUnmount, language = "javascript" }: CodeEditorProps) {
   const { settings, theme } = useTheme();
   const updateMyPresence = useUpdateMyPresence();
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
+  const onUnmountRef = useRef(onUnmount);
+  onUnmountRef.current = onUnmount;
+
+  useEffect(() => {
+    return () => {
+      onUnmountRef.current?.();
+    };
+  }, []);
 
   // Disable TS/JS diagnostics when language is not JS or TS.
   // Monaco's TypeScript worker runs on every model regardless of the set

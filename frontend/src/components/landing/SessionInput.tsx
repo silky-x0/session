@@ -36,6 +36,13 @@ export const SessionInput: React.FC = () => {
 
       setPendingRoomId(data.roomId);
       setAiReady(true);
+
+      try {
+        sessionStorage.setItem(
+          `ai-session-${data.roomId}`,
+          JSON.stringify({ prompt, promptType: data.promptType ?? "problem" }),
+        );
+      } catch {}
     } catch (error) {
       if (abortControllerRef.current?.signal.aborted) return;
       console.error(" Error creating AI session:", error);

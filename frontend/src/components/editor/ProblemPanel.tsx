@@ -17,12 +17,13 @@ interface ProblemMetadata {
 }
 
 interface ProblemPanelProps {
-  metadata: ProblemMetadata;
-  language: string; 
+  metadata?: ProblemMetadata;
+  language?: string; 
   onSolutionClick?: () => void;
+  children?: React.ReactNode;
 }
 
-export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
+export function ProblemPanel({ metadata, language, children }: ProblemPanelProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [showHints, setShowHints] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
@@ -49,7 +50,9 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
     return () => window.removeEventListener("keydown", handleEsc);
   }, [showHints, showSolution]);
 
-  if (!metadata.title) return null;
+  if (!metadata?.title && !children) return null;
+
+  const meta = metadata ?? {};
 
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty) {
@@ -130,7 +133,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                 </div>
                 <div>
                   <h2 className="text-sm font-display font-bold uppercase text-foreground tracking-[0.15em]">Problem Details</h2>
-                  <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.1em] mt-0.5">Workspace / {metadata.title}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-[0.1em] mt-0.5">Workspace / {meta.title}</p>
                 </div>
               </div>
               <button
@@ -144,27 +147,28 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
 
             {/* Sidebar Content */}
             <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-3 md:px-6 md:py-4">
+              {children ? children : (
               <div className="space-y-4">
                 {/* Title & Difficulty */}
                 <div>
                   <div className="flex items-start justify-between gap-3 mb-1">
-                    <h1 className="text-2xl md:text-3xl font-display font-black uppercase text-foreground leading-tight tracking-[0.05em]">{metadata.title}</h1>
-                    {metadata.difficulty && (
+                    <h1 className="text-2xl md:text-3xl font-display font-black uppercase text-foreground leading-tight tracking-[0.05em]">{meta.title}</h1>
+                    {meta.difficulty && (
                       <span
                         className={`shrink-0 px-2 py-1 text-[10px] font-mono font-bold rounded border uppercase tracking-[0.1em] ${getDifficultyColor(
-                          metadata.difficulty
+                          meta.difficulty
                         )}`}
                       >
-                        {metadata.difficulty}
+                        {meta.difficulty}
                       </span>
                     )}
                   </div>
                   
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {metadata.timeLimit && (
+                    {meta.timeLimit && (
                       <span className="flex items-center gap-2 bg-secondary/30 px-3 py-1.5 rounded-lg border border-border/50 font-mono text-xs">
                         <Clock className="w-4 h-4 text-primary" />
-                        {metadata.timeLimit}
+                        {meta.timeLimit}
                       </span>
                     )}
                   </div>
@@ -173,27 +177,27 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                 <div className="h-px bg-gradient-to-r from-border/50 via-border/20 to-transparent" />
 
                 {/* Question Body */}
-                {metadata.question && (
+                {meta.question && (
                   <div className="prose prose-sm max-w-none">
                     <div className="text-foreground/80 leading-relaxed whitespace-pre-wrap text-[14px] font-mono tracking-wide">
-                      {metadata.question}
+                      {meta.question}
                     </div>
                   </div>
                 )}
 
                 {/* Complexity */}
-                {metadata.complexity && (
+                {meta.complexity && (
                   <div className="bg-card rounded-2xl p-6 border border-border/50 shadow-inner relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 to-transparent" />
                     <h3 className="text-xs font-display font-bold text-muted-foreground uppercase tracking-[0.2em] mb-4">Target Complexity</h3>
                     <div className="flex gap-8">
                       <div>
                         <p className="text-[10px] text-muted-foreground/80 mb-1.5 uppercase font-mono tracking-wider">Time</p>
-                        <code className="px-2 py-1 rounded bg-primary/10 text-[13px] font-mono font-medium text-primary border border-primary/20">{metadata.complexity.time}</code>
+                        <code className="px-2 py-1 rounded bg-primary/10 text-[13px] font-mono font-medium text-primary border border-primary/20">{meta.complexity.time}</code>
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground/80 mb-1.5 uppercase font-mono tracking-wider">Space</p>
-                        <code className="px-2 py-1 rounded bg-primary/10 text-[13px] font-mono font-medium text-primary border border-primary/20">{metadata.complexity.space}</code>
+                        <code className="px-2 py-1 rounded bg-primary/10 text-[13px] font-mono font-medium text-primary border border-primary/20">{meta.complexity.space}</code>
                       </div>
                     </div>
                   </div>
@@ -201,7 +205,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-4 pt-4">
-                  {metadata.hints && metadata.hints.length > 0 && (
+                  {meta.hints && meta.hints.length > 0 && (
                     <button
                       onClick={() => setShowHints(true)}
                       className="flex items-center justify-between w-full px-6 py-4 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-100 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
@@ -210,11 +214,11 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                         <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300" />
                         <span className="tracking-[0.15em] font-display uppercase text-xs font-bold">View Hints</span>
                       </div>
-                      <span className="text-[11px] font-mono font-bold bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full">{metadata.hints.length}</span>
+                      <span className="text-[11px] font-mono font-bold bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full">{meta.hints.length}</span>
                     </button>
                   )}
                   
-                  {metadata.fullSolution && (
+                  {meta.fullSolution && (
                     <button
                       onClick={() => setShowSolution(true)}
                       className="flex items-center justify-center gap-4 w-full px-6 py-4 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-100 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
@@ -225,6 +229,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                   )}
                 </div>
               </div>
+              )}
             </div>
 
             {/* Sidebar Footer */}
@@ -237,7 +242,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
 
       {/* Hints Modal */}
       <AnimatePresence>
-        {showHints && metadata.hints && (
+        {showHints && meta.hints && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -268,7 +273,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                     </div>
                     <div>
                       <h3 className="text-xl font-display font-bold uppercase text-foreground tracking-[0.1em]">Problem Hints</h3>
-                      <p className="text-xs font-mono text-muted-foreground mt-1 uppercase tracking-widest">{metadata.hints.length} hints available</p>
+                      <p className="text-xs font-mono text-muted-foreground mt-1 uppercase tracking-widest">{meta.hints.length} hints available</p>
                     </div>
                   </div>
                   <button
@@ -281,7 +286,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                 </div>
                 
                 <div className="space-y-4">
-                  {metadata.hints.map((hint, index) => (
+                  {meta.hints.map((hint, index) => (
                     <motion.div 
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -302,7 +307,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
 
       {/* Solution Modal */}
       <AnimatePresence>
-        {showSolution && metadata.fullSolution && (
+        {showSolution && meta.fullSolution && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -347,7 +352,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                 
                 <div className="flex-1 overflow-y-auto custom-scrollbar bg-background">
                   <SyntaxHighlighter
-                    language={language.toLowerCase()}
+                    language={(language ?? "text").toLowerCase()}
                     style={theme === "light" ? prism : vscDarkPlus}
                     customStyle={{
                       margin: 0,
@@ -367,7 +372,7 @@ export function ProblemPanel({ metadata, language }: ProblemPanelProps) {
                       userSelect: 'none',
                     }}
                   >
-                    {metadata.fullSolution}
+                    {meta.fullSolution}
                   </SyntaxHighlighter>
                 </div>
               </div>
