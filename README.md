@@ -4,9 +4,9 @@
   <br />
   <br />
   
-  <h3>the coding room that thinks with you</h3>
+  <h3>One link. Multiple questions. Zero setup.</h3>
   
-  <p>Session is for live coding interviews and pair programming. You share one link and get a shared editor, AI made questions, audio and video, plus a whiteboard. Nothing to install.</p>
+  <p><strong>Session</strong> runs live coding interviews end to end. Describe the role or the topic, get a five-question set generated for the room, then interview over shared code, video, and whiteboard — with execution and review built in.</p>
 
   <br />
 
@@ -33,6 +33,7 @@
 ## Table of Contents
 
 - [Features](#features)
+- [Running an interview](#running-an-interview)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
@@ -45,16 +46,26 @@
 
 | Category | What you get |
 |---|---|
-| **Live editing** | Same file, multiple people. Live cursors with colors. Monaco under the hood (same editor VS Code uses), synced with Yjs and Liveblocks. Works across languages. |
-| **AI questions** | Type a topic or role on the home page and it puts together an interview question with starter code, hints, and a difficulty level, then loads it into your room. There is also a chat panel inside the editor. Runs on Gemini by default, or OpenRouter if you set `AI_PROVIDER`. |
-| **Run code** | Code runs through JDoodle. Everyone in the room sees the same output. |
-| **Interview view** | Question panel with difficulty, hints, time and space notes, and a solution reveal when you need it. |
-| **Calls built in** | Audio and video right inside the room, so you do not have to juggle Zoom alongside it. |
-| **Whiteboard** | Shared Excalidraw board. Good for sketching out an approach together. |
-| **Rate limiting** | Redis token bucket, keyed by IP and room. Old keys expire on their own. If Redis goes down, requests still pass through. |
-| **UI** | Dark theme, JetBrains Mono, some light motion between routes. Meant to stay out of the way. |
-| **Presence** | See who is in the room, where they are typing, and whether you are synced. You get a notice if the connection drops. |
-| **Still to do** | Follow mode, inline comments, session playback. |
+| **Live editing** | One file, multiple cursors. Monaco (VS Code's editor) synced over Yjs + Liveblocks, in any language. |
+| **AI questions** | Enter a topic ("sliding window") or a role ("senior backend, Go") on the home page. Q1 generates immediately, Q2–Q5 follow in the background. Each question gets its own code buffer, hints, difficulty, and solution. An AI chat panel lives inside the editor. Gemini by default, OpenRouter via `AI_PROVIDER`. |
+| **Run code** | Execution through JDoodle against custom test cases, with a shared console and timing metrics for every run. |
+| **Interview view** | Question browser with difficulty, hints, time/space notes, and revealable solutions. Presence dots show who is on which question. Failed generations show a retry button instead of dying quietly. |
+| **Calls built in** | Audio and video inside the room. No separate meeting app. |
+| **Whiteboard** | Shared Excalidraw board for sketching approaches together. |
+| **Rate limiting** | Redis token bucket keyed by IP and room. Fails open if Redis goes down. |
+| **Presence** | Roster, live cursors, typing indicators, and sync status, with a notice on disconnect. |
+
+Planned work (follow mode, inline comments, session playback) lives in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
+
+## Running an interview
+
+1. **Describe it.** Type a topic or paste a role on the home page and pick a nickname. A room spins up with Q1 ready; the other four questions generate while you start.
+2. **Run it.** Send the link. The candidate solves in a shared Monaco editor with live cursors while you talk over built-in audio/video and sketch on the whiteboard. Either of you can switch questions independently — code per question is preserved.
+3. **Review it.** Run against test cases, compare timing metrics across attempts, and open hints or the full solution when the candidate is stuck.
+
+No accounts, no installs. A room is a link plus a nickname.
 
 ---
 
@@ -62,31 +73,26 @@
 
 ### Frontend
 
-| Technology | What it is for |
+| Technology | Role |
 |---|---|
-| **React 19** | UI |
-| **TypeScript** | Types |
-| **Vite** | Dev server and builds |
-| **Tailwind CSS v4** | Styling |
-| **Liveblocks** | Presence and room sync |
-| **Monaco Editor** | Code editor |
-| **LiveKit Client** | Audio and video in the browser |
-| **Yjs + y-monaco** | Keeps editor text in sync between people |
-| **Framer Motion** | Small animations and page transitions |
+| **React 19 + TypeScript + Vite** | App framework, types, dev server and builds |
+| **Tailwind CSS v4** | Styling and design tokens |
+| **Liveblocks** | Presence, cursors, and room sync |
+| **Monaco + Yjs** | Editor engine with CRDT text sync |
+| **LiveKit** | In-browser audio and video |
+| **Framer Motion** | Transitions and micro-interactions |
 | **React Router v7** | Routing |
 
 ### Backend
 
-| Technology | What it is for |
+| Technology | Role |
 |---|---|
-| **Node.js + Express** | API server |
-| **TypeScript** | Types on the server |
-| **Liveblocks Node SDK** | Creates rooms and handles webhooks |
+| **Node.js + Express + TypeScript** | API server |
+| **Liveblocks Node SDK** | Room creation and webhooks |
 | **LiveKit Server SDK** | Call tokens and room setup |
-| **Gemini / OpenRouter SDK** | AI questions and chat. Picked with `AI_PROVIDER` |
-| **JDoodle API** | Runs user code, so no Docker setup needed |
-| **Redis + ioredis** | Stores rate limit counts and queued jobs |
-| **BullMQ** | Deletes old rooms after a delay |
+| **Gemini / OpenRouter SDK** | Question generation and chat, selected by `AI_PROVIDER` |
+| **JDoodle API** | Code execution without local Docker |
+| **Redis + BullMQ** | Rate-limit counters and delayed room cleanup |
 
 ---
 
@@ -94,44 +100,29 @@
 
 ```
 session/
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── editor/           # Monaco, TopBar, AIChat, OutputPanel,
-│       │   │                     # LiveCursors, AvatarStack, ConnectionToast,
-│       │   │                     # BroadcastProvider, NotificationsPanel...
-│       │   ├── landing/          # Hero, SessionInput, SessionLoadingScreen,
-│       │   │                     # Header, Marquee, EditorShowcase,
-│       │   │                     # GeneratorSection, TypographyBreak,
-│       │   │                     # FeatureGallery, CinematicFooter...
-│       │   ├── ui/               # hero-shutter-text, weave-spinner, link-preview
-│       │   ├── Editor.tsx        # RoomProvider + CollaborativeEditorInner
-│       │   └── RouteTransition.tsx
-│       ├── hooks/                # useRoomSettings
-│       ├── utils/                # getContrastingColor, useBoundingClientRectRef
-│       ├── liveblocks.config.ts  # Presence/Storage types
-│       ├── App.tsx               # Routes + editorReady state
-│       └── index.css             # Design tokens, global styles
+├── frontend/src/
+│   ├── components/editor/    # Workspace: editor, TopBar, chat, output,
+│   │                         # questions sidebar, calls, whiteboard, toasts
+│   ├── components/landing/   # Marketing page sections and session entry
+│   ├── components/ui/        # Shared primitives (spinners, previews)
+│   ├── lib/                  # API client, LiveKit credentials
+│   ├── hooks/                # Shared React hooks
+│   ├── utils/                # Color helpers, DOM measurement
+│   ├── liveblocks.config.ts  # Presence and storage types
+│   ├── App.tsx               # Routes
+│   └── index.css             # Theme tokens and global styles
 │
-├── backend/
-│   └── src/
-│       ├── config/               # env, redis, liveblock, AI providers
-│       ├── controllers/          # session, aichat, execute, webhook (userentered/userleft), livekit
-│       ├── middleware/           # errorHandler, asyncHandler, rateLimiter, auth, session tokens
-│       ├── queues/               # roomDeletion queue (BullMQ scheduling)
-│       ├── workers/              # roomDeletion worker (delayed cleanup)
-│       ├── websocket/            # socket server
-│       ├── routes/               # ai, code, session, livekit, webhook
-│       ├── services/             # session, liveblocks, aichat, execute (JDoodle), yjs, livekit, tokens
-│       └── utils/                # languageMapper, payloadLimits
+├── backend/src/
+│   ├── config/               # env, redis, Liveblocks, AI providers
+│   ├── controllers/          # session, AI chat, execution, webhooks, LiveKit
+│   ├── middleware/           # errors, rate limiting, room session tokens
+│   ├── queues/ + workers/    # Delayed room cleanup (BullMQ)
+│   ├── routes/               # ai, code, session, livekit, webhook
+│   ├── services/             # AI, Liveblocks patching, execution, tokens
+│   └── utils/                # language mapping, payload limits
 │
-├── docs/
-│   ├── ARCHITECTURE.md           # System design, data flow, rate limiting, execution pipeline
-│   ├── ROADMAP.md                # Completed, in-progress, and planned features
-│   ├── CONTRIBUTING.md           # Workflow, code style, project-specific notes
-│   ├── DEPLOYMENT.md             # Vercel + Render setup
-│   └── ENV_VARS.md               # All environment variables reference
-│
+├── docs/                     # architecture, roadmap, contributing,
+│                             # deployment, env vars
 └── README.md
 ```
 
@@ -142,11 +133,11 @@ session/
 ### Prerequisites
 
 - **Node.js** v18+ and **npm**
-- A **Liveblocks** account (free). Keys are at [liveblocks.io](https://liveblocks.io)
-- A **JDoodle** account for running code. Free tier is fine: [jdoodle.com](https://jdoodle.com)
-- A **Gemini** key from [aistudio.google.com](https://aistudio.google.com). Or use OpenRouter by setting `AI_PROVIDER=openrouter` with a key from [openrouter.ai](https://openrouter.ai)
-- A **LiveKit Cloud** project (free) if you want calls: [cloud.livekit.io](https://cloud.livekit.io)
-- A **Redis** instance for rate limits and cleanup jobs. The free tier at [Redis Cloud](https://redis.io/try-free/) is enough.
+- **Liveblocks** key (free): [liveblocks.io](https://liveblocks.io)
+- **JDoodle** key for code execution (free tier works): [jdoodle.com](https://jdoodle.com)
+- **Gemini** key ([aistudio.google.com](https://aistudio.google.com)), or **OpenRouter** key ([openrouter.ai](https://openrouter.ai)) with `AI_PROVIDER=openrouter`
+- **LiveKit Cloud** project (free, only needed for calls): [cloud.livekit.io](https://cloud.livekit.io)
+- **Redis** instance (free tier is enough): [redis.io/try-free](https://redis.io/try-free/)
 
 ### Installation
 
@@ -165,8 +156,6 @@ npm install
 cp .env.example .env    # then fill in your keys
 ```
 
-
-
 ### Running Locally
 
 ```bash
@@ -177,19 +166,19 @@ cd backend && npm run dev
 cd frontend && npm run dev
 ```
 
-Open `http://localhost:5173`, type a topic or leave it blank, hit **"Start Session"**, and send the link to whoever is joining.
+Open `http://localhost:5173`, describe a session or start empty, and send the link to whoever is joining.
 
 ---
 
 ## Documentation
 
-| Doc | What is in it |
+| Doc | Contents |
 |-----|----------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the pieces fit together, how data flows, how rate limiting and code runs work |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | What is done, what is being worked on, what is planned |
-| [docs/ENV_VARS.md](docs/ENV_VARS.md) | Every env var for backend and frontend |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | How to deploy on Render and Vercel |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to send a PR and what to watch out for in this repo |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System design, data flow, rate limiting, execution pipeline |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Done, in progress, planned |
+| [docs/ENV_VARS.md](docs/ENV_VARS.md) | Every backend and frontend env var |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Render + Vercel setup |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | PR workflow and repo conventions |
 
 ---
 
