@@ -60,7 +60,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                     <button
                       key={t}
                       onClick={() => setTheme(t)}
-                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border transition-all ${
+                      className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-lg border transition ${
                         theme === t
                           ? "bg-neon-pulse/20 border-neon-pulse text-neon-pulse shadow-[0_0_12px_rgba(0,255,65,0.15)]"
                           : "border-glass-border bg-white/5 text-muted-foreground hover:text-foreground hover:bg-white/10"
@@ -161,7 +161,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ isOpen, onClose, o
                     onFormat();
                     onClose();
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-neon-pulse/20 text-neon-pulse border border-neon-pulse/30 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-neon-pulse/30 transition-all shadow-[0_0_15px_rgba(0,255,65,0.05)] cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-neon-pulse/20 text-neon-pulse border border-neon-pulse/30 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-neon-pulse/30 transition shadow-[0_0_15px_rgba(0,255,65,0.05)] cursor-pointer"
                 >
                   Format Code (Prettier)
                 </button>

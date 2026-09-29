@@ -1,23 +1,15 @@
 import { useState, useCallback } from "react";
 import { useLostConnectionListener, useErrorListener } from "@liveblocks/react/suspense";
 import { motion, AnimatePresence } from "framer-motion";
-import { WifiOff, Wifi, AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 type Toast = {
   id: string;
-  type: "warning" | "success" | "error";
+  type: "error";
   message: string;
   icon: React.ReactNode;
 };
 
-/**
- * Listens for Liveblocks connection loss and error events,
- * then renders animated toast notifications.
- *
- * Uses:
- * - useLostConnectionListener — fires "lost" / "restored" / "failed"
- * - useErrorListener — fires on any Liveblocks error (room connection, thread ops, etc.)
- */
 export function ConnectionToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -36,28 +28,12 @@ export function ConnectionToast() {
 
   // ─── Connection Loss Listener ─────────────────────────────
   useLostConnectionListener((event) => {
-    switch (event) {
-      case "lost":
-        addToast({
-          type: "warning",
-          message: "Connection lost. Trying to reconnect…",
-          icon: <WifiOff className="w-4 h-4" />,
-        });
-        break;
-      case "restored":
-        addToast({
-          type: "success",
-          message: "Connection restored!",
-          icon: <Wifi className="w-4 h-4" />,
-        });
-        break;
-      case "failed":
-        addToast({
-          type: "error",
-          message: "Could not reconnect. Please refresh the page.",
-          icon: <AlertTriangle className="w-4 h-4" />,
-        });
-        break;
+    if (event === "failed") {
+      addToast({
+        type: "error",
+        message: "Could not reconnect. Please refresh the page.",
+        icon: <AlertTriangle className="w-4 h-4" />,
+      });
     }
   });
 
@@ -91,13 +67,7 @@ export function ConnectionToast() {
             exit={{ opacity: 0, x: 100, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl backdrop-blur-xl
-              ${
-                toast.type === "warning"
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : toast.type === "success"
-                    ? "bg-green-500/10 border-green-500/30 text-green-400"
-                    : "bg-red-500/10 border-red-500/30 text-red-400"
-              }`}
+              bg-red-500/10 border-red-500/30 text-red-400`}
           >
             {toast.icon}
             <span className="text-sm font-medium">{toast.message}</span>

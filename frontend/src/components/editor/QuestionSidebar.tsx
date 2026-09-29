@@ -3,10 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ChevronDown,
-  Clock,
   Lightbulb,
   ListOrdered,
-  Loader2,
   RotateCcw,
   Unlock,
 } from "lucide-react";
@@ -91,42 +89,25 @@ function QuestionRow({
   onRetry?: () => void;
 }) {
   const qLabel = `Q${index + 1}`;
-  const baseRow = "rounded-xl border transition-all duration-200";
+  const baseRow = "rounded-xl border transition-colors duration-200";
 
-  if (slot.status === "pending") {
+  if (slot.status === "pending" || slot.status === "generating") {
+    const busy = slot.status === "generating";
     return (
       <div
-        className={`${baseRow} border-border/40 bg-card/40 opacity-50 cursor-not-allowed px-3 py-2.5`}
+        className={`${baseRow} border-border/40 bg-card/40 px-3 py-2.5`}
         title='Still generating…'
         aria-disabled='true'
+        aria-label={`${qLabel} ${busy ? "generating" : "pending"}`}
       >
-        <div className='flex items-center gap-2.5'>
-          <span className='flex-shrink-0 w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[11px] font-mono font-bold text-muted-foreground'>
-            {index + 1}
-          </span>
-          <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
-            <Clock className='w-3.5 h-3.5' />
-            {qLabel} · Pending
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  if (slot.status === "generating") {
-    return (
-      <div
-        className={`${baseRow} border-border/40 bg-card/40 opacity-70 px-3 py-2.5`}
-        title='Still generating…'
-        aria-disabled='true'
-      >
-        <div className='flex items-center gap-2.5'>
-          <span className='flex-shrink-0 w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-[11px] font-mono font-bold text-muted-foreground'>
-            {index + 1}
-          </span>
-          <span className='flex items-center gap-1.5 text-xs text-muted-foreground font-medium'>
-            <Loader2 className='w-3.5 h-3.5 animate-spin' />
-            {qLabel} · Generating…
+        <div className='flex items-center gap-2.5 animate-pulse'>
+          <span className='flex-shrink-0 w-7 h-7 rounded-lg bg-muted' aria-hidden='true' />
+          <span className='flex-1 min-w-0' aria-hidden='true'>
+            <span className='block h-3.5 w-3/4 rounded bg-muted' />
+            <span className='mt-1.5 flex items-center gap-1.5'>
+              <span className='h-4 w-12 rounded border border-border/50 bg-muted/60' />
+              {busy && <span className='h-3 w-16 rounded bg-muted/60' />}
+            </span>
           </span>
         </div>
       </div>

@@ -80,7 +80,7 @@ export function ProblemPanel({ metadata, language, children }: ProblemPanelProps
             transition={{ duration: 0.2, ease: "easeOut" }}
             onClick={() => setIsOpen(true)}
             aria-label="Open Problem Description"
-            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 pl-2 pr-4 py-6 rounded-r-xl bg-background/80 backdrop-blur-md border border-l-0 border-primary/30 text-primary shadow-md hover:bg-primary/10 hover:border-primary/60 transition-all duration-300 group flex flex-col items-center gap-4 cursor-pointer min-h-[48px] min-w-[48px]"
+            className="fixed left-0 top-1/2 -translate-y-1/2 z-40 pl-2 pr-4 py-6 rounded-r-xl bg-background/80 backdrop-blur-md border border-l-0 border-primary/30 text-primary shadow-md hover:bg-primary/10 hover:border-primary/60 transition duration-300 group flex flex-col items-center gap-4 cursor-pointer min-h-[48px] min-w-[48px]"
             title="Open Problem Description"
           >
             {isSomeoneInProblem && (
@@ -208,7 +208,7 @@ export function ProblemPanel({ metadata, language, children }: ProblemPanelProps
                   {meta.hints && meta.hints.length > 0 && (
                     <button
                       onClick={() => setShowHints(true)}
-                      className="flex items-center justify-between w-full px-6 py-4 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-100 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+                      className="flex items-center justify-between w-full px-6 py-4 text-sm font-medium rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-100 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition duration-200 group cursor-pointer active:scale-[0.98]"
                     >
                       <div className="flex items-center gap-3">
                         <Lightbulb className="w-4 h-4 text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300" />
@@ -221,7 +221,7 @@ export function ProblemPanel({ metadata, language, children }: ProblemPanelProps
                   {meta.fullSolution && (
                     <button
                       onClick={() => setShowSolution(true)}
-                      className="flex items-center justify-center gap-4 w-full px-6 py-4 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-100 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+                      className="flex items-center justify-center gap-4 w-full px-6 py-4 text-sm font-medium rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-100 border border-purple-500/20 hover:bg-purple-500/20 hover:border-purple-500/40 transition duration-200 group cursor-pointer active:scale-[0.98]"
                     >
                       <Unlock className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300" />
                       <span className="tracking-[0.15em] font-display uppercase text-xs font-bold">Reveal Solution</span>

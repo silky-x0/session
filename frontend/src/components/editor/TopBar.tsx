@@ -118,7 +118,7 @@ export function TopBar({
           <div className='flex items-center gap-1 p-0.5 bg-secondary/50 border border-glass-border/40 rounded-full select-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.03)] backdrop-blur-md'>
             <button
               onClick={() => onActiveMainViewChange("code")}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
                 activeMainView === "code"
                   ? "bg-primary/20 text-primary border border-primary/30 shadow-md shadow-primary/5"
                   : "text-muted-foreground hover:text-foreground"
@@ -140,7 +140,7 @@ export function TopBar({
             </button>
             <button
               onClick={() => onActiveMainViewChange("whiteboard")}
-              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer relative ${
                 activeMainView === "whiteboard"
                   ? "bg-primary/20 text-primary border border-primary/30 shadow-md shadow-primary/5"
                   : "text-muted-foreground hover:text-foreground"
