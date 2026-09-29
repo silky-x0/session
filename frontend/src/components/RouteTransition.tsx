@@ -58,7 +58,7 @@ export function RouteTransition({ children, text, isReady }: RouteTransitionProp
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen w-full relative"
+      className="min-h-dvh w-full relative"
     >
       {/* Actual page content rendered underneath the overlay */}
       {children}

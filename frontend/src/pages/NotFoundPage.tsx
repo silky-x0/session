@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 
 const NotFoundPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col relative overflow-hidden font-sans">
+    <div className="min-h-dvh bg-[#050505] text-white flex flex-col relative overflow-hidden font-sans">
       {/* Background grain texture */}
       <div className="absolute inset-0 opacity-[0.03] bg-[url('/noise.png')] pointer-events-none mix-blend-overlay"></div>
 
@@ -33,10 +33,10 @@ const NotFoundPage: React.FC = () => {
 
           <a 
             href="/" 
-            className="group flex items-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-xl w-fit hover:bg-white/10 hover:border-white/20 transition-all duration-300 backdrop-blur-sm"
+            className="group flex items-center gap-3 px-6 py-4 bg-white/5 border border-white/10 rounded-xl w-fit hover:bg-white/10 hover:border-white/20 transition duration-300 backdrop-blur-sm"
           >
             <span className="text-sm font-medium tracking-wide">Return home</span>
-            <ArrowUpRight size={20} className="text-white/30 group-hover:text-cyber-cyan group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            <ArrowUpRight size={20} className="text-white/30 group-hover:text-cyber-cyan group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
           </a>
         </motion.div>
       </div>
