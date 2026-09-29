@@ -9,9 +9,10 @@ export async function generateRemainingQuestions(
   roomId: string,
   originalPrompt: string,
   type: "problem" | "profile",
-  previousTitles: string[]
+  previousTitles: string[],
+  startFromIndex: number = 1
 ): Promise<void> {
-  for (let i = 1; i <= 4; i++) {
+  for (let i = startFromIndex; i <= 4; i++) {
     // Mark slot as generating
     await patchLiveblocksQuestionSlot(roomId, i, { status: "generating", version: 0 });
 
