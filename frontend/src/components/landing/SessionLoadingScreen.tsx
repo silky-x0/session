@@ -247,12 +247,12 @@ export const SessionLoadingScreen: React.FC<SessionLoadingScreenProps> = ({
                       }}
                       placeholder='Enter your nickname…'
                       maxLength={20}
-                      className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-sm'
+                      className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/25 font-sans text-base'
                     />
                     <button
                       onClick={handleNicknameSubmit}
                       disabled={!nickname.trim()}
-                      className='p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0'
+                      className='p-2 bg-[#00FF41] rounded-xl hover:brightness-110 transition duration-150 ease-out active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0'
                     >
                       <svg
                         width='16'

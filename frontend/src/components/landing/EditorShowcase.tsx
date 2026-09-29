@@ -165,7 +165,7 @@ export const EditorShowcase: React.FC = () => {
               <div
                 key={i}
                 onClick={() => setActiveFile(i)}
-                className={`flex items-center gap-3 text-sm cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 text-sm cursor-pointer transition duration-150 ease-out active:scale-[0.98] ${
                   i === activeFile
                     ? "text-[#00FF41]"
                     : "text-white/50 hover:text-white/80"

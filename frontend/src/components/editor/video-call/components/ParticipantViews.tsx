@@ -23,7 +23,6 @@ export function ParticipantGrid({
         <CamTile
           key={t.participant.identity}
           trackRef={t}
-          size="grid"
           speaking={isSpeaking(t.participant.identity)}
           mirrored={t.participant.isLocal}
           isPinned={pinnedIdentity === t.participant.identity}
@@ -67,7 +66,6 @@ export function HeroStage({
       {heroTrack && (
         <CamTile
           trackRef={heroTrack}
-          size={mode === "focus" ? "lg" : "md"}
           speaking={isSpeaking(heroTrack.participant.identity)}
           mirrored={heroTrack.participant.isLocal}
           isPinned={pinnedIdentity === heroTrack.participant.identity}
@@ -87,7 +85,6 @@ export function HeroStage({
             >
               <CamTile
                 trackRef={t}
-                size="sm"
                 speaking={isSpeaking(t.participant.identity)}
                 mirrored={t.participant.isLocal}
                 isPinned={pinnedIdentity === t.participant.identity}

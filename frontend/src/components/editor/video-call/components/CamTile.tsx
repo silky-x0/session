@@ -2,14 +2,10 @@ import { ParticipantTile, type TrackReferenceOrPlaceholder } from "@livekit/comp
 import { MicOff, Pin, PinOff } from "lucide-react";
 import { displayName } from "../utils";
 
-export type CamTileSize = "sm" | "md" | "lg" | "grid";
-
 interface CamTileProps {
   trackRef: TrackReferenceOrPlaceholder;
   speaking: boolean;
   mirrored?: boolean;
-  /** Reserved for per-size tile chrome; currently all tiles share one look. */
-  size?: CamTileSize;
   isPinned?: boolean;
   onTogglePin?: () => void;
 }
@@ -53,7 +49,7 @@ export function CamTile({
           }}
           title={isPinned ? "Unpin participant" : "Pin participant"}
           aria-label={isPinned ? "Unpin participant" : "Pin participant"}
-          className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-md transition-all cursor-pointer z-20 ${
+          className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-md cursor-pointer z-20 flex items-center justify-center min-h-[36px] min-w-[36px] transition duration-150 ease-out active:scale-[0.97] [@media(hover:none)]:opacity-100 ${
             isPinned
               ? "bg-primary text-background opacity-100 shadow-md"
               : "bg-black/60 text-white/80 opacity-0 group-hover/tile:opacity-100 hover:text-white hover:bg-black/80"

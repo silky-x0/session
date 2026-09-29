@@ -17,7 +17,7 @@ interface CallHeaderProps {
 }
 
 const iconBtn =
-  "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center";
+  "p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center transition duration-150 ease-out active:scale-[0.97]";
 
 /** Draggable window header with mode controls. */
 export function CallHeader({

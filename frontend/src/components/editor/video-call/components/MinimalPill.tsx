@@ -42,7 +42,7 @@ export function MinimalPill({
       onPointerUp={dragHandlers.onDragEnd}
       aria-label="Open call preview"
       title="Open call preview"
-      className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition-colors touch-none"
+      className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition duration-150 ease-out active:scale-[0.97] touch-none"
     >
       <span className="flex -space-x-2">
         {[localCam, ...remoteCams.slice(0, 2)].map(

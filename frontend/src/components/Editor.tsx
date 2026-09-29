@@ -793,7 +793,7 @@ function CollaborativeEditorInner({
   return (
     <div
       ref={mainContainerRef}
-      className='h-screen flex flex-col bg-background overflow-hidden p-0 gap-1.5 sm:gap-2 lg:gap-3 relative'
+      className='h-dvh flex flex-col bg-background overflow-hidden p-0 gap-1.5 sm:gap-2 lg:gap-3 relative'
     >
       {/* Connection Toast — global position: fixed overlay */}
       <ConnectionToast />
@@ -859,7 +859,7 @@ function CollaborativeEditorInner({
               <button
                 key={tab.id}
                 onClick={() => setActivePanel(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 relative ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-md text-xs sm:text-sm font-medium transition duration-200 relative ${
                   activePanel === tab.id
                     ? "bg-foreground/10 text-foreground border border-foreground/20 shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-card/50"
@@ -929,7 +929,7 @@ function CollaborativeEditorInner({
           {/* Right - AI Chat & Output */}
           {!zenMode && (
           <div
-            className='flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition-all duration-300'
+            className='flex w-[380px] xl:w-[420px] flex-col gap-3 flex-shrink-0 transition duration-300'
           >
             {/* AI Chat - Top */}
             <div className='flex-1 min-h-0'>
@@ -1064,7 +1064,7 @@ function CollaborativeEditorInner({
                   {/* Close Button */}
                   <button
                     onClick={() => setIsMetricsOpen(false)}
-                    className='absolute -top-3 -right-3 z-10 p-1.5 bg-secondary text-muted-foreground hover:text-foreground rounded-full border border-border shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer'
+                    className='absolute -top-3 -right-3 z-10 p-1.5 bg-secondary text-muted-foreground hover:text-foreground rounded-full border border-border shadow-md hover:scale-110 active:scale-95 transition cursor-pointer'
                     aria-label='Close metrics'
                   >
                     <X className='w-4 h-4' />

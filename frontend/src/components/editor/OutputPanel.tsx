@@ -465,7 +465,7 @@ export function OutputPanel({
           <div className="flex items-center gap-1.5 p-0.5 bg-secondary/50 border border-glass-border/40 rounded-lg shadow-sm">
             <button
               onClick={() => setActiveTab("console")}
-              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition duration-200 cursor-pointer ${
                 activeTab === "console"
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "text-muted-foreground hover:text-foreground border border-transparent"
@@ -475,7 +475,7 @@ export function OutputPanel({
             </button>
             <button
               onClick={() => setActiveTab("testcase")}
-              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+              className={`px-3 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider transition duration-200 cursor-pointer ${
                 activeTab === "testcase"
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "text-muted-foreground hover:text-foreground border border-transparent"
@@ -498,7 +498,7 @@ export function OutputPanel({
                     ? `"${language}" is not supported for execution`
                     : "Run code"
               }
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg pl-2 bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-[9px] font-bold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] border border-primary/30 uppercase tracking-widest cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg pl-2 bg-primary/20 text-primary hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed text-[9px] font-bold transition duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] border border-primary/30 uppercase tracking-widest cursor-pointer"
             >
               {isRunning ? (
                 <Clock strokeWidth={1.5} className="w-3 h-3 animate-spin" />
@@ -569,7 +569,7 @@ export function OutputPanel({
                       return (
                         <div
                           key={idx}
-                          className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 transition-all duration-200 ${btnClass}`}
+                          className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 transition duration-200 ${btnClass}`}
                         >
                           <button
                             onClick={() => setActiveTestCaseIndex(idx)}
@@ -638,7 +638,7 @@ export function OutputPanel({
                     setTestcases(newCases);
                   }}
                   placeholder={`Enter custom input (STDIN) to pass to Case ${activeTestCaseIndex + 1}...`}
-                  className="flex-1 min-h-[110px] w-full p-3 rounded-xl bg-secondary/30 border border-glass-border/30 text-foreground font-mono text-[11px] focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/50 resize-none backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
+                  className="flex-1 min-h-[110px] w-full p-3 rounded-xl bg-secondary/30 border border-glass-border/30 text-foreground font-mono text-base focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/50 resize-none backdrop-blur-sm shadow-[inset_0_1px_2px_rgba(0,0,0,0.2)]"
                 />
               </motion.div>
             ) : (
@@ -671,7 +671,7 @@ export function OutputPanel({
                         <button
                           key={idx}
                           onClick={() => setActiveResultCaseIndex(idx)}
-                          className={`px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 ${btnClass}`}
+                          className={`px-2.5 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-wider cursor-pointer transition duration-200 ${btnClass}`}
                         >
                           Case {idx + 1}
                         </button>

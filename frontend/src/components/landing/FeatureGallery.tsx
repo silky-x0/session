@@ -42,7 +42,7 @@ export const FeatureGallery: React.FC = () => {
               delay: Math.min(index * 0.08, 0.3),
               ease: "easeOut",
             }}
-            className='group relative aspect-[4/3] rounded-2xl bg-[#0a0a0a] border border-white/10 overflow-hidden transform transition-all duration-300 hover:-translate-y-2 hover:border-white/30 cursor-pointer'
+            className='group relative aspect-[4/3] rounded-2xl bg-[#0a0a0a] border border-white/10 overflow-hidden transform transition duration-300 hover:-translate-y-2 hover:border-white/30 cursor-pointer'
           >
             <div
               className='absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none'
@@ -69,7 +69,7 @@ export const FeatureGallery: React.FC = () => {
               </span>
             </div>
 
-            <div className='absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0'>
+            <div className='absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition duration-300 transform translate-y-2 group-hover:translate-y-0'>
               <div className='flex items-center gap-1.5 text-cyber-cyan'>
                 <span className='text-[9px] font-mono tracking-widest uppercase'>
                   open

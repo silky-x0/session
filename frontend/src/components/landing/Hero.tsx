@@ -1,24 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { SessionInput } from "./SessionInput";
-import { LinkPreview } from "../ui/link-preview";
 import { motion, AnimatePresence } from "framer-motion";
 
 const WORDS = ["interview", "pairing session", "code review"];
 
 export const Hero: React.FC = () => {
   const [wordIndex, setWordIndex] = useState(0);
-  // const [history, setHistory] = useState<{ roomId: string; timestamp: number }[]>([]);
-
-  // useEffect(() => {
-  //   try {
-  //     const stored = localStorage.getItem("session-history");
-  //     if (stored) {
-  //       setHistory(JSON.parse(stored));
-  //     }
-  //   } catch (e) {
-  //     console.error("Failed to load session history", e);
-  //   }
-  // }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -29,7 +16,7 @@ export const Hero: React.FC = () => {
 
 
   return (
-    <section className='flex flex-col items-center justify-center min-h-[75vh] sm:min-h-[55vh] lg:min-h-[60vh] pt-12 sm:pt-16 lg:pt-20 px-4 relative z-10 gap-10 sm:gap-12'>
+    <section className='flex flex-col items-center justify-center min-h-[75svh] sm:min-h-[55svh] lg:min-h-[60svh] pt-12 sm:pt-16 lg:pt-20 px-4 relative z-10 gap-10 sm:gap-12'>
       <div className='flex flex-col items-center gap-5 sm:gap-6 max-w-4xl text-center'>
 
         {/* Main Heading */}
@@ -67,76 +54,25 @@ export const Hero: React.FC = () => {
           </span>
         </h1>
 
-        {/* Subheading — tighter, covers all three personas */}
         <p className='sm:hidden font-sans text-white/50 text-sm max-w-[300px] leading-relaxed text-center'>
           one link. shared IDE, AI questions, video, and whiteboard.
         </p>
         <p className='hidden sm:block font-sans text-white/50 text-base max-w-[520px] leading-relaxed text-center'>
-          Session gives interviewers and engineers a shared{" "}
-          <LinkPreview
-            url='#'
-            isStatic
-            imageSrc='/livexec.mp4'
-            className='text-cyber-cyan/70 hover:text-cyber-cyan transition-colors font-semibold'
-          >
-            live IDE
-          </LinkPreview>
-          ,{" "}
-          <LinkPreview
-            url='#'
-            isStatic
-            imageSrc='/realtime.mp4'
-            className='text-cyber-cyan/70 hover:text-cyber-cyan transition-colors font-semibold'
-          >
-            ai-generated questions
-          </LinkPreview>{" "}
-          tuned to experience level, audio & video, and{" "}
-          <LinkPreview
-            url='#'
-            isStatic
-            imageSrc=''
-            className='text-cyber-cyan/70 hover:text-cyber-cyan transition-colors font-semibold'
-          >
-            shared whiteboard
-          </LinkPreview>{" "}
-          , all from a single link.
+          One link for{" "}
+          <span className='text-cyber-cyan/70 font-semibold'>live code</span>,{" "}
+          <span className='text-cyber-cyan/70 font-semibold'>AI questions</span>
+          , video, and{" "}
+          <span className='text-cyber-cyan/70 font-semibold'>whiteboard</span>.
+          Built for technical interviews.
         </p>
 
-        {/* Trust / social proof line */}
         <p className='font-mono text-[10px] sm:text-[11px] text-white/20 tracking-wide text-center'>
           no setup · no credit card · just describe your session
         </p>
       </div>
 
-      {/* SessionInput — naturally flows after text */}
       <div className='w-full flex flex-col items-center gap-3 mt-2 sm:mt-0'>
         <SessionInput />
-        <p className='font-mono text-[10px] text-white/20 text-center'>
-          try: "mid-level backend interview, node.js, 2 yrs exp"
-        </p>
-
-        {/* Recent Sessions list */}
-        {/* {history.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 flex flex-col items-center gap-2 max-w-sm w-full select-none"
-          >
-            <span className="font-mono text-[9px] uppercase tracking-widest text-white/40">Recent Sessions</span>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {history.map((h) => (
-                <a
-                  key={h.roomId}
-                  href={`/editor?room=${h.roomId}`}
-                  className="px-3 py-1 text-[10px] font-mono rounded-md bg-white/5 border border-white/5 hover:border-cyber-cyan/30 hover:bg-cyber-cyan/10 text-cyber-cyan transition-all shadow-md flex items-center gap-1.5"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyber-cyan animate-pulse" />
-                  {h.roomId}
-                </a>
-              ))}
-            </div>
-          </motion.div>
-        )} */}
       </div>
     </section>
   );

@@ -28,7 +28,7 @@ const LandingPage: React.FC = () => {
     }, [mouseX, mouseY]);
 
     return (
-        <div className="min-h-screen bg-session-dark text-white font-sans selection:bg-neon-pulse selection:text-black overflow-x-hidden">
+        <div className="min-h-dvh bg-session-dark text-white font-sans selection:bg-neon-pulse selection:text-black overflow-x-hidden">
             <motion.div 
                 className="fixed inset-0 pointer-events-none z-0"
                 style={{

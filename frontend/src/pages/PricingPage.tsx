@@ -2,7 +2,7 @@ import { Header } from "../components/landing/Header";
 
 export default function PricingPage() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-hidden font-sans selection:bg-[#00FF41]/30">
+    <div className="min-h-dvh bg-[#050505] text-white overflow-hidden font-sans selection:bg-[#00FF41]/30">
       <Header />
       
       <main className="flex flex-col items-center justify-start pt-24 sm:pt-32 px-4 pb-24 relative z-10 gap-16 sm:gap-24 w-full">
@@ -30,7 +30,7 @@ export default function PricingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl relative z-20">
           
           {/* Card 1 */}
-          <div className="flex flex-col p-8 rounded-2xl border border-white/10 bg-[#050505]/50 backdrop-blur-sm hover:border-white/20 transition-all duration-300">
+          <div className="flex flex-col p-8 rounded-2xl border border-white/10 bg-[#050505]/50 backdrop-blur-sm hover:border-white/20 transition duration-300">
             <h3 className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-2 font-mono">Starter</h3>
             <div className="flex items-baseline gap-1 mb-6">
               <span className="text-4xl font-bold text-white">Free</span>
@@ -50,7 +50,7 @@ export default function PricingPage() {
           </div>
 
           {/* Card 2 - Pro (Highlighted) */}
-          <div className="flex flex-col p-8 rounded-2xl border border-[#00FF41]/40 bg-[#050505] shadow-[0_0_30px_rgba(0,255,65,0.1)] hover:shadow-[0_0_40px_rgba(0,255,65,0.2)] transition-all duration-300 relative transform md:-translate-y-4">
+          <div className="flex flex-col p-8 rounded-2xl border border-[#00FF41]/40 bg-[#050505] shadow-[0_0_30px_rgba(0,255,65,0.1)] hover:shadow-[0_0_40px_rgba(0,255,65,0.2)] transition duration-300 relative transform md:-translate-y-4">
             <div className="absolute top-0 right-8 -translate-y-1/2 bg-[#00FF41] text-black text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">
               Most Popular
             </div>
@@ -70,13 +70,13 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <button className="mt-8 w-full py-3 rounded-lg bg-[#00FF41] text-black text-sm font-bold shadow-[0_0_15px_rgba(0,255,65,0.4)] hover:brightness-110 transition-all duration-300">
+            <button className="mt-8 w-full py-3 rounded-lg bg-[#00FF41] text-black text-sm font-bold shadow-[0_0_15px_rgba(0,255,65,0.4)] hover:brightness-110 transition duration-300">
               Go Pro
             </button>
           </div>
 
           {/* Card 3 */}
-          <div className="flex flex-col p-8 rounded-2xl border border-white/10 bg-[#050505]/50 backdrop-blur-sm hover:border-white/20 transition-all duration-300">
+          <div className="flex flex-col p-8 rounded-2xl border border-white/10 bg-[#050505]/50 backdrop-blur-sm hover:border-white/20 transition duration-300">
             <h3 className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-2 font-mono">Enterprise</h3>
             <div className="flex items-baseline gap-1 mb-6">
               <span className="text-4xl font-bold text-white">Custom</span>

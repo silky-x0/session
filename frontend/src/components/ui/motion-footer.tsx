@@ -38,11 +38,6 @@ const STYLES = `
   100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.8; }
 }
 
-@keyframes footer-scroll-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-
 @keyframes footer-heartbeat {
   0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(0, 255, 65, 0.4)); }
   15%, 45% { transform: scale(1.2); filter: drop-shadow(0 0 10px rgba(0, 255, 65, 0.7)); }
@@ -51,10 +46,6 @@ const STYLES = `
 
 .animate-footer-breathe {
   animation: footer-breathe 8s ease-in-out infinite alternate;
-}
-
-.animate-footer-scroll-marquee {
-  animation: footer-scroll-marquee 40s linear infinite;
 }
 
 .animate-footer-heartbeat {
@@ -214,25 +205,7 @@ const MagneticButton = React.forwardRef<HTMLElement, MagneticButtonProps>(
 MagneticButton.displayName = "MagneticButton";
 
 // -------------------------------------------------------------------------
-// 3. MARQUEE ITEM — Session-themed
-// -------------------------------------------------------------------------
-const MarqueeItem = () => (
-  <div className='flex items-center space-x-12 px-6'>
-    <span>Real-Time Collaboration</span>{" "}
-    <span style={{ color: "rgba(0,255,65,0.5)" }}>✦</span>
-    <span>AI-Powered Sessions</span>{" "}
-    <span style={{ color: "rgba(0,255,65,0.3)" }}>✦</span>
-    <span>Live Code Execution</span>{" "}
-    <span style={{ color: "rgba(0,255,65,0.5)" }}>✦</span>
-    <span>Pair Programming</span>{" "}
-    <span style={{ color: "rgba(0,255,65,0.3)" }}>✦</span>
-    <span>Built for Engineers</span>{" "}
-    <span style={{ color: "rgba(0,255,65,0.5)" }}>✦</span>
-  </div>
-);
-
-// -------------------------------------------------------------------------
-// 4. MAIN COMPONENT
+// 3. MAIN COMPONENT
 // -------------------------------------------------------------------------
 export function CinematicFooter() {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -314,24 +287,7 @@ export function CinematicFooter() {
             SESSION
           </div>
 
-          {/* 1. Diagonal Marquee */}
-          <div
-            className='absolute top-12 left-0 w-full overflow-hidden border-y border-white/5 py-4 z-10 -rotate-2 scale-110 shadow-2xl'
-            style={{
-              backgroundColor: "rgba(5,5,5,0.6)",
-              backdropFilter: "blur(12px)",
-            }}
-          >
-            <div
-              className='flex w-max animate-footer-scroll-marquee text-xs md:text-sm font-bold tracking-[0.3em] text-white/30 uppercase'
-              style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            >
-              <MarqueeItem />
-              <MarqueeItem />
-            </div>
-          </div>
-
-          {/* 2. Main Center Content */}
+          {/* 1. Main Center Content */}
           <div className='relative z-10 flex flex-1 flex-col items-center justify-center px-6 mt-20 w-full max-w-4xl mx-auto'>
             {/* Heading */}
             <h2

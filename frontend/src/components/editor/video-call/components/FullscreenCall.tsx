@@ -65,7 +65,7 @@ export function FullscreenCall({
             onClick={onToggleFullscreen}
             aria-label="Exit full screen"
             title="Exit full screen"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-white text-xs font-medium cursor-pointer min-h-[36px] border border-white/10"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-white text-xs font-medium cursor-pointer min-h-[36px] border border-white/10 transition duration-150 ease-out active:scale-[0.97]"
           >
             <Shrink className="w-4 h-4 text-primary" />
             <span className="hidden sm:inline">Exit Full Screen</span>
@@ -74,7 +74,7 @@ export function FullscreenCall({
             onClick={onClose}
             aria-label="Close full screen"
             title="Close full screen"
-            className="p-2 rounded-lg bg-secondary/80 hover:bg-secondary text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-white/10"
+            className="p-2 rounded-lg bg-secondary/80 hover:bg-secondary text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-white/10 transition duration-150 ease-out active:scale-[0.97]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -95,7 +95,6 @@ export function FullscreenCall({
             <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
               <CamTile
                 trackRef={heroTrack}
-                size="lg"
                 speaking={isSpeaking(heroTrack.participant.identity)}
                 mirrored={heroTrack.participant.isLocal}
                 isPinned={pinnedIdentity === heroTrack.participant.identity}
@@ -118,7 +117,6 @@ export function FullscreenCall({
             >
               <CamTile
                 trackRef={t}
-                size="sm"
                 speaking={isSpeaking(t.participant.identity)}
                 mirrored={t.participant.isLocal}
                 isPinned={pinnedIdentity === t.participant.identity}

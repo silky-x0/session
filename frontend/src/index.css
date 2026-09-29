@@ -1,7 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..900;1,100..900&family=IBM+Plex+Sans+Condensed:ital,wght@0,100..900;1,100..900&family=Inter:ital,wght@0,100..900;1,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import "./fonts.css";
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant hoverable (@media (hover: hover) and (pointer: fine));
+
+@media (hover: hover) and (pointer: fine) {
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
+}
 
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -96,20 +103,52 @@
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: 'Inter', system-ui, sans-serif;
   transition: background-color 0.2s ease, color 0.2s ease;
+  overscroll-behavior: none;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+[role="button"],
+select,
+input[type="submit"] {
+  touch-action: manipulation;
+}
+
+button,
+[role="button"] {
+  cursor: pointer;
 }
 
 #root {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom Utilities */
 @layer utilities {
+  /* Corner-radius rule: full-pill for single-line controls (buttons, inputs,
+     toggles, tabs, chips); rounded-lg panels; rounded-xl multi-line inputs;
+     rounded-2xl mobile cards; rounded-3xl double-bezel workspace shells. */
   .glass-panel {
     background: var(--color-glass-bg);
     backdrop-filter: blur(24px);

@@ -23,7 +23,7 @@ export function ScreenshareView({ share, onFullscreen }: ScreenshareViewProps) {
         onClick={onFullscreen}
         title="View screen share in full screen"
         aria-label="View screen share in full screen"
-        className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/75 hover:bg-black/90 text-white text-xs font-medium backdrop-blur-md flex items-center gap-1.5 z-20 cursor-pointer border border-white/20 transition-all shadow-md active:scale-95 min-h-[36px]"
+        className="absolute top-2 right-2 px-2.5 py-1.5 rounded-lg bg-black/75 hover:bg-black/90 text-white text-xs font-medium backdrop-blur-md flex items-center gap-1.5 z-20 cursor-pointer border border-white/20 transition shadow-md active:scale-95 min-h-[36px]"
       >
         <Expand className="w-3.5 h-3.5 text-primary shrink-0" />
         <span className="text-xs font-semibold">Full Screen</span>

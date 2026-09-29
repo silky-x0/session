@@ -170,7 +170,6 @@ export function CallSession({ onStatus }: CallSessionProps) {
                   <div key={t.participant.identity} className="w-28 shrink-0">
                     <CamTile
                       trackRef={t}
-                      size="sm"
                       speaking={isSpeaking(t.participant.identity)}
                       mirrored={t.participant.isLocal}
                       isPinned={pinnedIdentity === t.participant.identity}

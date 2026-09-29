@@ -82,8 +82,9 @@ describe('QuestionSidebar', () => {
         presenceByQuestion={emptyPresence}
       />,
     );
-    expect(screen.getByText(/Q2 · Generating/i)).toBeInTheDocument();
-    expect(screen.getByText(/Q3 · Pending/i)).toBeInTheDocument();
+    // Pending / generating rows render as non-clickable skeletons
+    expect(screen.getByLabelText(/Q2 generating/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Q3 pending/i)).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /switch to question [23]/i }),
     ).toBeNull();

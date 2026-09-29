@@ -118,20 +118,21 @@ export const SessionInput: React.FC = () => {
   return (
     <>
       <div
-        className={`w-full mt-6 sm:mt-8 transition-all duration-300 ease-in-out ${mode === "join" ? "max-w-[260px] sm:max-w-[280px]" : "max-w-[calc(100%-1rem)] sm:max-w-md"}`}
+        id='session-input'
+        className={`w-full mt-6 sm:mt-8 transition-[max-width] duration-300 ease-in-out ${mode === "join" ? "max-w-[260px] sm:max-w-[280px]" : "max-w-[calc(100%-1rem)] sm:max-w-md"}`}
       >
         <div className='flex justify-center mb-4'>
           <div className='relative flex bg-[#1c1c1c] border border-white/5 rounded-full p-1'>
             {/* Animated Background Pill */}
             <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white transition-all duration-300 ease-out ${
+              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white transition-[left] duration-300 ease-out ${
                 mode === "start" ? "left-1" : "left-[calc(50%+2px)]"
               }`}
             ></div>
 
             <button
               onClick={() => setMode("start")}
-              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition duration-150 ease-out active:scale-[0.97] ${
                 mode === "start"
                   ? "text-black"
                   : "text-white/60 hover:text-white"
@@ -141,7 +142,7 @@ export const SessionInput: React.FC = () => {
             </button>
             <button
               onClick={() => setMode("join")}
-              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+              className={`relative z-10 px-3 sm:px-4 py-1 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition duration-150 ease-out active:scale-[0.97] ${
                 mode === "join"
                   ? "text-black"
                   : "text-white/60 hover:text-white"
@@ -169,15 +170,15 @@ export const SessionInput: React.FC = () => {
               disabled={showOverlay}
               placeholder={
                 mode === "start"
-                  ? "Paste a prompt or start empty…"
+                  ? "Describe your session, e.g. backend interview…"
                   : "Enter room ID..."
               }
-              className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-xs sm:text-[13px] disabled:opacity-60 py-1'
+              className='flex-1 min-w-0 bg-transparent border-none outline-none text-white/90 placeholder:text-white/30 font-sans text-base disabled:opacity-60 py-1'
             />
             <button
               onClick={handleJoin}
               disabled={showOverlay}
-              className='p-1.5 bg-neon-pulse rounded-full hover:brightness-110 transition-all shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0'
+              className='p-1.5 bg-neon-pulse rounded-full hover:brightness-110 transition duration-150 ease-out active:scale-[0.97] shadow-[inset_0px_0.29px_1.84px_0.69px_rgba(255,255,255,0.32)] disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0'
             >
               <svg
                 width='16'
@@ -188,7 +189,7 @@ export const SessionInput: React.FC = () => {
                 strokeWidth='2.2'
                 strokeLinecap='round'
                 strokeLinejoin='round'
-                className='sm:w-4 sm:h-4 ml-0.5'
+                className='sm:w-4 sm:h-4 ml-0.5 transition-transform duration-150 ease-out hoverable:translate-x-0.5'
               >
                 <path d='M5 12h14'></path>
                 <path d='M12 5l7 7-7 7'></path>

@@ -14,6 +14,7 @@ export function useLivekitCredentials(
 ) {
   const [creds, setCreds] = useState<LivekitCredentials | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,7 +32,7 @@ export function useLivekitCredentials(
     return () => {
       cancelled = true;
     };
-  }, [roomId, identity, name]);
+  }, [roomId, identity, name, attempt]);
 
-  return { creds, error };
+  return { creds, error, retry: () => setAttempt((a) => a + 1) };
 }

@@ -315,14 +315,14 @@ export function AIChat({ editorRef, yChat, getFullCode }: AIChatProps) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Message Kernel..."
-              className="flex-1 px-3 py-2 rounded-xl bg-card border border-glass-border/50 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/30 focus:border-foreground/30 transition-all"
+              className="flex-1 px-3 py-2 rounded-xl bg-card border border-glass-border/50 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-foreground/30 focus:border-foreground/30 transition-colors"
             />
             <motion.button
               onClick={handleSend}
               whileHover={input.trim() ? { scale: 1.05 } : {}}
               whileTap={input.trim() ? { scale: 0.95 } : {}}
               disabled={!input.trim()}
-              className="p-2 rounded-xl bg-neon-pulse text-black hover:bg-neon-pulse/90 hover:shadow-[0_0_8px_rgba(0,255,65,0.3)] disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed transition-all flex items-center justify-center cursor-pointer"
+              className="p-2 rounded-xl bg-neon-pulse text-black hover:bg-neon-pulse/90 hover:shadow-[0_0_8px_rgba(0,255,65,0.3)] disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed transition flex items-center justify-center cursor-pointer"
             >
               <Send strokeWidth={1.5} className="w-3.5 h-3.5" />
             </motion.button>
