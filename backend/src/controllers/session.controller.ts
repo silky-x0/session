@@ -58,14 +58,20 @@ export const generateRemainingController = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { roomId, prompt, promptType, generatedTitles } = req.body;
+  const { roomId, prompt, promptType, generatedTitles, startFromIndex } = req.body;
 
   if (!roomId || !prompt || !promptType || !generatedTitles) {
     throw new AppError(400, "Missing required fields");
   }
 
+  const startIndex =
+    startFromIndex === undefined ? 1 : Number(startFromIndex);
+  if (!Number.isInteger(startIndex) || startIndex < 1 || startIndex > 4) {
+    throw new AppError(400, "startFromIndex must be an integer between 1 and 4");
+  }
+
   // Fire and forget
-  generateRemainingQuestions(roomId, prompt, promptType, generatedTitles).catch((err) => {
+  generateRemainingQuestions(roomId, prompt, promptType, generatedTitles, startIndex).catch((err) => {
     console.error("Error generating remaining questions:", err);
   });
 
