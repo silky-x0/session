@@ -24,6 +24,7 @@ import {
   PinOff,
   Expand,
   Shrink,
+  Loader2,
 } from "lucide-react";
 import { getLivekitCredentials } from "@/lib/livekit";
 
@@ -78,8 +79,6 @@ function CamTile({
   trackRef: TrackReferenceOrPlaceholder;
   speaking: boolean;
   mirrored?: boolean;
-  /** Reserved for per-size tile chrome; currently all tiles share one look. */
-  size?: "sm" | "md" | "lg" | "grid";
   isPinned?: boolean;
   onTogglePin?: () => void;
 }) {
@@ -113,7 +112,7 @@ function CamTile({
           }}
           title={isPinned ? "Unpin participant" : "Pin participant"}
           aria-label={isPinned ? "Unpin participant" : "Pin participant"}
-          className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-md transition cursor-pointer z-20 ${
+          className={`absolute top-1 left-1 p-1 rounded-full backdrop-blur-md cursor-pointer z-20 flex items-center justify-center min-h-[36px] min-w-[36px] transition duration-150 ease-out active:scale-[0.97] [@media(hover:none)]:opacity-100 ${
             isPinned
               ? "bg-primary text-background opacity-100 shadow-md"
               : "bg-black/60 text-white/80 opacity-0 group-hover/tile:opacity-100 hover:text-white hover:bg-black/80"
@@ -367,7 +366,7 @@ function CallLayerInner({
   );
 
   const controlBtn =
-    "flex items-center justify-center w-11 h-11 rounded-full bg-secondary/80 border border-border text-foreground hover:bg-secondary transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]";
+    "flex items-center justify-center w-11 h-11 rounded-full bg-secondary/80 border border-border text-foreground hover:bg-secondary transition duration-150 ease-out active:scale-[0.97] cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]";
 
   // Dedicated full screen layout mode (mobile & desktop friendly)
   if (isFullscreen) {
@@ -389,7 +388,7 @@ function CallLayerInner({
               onClick={toggleFullscreen}
               aria-label="Exit full screen"
               title="Exit full screen"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-white text-xs font-medium cursor-pointer min-h-[36px] border border-white/10"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/80 hover:bg-secondary text-white text-xs font-medium cursor-pointer min-h-[36px] border border-white/10 transition duration-150 ease-out active:scale-[0.97]"
             >
               <Shrink className="w-4 h-4 text-primary" />
               <span className="hidden sm:inline">Exit Full Screen</span>
@@ -401,7 +400,7 @@ function CallLayerInner({
               }}
               aria-label="Close full screen"
               title="Close full screen"
-              className="p-2 rounded-lg bg-secondary/80 hover:bg-secondary text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-white/10"
+              className="p-2 rounded-lg bg-secondary/80 hover:bg-secondary text-white cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center border border-white/10 transition duration-150 ease-out active:scale-[0.97]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -422,7 +421,6 @@ function CallLayerInner({
               <div className="relative w-full h-full max-w-5xl flex items-center justify-center">
                 <CamTile
                   trackRef={heroTrack}
-                  size="lg"
                   speaking={isSpeaking(heroTrack.participant.identity)}
                   mirrored={heroTrack.participant.isLocal}
                   isPinned={pinnedIdentity === heroTrack.participant.identity}
@@ -440,7 +438,6 @@ function CallLayerInner({
               <div key={t.participant.identity} className="w-20 sm:w-28 shrink-0">
                 <CamTile
                   trackRef={t}
-                  size="sm"
                   speaking={isSpeaking(t.participant.identity)}
                   mirrored={t.participant.isLocal}
                   isPinned={pinnedIdentity === t.participant.identity}
@@ -474,7 +471,7 @@ function CallLayerInner({
             >
               <Shrink className="w-4 h-4 text-primary" />
             </button>
-            <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
+            <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition duration-150 ease-out active:scale-[0.97] cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
               <PhoneOff />
             </DisconnectButton>
           </div>
@@ -510,7 +507,7 @@ function CallLayerInner({
           onPointerUp={onDragEnd}
           aria-label="Open call preview"
           title="Open call preview"
-          className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition-colors touch-none"
+          className="flex items-center gap-2 h-12 pl-2 pr-3 rounded-full glass-panel border border-glass-border/40 cursor-pointer hover:border-primary/40 transition duration-150 ease-out active:scale-[0.97] touch-none"
         >
           <span className="flex -space-x-2">
             {[localCam, ...remoteCams.slice(0, 2)].map(
@@ -569,7 +566,7 @@ function CallLayerInner({
                 onClick={toggleFullscreen}
                 aria-label="Full screen"
                 title="Full screen view"
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[32px] min-w-[32px] flex items-center justify-center"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center transition duration-150 ease-out active:scale-[0.97]"
               >
                 <Expand className="w-3.5 h-3.5 text-primary" />
               </button>
@@ -578,7 +575,7 @@ function CallLayerInner({
                   onClick={() => setMode("focus")}
                   aria-label="Open focus mode"
                   title="Focus mode"
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center transition duration-150 ease-out active:scale-[0.97]"
                 >
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
@@ -587,7 +584,7 @@ function CallLayerInner({
                   onClick={share ? minimizeShare : () => setMode("preview")}
                   aria-label="Minimize call"
                   title="Minimize"
-                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer"
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center transition duration-150 ease-out active:scale-[0.97]"
                 >
                   <Minimize2 className="w-3.5 h-3.5" />
                 </button>
@@ -596,7 +593,7 @@ function CallLayerInner({
                 onClick={() => setMode("minimal")}
                 aria-label="Collapse call to status pill"
                 title="Collapse to pill"
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-pointer min-h-[36px] min-w-[36px] flex items-center justify-center transition duration-150 ease-out active:scale-[0.97]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -630,7 +627,6 @@ function CallLayerInner({
                     <div key={t.participant.identity} className="w-28 shrink-0">
                       <CamTile
                         trackRef={t}
-                        size="sm"
                         speaking={isSpeaking(t.participant.identity)}
                         mirrored={t.participant.isLocal}
                         isPinned={pinnedIdentity === t.participant.identity}
@@ -642,16 +638,11 @@ function CallLayerInner({
               </>
             ) : isGridView ? (
               /* Balanced equal grid layout when 2-4 participants are in focus mode without a pin */
-              <div
-                className={`grid gap-2 ${
-                  camTracks.length <= 2 ? "grid-cols-2" : "grid-cols-2"
-                }`}
-              >
+              <div className="grid gap-2 grid-cols-2">
                 {camTracks.slice(0, 4).map((t) => (
                   <CamTile
                     key={t.participant.identity}
                     trackRef={t}
-                    size="grid"
                     speaking={isSpeaking(t.participant.identity)}
                     mirrored={t.participant.isLocal}
                     isPinned={pinnedIdentity === t.participant.identity}
@@ -673,7 +664,6 @@ function CallLayerInner({
                 {heroTrack && (
                   <CamTile
                     trackRef={heroTrack}
-                    size={mode === "focus" ? "lg" : "md"}
                     speaking={isSpeaking(heroTrack.participant.identity)}
                     mirrored={heroTrack.participant.isLocal}
                     isPinned={pinnedIdentity === heroTrack.participant.identity}
@@ -689,7 +679,6 @@ function CallLayerInner({
                       >
                         <CamTile
                           trackRef={t}
-                          size="sm"
                           speaking={isSpeaking(t.participant.identity)}
                           mirrored={t.participant.isLocal}
                           isPinned={pinnedIdentity === t.participant.identity}
@@ -731,7 +720,7 @@ function CallLayerInner({
                 showIcon
                 className={controlBtn}
               />
-              <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-colors cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
+              <DisconnectButton className="flex items-center justify-center w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition duration-150 ease-out active:scale-[0.97] cursor-pointer [&_svg]:w-4 [&_svg]:h-4 min-h-[44px] min-w-[44px]">
                 <PhoneOff />
               </DisconnectButton>
             </div>
@@ -755,6 +744,7 @@ export function VideoCall({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -770,16 +760,23 @@ export function VideoCall({
     return () => {
       cancelled = true;
     };
-  }, [roomId, identity, name]);
+  }, [roomId, identity, name, attempt]);
 
   if (error) {
     return (
       <div className="fixed left-6 bottom-6 z-[90] glass-panel rounded-xl p-3 text-xs text-red-400 flex items-center gap-2">
         <span>Call failed: {error}</span>
         <button
+          onClick={() => setAttempt((a) => a + 1)}
+          aria-label="Retry joining call"
+          className="px-3 min-h-[44px] rounded-md bg-secondary border border-border text-foreground cursor-pointer transition duration-150 ease-out active:scale-[0.97]"
+        >
+          Retry
+        </button>
+        <button
           onClick={onLeave}
           aria-label="Close call error"
-          className="px-3 min-h-[44px] rounded-md bg-secondary border border-border text-foreground cursor-pointer"
+          className="px-3 min-h-[44px] rounded-md bg-secondary border border-border text-foreground cursor-pointer transition duration-150 ease-out active:scale-[0.97]"
         >
           Close
         </button>
@@ -787,7 +784,22 @@ export function VideoCall({
     );
   }
 
-  if (!creds) return null;
+  if (!creds) {
+    return (
+      <div
+        className="fixed left-6 bottom-6 z-[90] glass-panel rounded-full pl-2 pr-4 h-12 flex items-center gap-2"
+        role="status"
+        aria-label="Joining call"
+      >
+        <span className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+        </span>
+        <span className="text-[11px] font-mono text-muted-foreground">
+          Joining…
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="group">
