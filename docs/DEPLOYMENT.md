@@ -23,10 +23,19 @@
 ```
 PORT
 FRONTEND_URL       ← your Vercel URL
-OPEN_ROUTER_KEY
+GEMINI_API_KEY     ← or OPEN_ROUTER_KEY with AI_PROVIDER=openrouter
+AI_PROVIDER        ← gemini (default) or openrouter
+AI_MODEL           ← e.g. gemini-2.5-flash
+OPEN_ROUTER_KEY    ← required when AI_PROVIDER=openrouter
 LIVEBLOCKS_SECRET_KEY
+SESSION_TOKEN_SECRET  ← dedicated HMAC secret (else falls back to LIVEBLOCKS_SECRET_KEY)
 LIVEBLOCKS_WEBHOOK_SECRET   ← from Liveblocks Dashboard → Webhooks
 REDIS_URL                    ← from Redis Cloud (rediss://... with TLS)
+JDOODLE_CLIENT_ID
+JDOODLE_CLIENT_SECRET
+LIVEKIT_URL                  ← wss://... (LiveKit Cloud, for calls)
+LIVEKIT_API_KEY
+LIVEKIT_API_SECRET
 ```
 
 See [ENV_VARS.md](./ENV_VARS.md) for full reference.

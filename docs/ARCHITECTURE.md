@@ -64,11 +64,15 @@ App.tsx
                                     └── CollaborativeEditorInner
                                           ├── TopBar
                                           ├── ProblemPanel
-                                          ├── CodeEditor (Monaco)
-                                          ├── AIChat
+                                          │     └── QuestionSidebar (5-slot browser: ready/generating/pending/error, retry via startFromIndex)
+                                          ├── CodeEditor (Monaco, single instance rebound per Y.Text("monaco-q{n}"))
+                                          ├── AIChat (Yjs-synced)
                                           ├── OutputPanel
-                                          ├── LiveCursors
-                                          ├── ConnectionToast
+                                          ├── Whiteboard (Excalidraw, Y.Text("whiteboard"))
+                                          ├── video-call/ (LiveKit: VideoCall, CallControls, FullscreenCall, FloatingCallWindow, hooks)
+                                          ├── SettingsPanel + metrics/ (ExecutionTimeChart, MemoryUsageChart, RuntimeComparison)
+                                          ├── LiveCursors + AvatarStack
+                                          ├── ConnectionToast + SyncStatusBadge
                                           └── BroadcastProvider
 ```
 
@@ -95,7 +99,7 @@ HTTP Request
   → express.json() body parser (512 KB global cap → 413)
   → globalApiLimiter (all /api/* routes)
   → POST /api/sessions/:roomId/token (public) ← mints room session token, exits here
-  → validateSessionToken on protected routes (/api/code/*, /api/ai/chat)
+  → validateSessionToken on protected routes (/api/code/*, /api/ai/chat, POST /api/ai/session/generate-remaining, POST /livekit/token)
       401 missing/invalid/expired · 403 room mismatch · req.session = payload
   → Route-specific dual-key limiters
     → Controller (controllers/, per-field payload caps → 413)
@@ -110,7 +114,7 @@ The product is login-less: anyone with a room link can collaborate via Liveblock
 
 1. Client entering the editor calls `POST /api/sessions/:roomId/token` (public, rate-limited).
 2. Backend returns a short-lived (2 h) self-contained JWT (HS256, `node:crypto` — no extra deps) bound to `{ roomId, iat, exp }`, signed with `SESSION_TOKEN_SECRET` (falls back to `LIVEBLOCKS_SECRET_KEY`).
-3. Every request to `/api/code/*` and `/api/ai/chat` carries `Authorization: Bearer <token>`.
+3. Every request to `/api/code/*`, `/api/ai/chat`, `POST /api/ai/session/generate-remaining` and `POST /livekit/token` carries `Authorization: Bearer <token>`.
 4. `validateSessionToken` (`middleware/auth.ts`) verifies signature + expiry (401), that the token's room matches the request's target room resolved from `body.roomId → query.room → x-room-id → Referer` (403), then attaches the decoded payload as `req.session`. Stateless — no Redis lookup; rate limiting handles volume separately.
 5. The frontend caches tokens per room in `lib/apiClient.ts` and transparently re-mints once on a 401.
 
@@ -120,48 +124,71 @@ Payload size limits guard individual fields before they reach paid services or g
 
 ```
 backend/src/
-├── index.ts                  ← server entry, port bind
+├── index.ts                  ← server entry, port bind, graceful shutdown
 ├── app.ts                    ← Express app, middleware, routes
 ├── config/
 │   ├── env.ts                ← all env vars + CORS config
-│   └── kimi2thinking.ts      ← Kimi AI model config
+│   ├── ai.config.ts          ← AI provider selection (gemini / openrouter)
+│   ├── liveblock.ts          ← Liveblocks Node client
+│   └── redis.ts              ← connection factory + fail-fast helper
 ├── controllers/
-│   ├── session.controller.ts ← POST /api/session
-│   ├── aichat.controller.ts  ← POST /api/chat
-│   └── execute.controller.ts ← POST /api/execute
+│   ├── session.controller.ts      ← POST /api/ai/session + generate-remaining
+│   ├── aichat.controller.ts       ← POST /api/ai/chat
+│   ├── execute.controller.ts      ← POST /api/code/execute
+│   ├── livekit.controller.ts       ← POST /livekit/token (room-bound SFU token)
+│   ├── sessionToken.controller.ts   ← POST /api/sessions/:roomId/token
+│   ├── webhook.controller.ts        ← Liveblocks webhook dispatcher
+│   ├── userentered.controller.ts    ← cancel pending deletion
+│   └── userleft.controller.ts       ← schedule deletion when empty
 ├── middleware/
 │   ├── errorHandler.ts       ← global error handler
 │   ├── asyncHandler.ts       ← wraps async route handlers
 │   ├── auth.ts               ← validateSessionToken (Bearer room token) middleware
-│   └── rateLimiter.ts        ← Token Bucket rate limiting middleware (Redis-backed)
+│   ├── rateLimiter.ts        ← Token Bucket rate limiting middleware (Redis-backed)
+│   └── verifyLiveblocksWebhook.ts ← HMAC verify (raw body)
+├── queues/
+│   └── roomDeletion.queue.ts ← scheduleRoomDeletion() + cancelRoomDeletion()
+├── workers/
+│   └── roomDeletion.worker.ts ← safety re-check + liveblocks.deleteRoom()
 ├── routes/
-│   ├── ai.routes.ts          ← /api/session, /api/chat
-│   ├── code.routes.ts        ← /api/execute
-│   └── session.routes.ts     ← /api/sessions/:roomId/token
+│   ├── ai.routes.ts          ← /api/ai/session, /api/ai/session/generate-remaining, /api/ai/chat
+│   ├── code.routes.ts        ← /api/code/execute
+│   ├── session.routes.ts     ← /api/sessions/:roomId/token
+│   ├── livekit.routes.ts     ← /livekit/token
+│   └── webhook.routes.ts     ← /webhook (raw body, no rate limiters)
 ├── services/
-│   ├── session.service.ts    ← AI problem gen → Liveblocks seed
-│   ├── liveblocks.service.ts ← Liveblocks Node SDK wrapper
+│   ├── session.service.ts    ← Q1 gen → Liveblocks seed (Q1 + 4 pending slots)
+│   ├── questionGenerator.service.ts ← background Q2–Q5 gen (retry + delta-patch)
+│   ├── ai/                   ← promptClassifier.ts, prompts.ts (follow-ups), providers/
+│   ├── liveblocks.service.ts ← Node SDK wrapper + patchLiveblocksQuestionSlot
+│   ├── livekit.service.ts    ← SFU token minting
+│   ├── token.service.ts      ← room session JWT mint/verify
 │   ├── aichat.service.ts     ← streaming AI chat
-│   ├── execute.service.ts    ← JDoodle API execution (with optional Docker runner)
+│   ├── execute.service.ts    ← JDoodle API execution (JDoodle-only, no Docker runner)
 │   └── yjs.service.ts        ← (legacy) in-memory Yjs store
 └── utils/
-    └── languageMapper.ts     ← maps language names → JDoodle codes / Docker images
+    └── languageMapper.ts     ← maps language names → JDoodle codes
 ```
 
-### Session Bootstrap Flow
+### Session Bootstrap Flow (multi-question)
 
 When a user clicks **"Start Session"** with AI generation enabled:
 
 ```
-1. Frontend POSTs to /api/session  { topic?, language }
-2. session.service.ts calls the AI model (Kimi/OpenRouter)
-3. AI returns: title, difficulty, question, hints, starterCode, fullSolution
+1. Frontend POSTs to /api/ai/session  { prompt }
+2. Backend classifies prompt (heuristic-first promptClassifier, AI fallback) → "problem" | "profile"
+3. session.service.ts generates Q1 (Gemini by default, OpenRouter via AI_PROVIDER)
 4. liveblocks.service.ts seeds the Liveblocks room via Node SDK:
-     - yDoc.getMap("meta").set(...)      ← problem metadata
-     - yDoc.getText("monaco").insert()   ← starter code
-5. Backend returns { roomId, ... } to the frontend
+     - yDoc.getArray("questions").insert() ← [Q1 ready + 4 pending slots]
+     - yDoc.getText("monaco-q0").insert()   ← Q1 starter code (legacy "monaco" retired, kept as fallback)
+5. Backend returns { roomId, promptType } immediately — no waiting for Q2–Q5
 6. Frontend navigates to /editor?room=<roomId>&nickname=<name>
 7. RouteTransition overlay stays until useStatus() === "connected"
+8. After room sync, frontend fires POST /api/ai/session/generate-remaining once
+   (guarded by pending-check + execution.queueStarted flag) → 202 fire-and-forget
+9. questionGenerator.service.ts generates Q2→Q5 sequentially:
+     patch slot → "generating" → AI call (buildFollowUpPrompt) → patch slot → "ready"
+     + seed Y.Text("monaco-qN") — auto-retry ×2, else "error" with manual Retry (startFromIndex)
 ```
 
 ---
@@ -255,11 +282,12 @@ HTTP Request
 
 ### Yjs + Liveblocks
 
-- **`Y.Text("monaco")`** — the shared code document, bound to Monaco via `MonacoBinding`
-- **`Y.Map("meta")`** — shared metadata (title, difficulty, language, hints, solution)
+- **`Y.Array("questions")`** — 5 question slots (`pending` / `generating` / `ready` / `error`) with title, difficulty, hints, solution; observed by `QuestionSidebar`
+- **`Y.Text("monaco-q{n}")`** — per-question shared code buffer, bound to Monaco via `MonacoBinding` (rebound on question switch; legacy `Y.Text("monaco")` kept as single-question fallback)
+- **`Y.Text("whiteboard")`** — shared Excalidraw board state
 - **`Y.Array("output")`** — shared execution output visible to all collaborators
-- **`Y.Map("execution")`** — distributed lock to prevent concurrent execution
-- **Awareness** — user cursor position, color, and nickname synced via Liveblocks presence
+- **`Y.Map("execution")`** — distributed lock to prevent concurrent execution + `queueStarted` double-trigger guard
+- **Awareness** — user cursor position, color, nickname, and `currentQuestionIndex` synced via Liveblocks presence
 
 ### Presence Shape
 
@@ -269,6 +297,7 @@ type Presence = {
   cursor: { x: number; y: number } | null;
   isTyping: boolean;
   selectedLineNumber: number | null;
+  currentQuestionIndex: number; // which question this user is viewing
   info: { name: string; color: string };
 };
 ```
@@ -277,7 +306,7 @@ type Presence = {
 
 ## Code Execution Pipeline
 
-Session supports code execution via two distinct execution engines: **JDoodle API** (Primary Cloud Execution) and **Docker Container Runner** (Self-Hosted Execution).
+Session supports code execution via the **JDoodle API** (cloud sandboxes). There is no Docker execution path in the code.
 
 ### Execution Strategy & Architectural Decision
 
@@ -288,8 +317,8 @@ Session supports code execution via two distinct execution engines: **JDoodle AP
 > By switching to the **JDoodle API** (`https://api.jdoodle.com/v1/execute`), code execution runs securely via external cloud sandboxes, eliminating host Docker dependencies and enabling zero-friction deployment on services like Render and Vercel.
 >
 > **Retaining both strategies**:
-> - **JDoodle API** (Primary / Default): Designed for cloud platform deployments without Docker daemon access. Executes multi-language code out-of-the-box using API key credentials (`JDOODLE_CLIENT_ID` / `JDOODLE_CLIENT_SECRET`).
-> - **Docker Ephemeral Containers** (Self-Hosted): Retained for self-hosted VPS/VM infrastructure (e.g., AWS EC2, DigitalOcean, Hetzner) where root/Docker socket permissions are available for local container isolation.
+> - **JDoodle API** (shipped / default): Designed for cloud platform deployments without Docker daemon access. Executes multi-language code out-of-the-box using API key credentials (`JDOODLE_CLIENT_ID` / `JDOODLE_CLIENT_SECRET`).
+> - **Docker Ephemeral Containers** (design sketch only): no Docker runner exists in `execute.service.ts` — see the "Alternative Flow (Planned, Not Implemented)" section below. Do not present it as a working self-hosted option.
 
 ---
 

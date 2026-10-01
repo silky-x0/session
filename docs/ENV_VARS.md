@@ -13,26 +13,40 @@ cp backend/.env.example backend/.env
 ```env
 PORT="1234"
 FRONTEND_URL="http://localhost:5173"
+GEMINI_API_KEY="..."
+AI_PROVIDER="gemini"
+AI_MODEL="gemini-2.5-flash"
 OPEN_ROUTER_KEY="sk-or-v1-..."
 LIVEBLOCKS_SECRET_KEY="sk_..."
 LIVEBLOCKS_WEBHOOK_SECRET="wh_..."
 SESSION_TOKEN_SECRET="a-long-random-string"
 REDIS_URL="redis://default:<password>@<host>:<port>"
 JDOODLE_CLIENT_ID="your_client_id"
-JDOODLE_CLIENT_SECRET="your_client_secret"
+JDOODLE_CLIENT_SECRET="your_secret_key"
+LIVEKIT_URL="wss://your-project.livekit.cloud"
+LIVEKIT_API_KEY="..."
+LIVEKIT_API_SECRET="..."
 ```
 
 | Variable                       | Required | Description                                                          | Example                                      |
 |--------------------------------|----------|----------------------------------------------------------------------|----------------------------------------------|
 | `PORT`                         | ✅        | HTTP server port                                                     | `1234`                                       |
 | `FRONTEND_URL`                 | ✅        | Frontend origin — used in CORS allow-list                            | `http://localhost:5173`                      |
-| `OPEN_ROUTER_KEY`              | ✅        | OpenRouter API key for AI problem generation & chat                  | `sk-or-v1-...`                               |
+| `GEMINI_API_KEY`               | ✅*       | Gemini key for Q1 + background Q2–Q5 generation & AI chat (default provider) | `AIza...`                             |
+| `AI_PROVIDER`                  | ⚠️        | `gemini` (default) or `openrouter` — selects question-gen + chat provider | `gemini`                               |
+| `AI_MODEL`                     | ⚠️        | Model override for the selected provider                             | `gemini-2.5-flash`                           |
+| `OPEN_ROUTER_KEY`              | ✅*       | Required when `AI_PROVIDER=openrouter` for AI problem generation & chat | `sk-or-v1-...`                               |
 | `LIVEBLOCKS_SECRET_KEY`        | ✅        | Liveblocks secret key for server-side room seeding & active users    | `sk_prod_...`                                |
 | `SESSION_TOKEN_SECRET`         | ⚠️        | HMAC secret signing room session tokens — falls back to `LIVEBLOCKS_SECRET_KEY` if unset; set a dedicated value in production so rotating Liveblocks keys doesn't invalidate sessions | `openssl rand -hex 32` |
 | `LIVEBLOCKS_WEBHOOK_SECRET`    | ✅        | Liveblocks webhook signing secret — used to verify incoming webhooks | `wh_...`                                     |
 | `REDIS_URL`                    | ✅        | IORedis connection string for BullMQ delayed job queue + rate limiting. Use the Redis Cloud dashboard snippet verbatim (`redis://...` or `rediss://...` — TLS is auto-detected). If unset, the backend falls back to `redis://localhost:6379` and warns at boot. | `redis://default:pass@host:port`             |
 | `JDOODLE_CLIENT_ID`            | ✅        | JDoodle Compiler API Client ID (required for code execution)        | `your_client_id`                             |
 | `JDOODLE_CLIENT_SECRET`        | ✅        | JDoodle Compiler API Client Secret Key (required for code execution) | `your_secret_key`                            |
+| `LIVEKIT_URL`                  | ✅        | LiveKit Cloud WS URL for audio/video calls                           | `wss://your-project.livekit.cloud`           |
+| `LIVEKIT_API_KEY`              | ✅        | LiveKit API key (server mints room-bound SFU tokens)                 | `API...`                                     |
+| `LIVEKIT_API_SECRET`           | ✅        | LiveKit API secret                                                   | `...`                                        |
+
+_* Either `GEMINI_API_KEY` (default) or `OPEN_ROUTER_KEY` (with `AI_PROVIDER=openrouter`) is required — see `backend/.env.example`._
 
 ---
 

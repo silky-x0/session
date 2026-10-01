@@ -50,9 +50,9 @@
 | **AI questions** | Enter a topic ("sliding window") or a role ("senior backend, Go") on the home page. Q1 generates immediately, Q2–Q5 follow in the background. Each question gets its own code buffer, hints, difficulty, and solution. An AI chat panel lives inside the editor. Gemini by default, OpenRouter via `AI_PROVIDER`. |
 | **Run code** | Execution through JDoodle against custom test cases, with a shared console and timing metrics for every run. |
 | **Interview view** | Question browser with difficulty, hints, time/space notes, and revealable solutions. Presence dots show who is on which question. Failed generations show a retry button instead of dying quietly. |
-| **Calls built in** | Audio and video inside the room. No separate meeting app. |
+| **Calls built in** | LiveKit audio and video inside the room. No separate meeting app. |
 | **Whiteboard** | Shared Excalidraw board for sketching approaches together. |
-| **Rate limiting** | Redis token bucket keyed by IP and room. Fails open if Redis goes down. |
+| **Rate limiting** | Redis token bucket keyed by IP and room. Protected routes require a short-lived room session token (`POST /api/sessions/:roomId/token`). Fails open if Redis goes down. |
 | **Presence** | Roster, live cursors, typing indicators, and sync status, with a notice on disconnect. |
 
 Planned work (follow mode, inline comments, session playback) lives in [docs/ROADMAP.md](docs/ROADMAP.md).
